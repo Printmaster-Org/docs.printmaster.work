@@ -177,7 +177,7 @@ Give each agent a meaningful name for easy identification:
 
 ```toml
 [server]
-agent_name = "NYC Office"
+name = "NYC Office"
 ```
 
 Or set via the web UI: **Settings** → **Server Connection** → **Agent Name**
@@ -220,7 +220,7 @@ For device access:
 ### Benefits
 
 - **No port forwarding required**: Works through existing connections
-- **Secure**: Traffic encrypted through WebSocket tunnel
+- **Transport security**: An HTTPS server URL produces a WSS tunnel; an HTTP URL produces unencrypted WS. WebSocket alone does not encrypt traffic.
 - **Firewall-friendly**: Uses the same connection agent established
 
 ---
@@ -234,16 +234,15 @@ Get notified about important events and issues.
 | Alert | Description |
 |-------|-------------|
 | **Device Offline** | Printer not responding to SNMP |
-| **Low Toner** | Toner/ink below threshold |
-| **Error State** | Printer reporting an error |
-| **Paper Out** | Paper tray empty |
+| **Low / Critical Toner** | Reported toner/ink levels below configured thresholds |
+| **Error State** | Device status messages evaluated by the device-error rule; not a dedicated paper-out rule |
 | **Agent Disconnected** | Server lost contact with agent |
 
 ### Configuring Alerts
 
 1. Go to **Settings** → **Alerts**
 2. Enable/disable specific alert types
-3. Set thresholds (e.g., low toner at 10%)
+3. Set thresholds (seeded toner defaults: warning at or below 20%, critical at or below 5%)
 4. Configure notification methods
 
 ### Notification Methods
@@ -254,12 +253,12 @@ Get notified about important events and issues.
 
 ### Alert Thresholds
 
-| Supply | Default Threshold |
-|--------|------------------|
-| Toner/Ink | 10% |
-| Drum | 5% |
-| Fuser | 5% |
-| Waste Toner | 95% full |
+| Rule | Seeded Default Threshold |
+|------|--------------------------|
+| Low toner/ink (`supply_low`) | At or below 20% |
+| Critical toner/ink (`supply_critical`) | At or below 5% |
+
+These rules evaluate reported `TonerLevels`. The snapshot does **not** implement dedicated drum-life, fuser-life, waste-toner-full, or paper-out threshold alerts. Supply information shown by a printer is not evidence that an automatic alert rule exists. Seeded defaults do not overwrite customized existing rules.
 
 ---
 
@@ -359,9 +358,11 @@ days_of_week = ["Saturday", "Sunday"]
 
 | Mode | Description |
 |------|-------------|
-| `local` | No login required; admin tasks require local access |
+| `local` | Protected routes require a session or loopback admin bypass when `allow_local_admin=true`; remote clients are not automatically admitted |
 | `server` | Defers auth to central server |
-| `disabled` | No authentication (not recommended) |
+| `disabled` | No authentication (unsafe on untrusted networks) |
+
+The current loopback detector also checks forwarding headers. Restrict direct access to the agent and sanitize those headers at a trusted proxy; do not rely on this mode as protection against spoofed headers.
 
 ### TLS/HTTPS
 
@@ -370,25 +371,26 @@ Enable encrypted connections:
 **Server:**
 ```bash
 docker run -d \
-  -e USE_HTTPS=true \
-  -e HTTPS_PORT=9443 \
-  -v /path/to/certs:/certs \
+   --name printmaster-server \
+   -p 9443:9443 \
+   -v printmaster-data:/var/lib/printmaster/server \
+   -e ADMIN_PASSWORD=your-secure-password \
+   -e TLS_MODE=self-signed \
+   -e SERVER_HTTPS_PORT=9443 \
   ghcr.io/printmaster-org/printmaster-server:latest
 ```
 
-**Agent:**
-```toml
-[web]
-enable_tls = true
-https_port = 8443
-```
+Standalone HTTPS on `9443` is the default. Supported server TLS modes are `self-signed`, `letsencrypt`, and `custom`; custom mode uses `TLS_CERT_PATH`/`TLS_KEY_PATH`. Use trusted certificates in production. `ADMIN_PASSWORD` creates an absent bootstrap username at startup, not a password reset for an existing account.
+
+**Agent:** Runtime web settings enable HTTPS on `8443` by default when certificates are available. Configure HTTPS and custom certificate/key paths in the agent UI's web settings. The legacy `[web].enable_tls` TOML field is not the runtime HTTPS switch.
 
 ### Reverse Proxy Support
 
-Both components work behind reverse proxies:
-- Enable `BEHIND_PROXY=true` for proper header handling
+For a reverse proxy terminating server TLS:
+- Set server `BEHIND_PROXY=true` and `PROXY_USE_HTTPS=false`; forward to HTTP `9090`
+- `PROXY_USE_HTTPS=true` instead selects HTTPS upstream on `9443`
 - Configure WebSocket passthrough for real-time features
-- Handle SSL termination at the proxy level
+- Restrict backend access and configure trusted proxies; these server env variables are not agent configuration switches
 
 ---
 

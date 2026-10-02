@@ -1,0 +1,9 @@
+/* Keep Swagger's contract layout, use PrintMaster's theme tokens. */
+#swagger-ui{margin-top:2rem;background:var(--panel);padding:1rem;border-radius:8px;overflow-wrap:anywhere}
+#swagger-ui .swagger-ui,#swagger-ui .swagger-ui .info p,#swagger-ui .swagger-ui .info li,#swagger-ui .swagger-ui .info hgroup h2,#swagger-ui .swagger-ui .opblock-tag,#swagger-ui .swagger-ui .opblock .opblock-summary-description,#swagger-ui .swagger-ui .opblock .opblock-summary-path,#swagger-ui .swagger-ui .opblock-description-wrapper p,#swagger-ui .swagger-ui .parameter__name,#swagger-ui .swagger-ui .parameter__type,#swagger-ui .swagger-ui .response-col_status,#swagger-ui .swagger-ui table thead tr th,#swagger-ui .swagger-ui .model,#swagger-ui .swagger-ui .model-title,#swagger-ui .swagger-ui section.models h4,#swagger-ui .swagger-ui .responses-inner h4,#swagger-ui .swagger-ui .responses-inner h5{color:var(--heading)}
+#swagger-ui .swagger-ui .scheme-container,#swagger-ui .swagger-ui .opblock .opblock-section-header,#swagger-ui .swagger-ui section.models .model-container{background:var(--bg);box-shadow:none}
+#swagger-ui .swagger-ui .btn{color:var(--heading);border-color:var(--border)}
+#swagger-ui .swagger-ui .opblock-tag,#swagger-ui .swagger-ui section.models{border-color:var(--border)}
+#swagger-ui .swagger-ui svg{fill:var(--text)}
+#swagger-ui .swagger-ui .auth-wrapper,#swagger-ui .swagger-ui .authorization__btn{display:none}
+#swagger-ui .swagger-ui .wrapper{padding:0}#swagger-ui .swagger-ui .opblock-summary{flex-wrap:wrap}

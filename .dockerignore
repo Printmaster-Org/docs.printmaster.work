@@ -3,7 +3,8 @@
 node_modules
 public
 resources
-scripts
+scripts/*
+!scripts/vendor-api.mjs
 README.md
 MIGRATION.md
 migration-manifest.json
