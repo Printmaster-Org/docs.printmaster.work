@@ -1,0 +1,2 @@
+{{ $current := .current }}
+<ul>{{ range .pages.ByWeight }}<li><a href="{{ .RelPermalink }}"{{ if eq $current . }} aria-current="page"{{ end }}>{{ .Title }}</a>{{ if .IsSection }}{{ partial "nav-tree.html" (dict "pages" .Pages "current" $current) }}{{ end }}</li>{{ end }}</ul>

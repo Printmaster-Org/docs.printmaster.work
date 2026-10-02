@@ -1,0 +1,514 @@
+{
+  "sourceRepository": "Printmaster-Org/printmaster",
+  "sourceCommit": "565f4c0762e467f083f54a9e0e7f6bc23ada56c3",
+  "pages": [
+    {
+      "source": "CONTRIBUTING.md",
+      "destination": "content/project/contributing.md",
+      "url": "/project/contributing/",
+      "sha256": "c655ed2bf141817de697237558b38f66cff4d706f49ef9229468f9daa7343144"
+    },
+    {
+      "source": "GIT_INTEGRATION_SUMMARY.md",
+      "destination": "content/development/git-integration-summary.md",
+      "url": "/development/git-integration-summary/",
+      "sha256": "b3bd5801a0e2cd0ab7b2384ded18c4465e7dd81b6b556912c04da17398386cec"
+    },
+    {
+      "source": "README.md",
+      "destination": "content/project/overview.md",
+      "url": "/project/overview/",
+      "sha256": "8f6febacff82b6fef0457d98963e6dcece9f9a50d34c35b6104a08e7a26b1e9d"
+    },
+    {
+      "source": "SECURITY.md",
+      "destination": "content/project/security.md",
+      "url": "/project/security/",
+      "sha256": "4ae3e2ed721d32667b0749aee780689f4c20261679abe02d0933122b52e4e079"
+    },
+    {
+      "source": "agent/README.md",
+      "destination": "content/components/agent/_index.md",
+      "url": "/components/agent/",
+      "sha256": "0730d6657e53104154b34c07ae7a2f6e01598e2527cf5abb4c136f0bfbf0e063"
+    },
+    {
+      "source": "agent/SERVICE.md",
+      "destination": "content/components/agent/service.md",
+      "url": "/components/agent/service/",
+      "sha256": "6eee1341cc56f28ca8d1cd80dd5db5e6776b038957338974b129af65b4e4cd9e"
+    },
+    {
+      "source": "agent/agent/README.md",
+      "destination": "content/components/agent/historical-overview.md",
+      "url": "/components/agent/historical-overview/",
+      "sha256": "5c25343cd3128be982d4806641a37060dc5a70d9b1d74647d808ca43ac99831d"
+    },
+    {
+      "source": "agent/docs/MIB_PROFILES.md",
+      "destination": "content/components/agent/docs/mib-profiles.md",
+      "url": "/components/agent/docs/mib-profiles/",
+      "sha256": "890ac9348320b772e96fb5b43e94ed72b3bf0784717c5d6ba55e67f7fe9e3177"
+    },
+    {
+      "source": "agent/docs/REMAINING_TASKS.md",
+      "destination": "content/components/agent/docs/remaining-tasks.md",
+      "url": "/components/agent/docs/remaining-tasks/",
+      "sha256": "b9e8ae5bdae251e6f5a94f4daac4c5a752488494d9710a80a924e69e9c40f97a"
+    },
+    {
+      "source": "agent/scanner/README.md",
+      "destination": "content/components/agent/scanner/_index.md",
+      "url": "/components/agent/scanner/",
+      "sha256": "980755fe5c7def969a46d42ff4dad32906f4831b58fc7fb35b256b9bf6226701"
+    },
+    {
+      "source": "agent/scanner/capabilities/README.md",
+      "destination": "content/components/agent/scanner/capabilities/_index.md",
+      "url": "/components/agent/scanner/capabilities/",
+      "sha256": "ce12e6ecab6a03435d91bd17d19754937382323e965fb69b50e2dcb1fc9954ad"
+    },
+    {
+      "source": "agent/storage/README.md",
+      "destination": "content/components/agent/storage/_index.md",
+      "url": "/components/agent/storage/",
+      "sha256": "9c46dd9eeea9ae032e0aee21492ac7932b0817b12ac6c9bfff325e24fb3fac5c"
+    },
+    {
+      "source": "common/logger/README.md",
+      "destination": "content/components/logger/_index.md",
+      "url": "/components/logger/",
+      "sha256": "dc0702426b2c1a7c1d3469eb0d7a5c32e79ee5c665a1de05c16a369a581238f2"
+    },
+    {
+      "source": "docs/CONFIGURATION.md",
+      "destination": "content/guides/configuration.md",
+      "url": "/guides/configuration/",
+      "sha256": "9de46597328e323491438ae77f58a147b85ae5c415c4b5cdef28ee9ee7222bda"
+    },
+    {
+      "source": "docs/FAQ.md",
+      "destination": "content/guides/faq.md",
+      "url": "/guides/faq/",
+      "sha256": "57adcba09c78f9f6592450d6fbdef8a31dee78ba59386e40edd634e523e82d5d"
+    },
+    {
+      "source": "docs/FEATURES.md",
+      "destination": "content/guides/features.md",
+      "url": "/guides/features/",
+      "sha256": "931b525b4d399b9e4a1b4c729467dd923b404ffc805badcb50d4af78e0ee10ea"
+    },
+    {
+      "source": "docs/GETTING_STARTED.md",
+      "destination": "content/guides/getting-started.md",
+      "url": "/guides/getting-started/",
+      "sha256": "d6a3e8e9997f27d64439039c1246775b6de66cb1d7a6a042e0eb56dd3591c8a7"
+    },
+    {
+      "source": "docs/INSTALL.md",
+      "destination": "content/guides/install.md",
+      "url": "/guides/install/",
+      "sha256": "b75f5023251596d48237e012e2680a5b2b4f55556d4330806527b7267332c2eb"
+    },
+    {
+      "source": "docs/README.md",
+      "destination": "content/guides/_index.md",
+      "url": "/guides/",
+      "sha256": "6cd65729ba92c2043275b8a1163821f93778c54803fc55dad2d1e0cdcbb1ce17"
+    },
+    {
+      "source": "docs/TROUBLESHOOTING.md",
+      "destination": "content/guides/troubleshooting.md",
+      "url": "/guides/troubleshooting/",
+      "sha256": "8af14ed3df41d5fbd14151f789b8897f2e31a6158474e8da2a09d8f0a999bd20"
+    },
+    {
+      "source": "docs/api/README.md",
+      "destination": "content/api/_index.md",
+      "url": "/api/",
+      "sha256": "a18dff35a018a6c4a0f14f2a1db714663418e7d229e0eaafff7e521fb395c556"
+    },
+    {
+      "source": "docs/deployment/database-upgrade.md",
+      "destination": "content/deployment/database-upgrade.md",
+      "url": "/deployment/database-upgrade/",
+      "sha256": "bccf8d56ff9b86c327b65cb37775f885e4bb2c6c434ea1d3c3ec5110f7bab70c"
+    },
+    {
+      "source": "docs/deployment/docker.md",
+      "destination": "content/deployment/docker.md",
+      "url": "/deployment/docker/",
+      "sha256": "63044473d882517908f623adf4d021e77fb564719abe6b514d0a0c5060b17a41"
+    },
+    {
+      "source": "docs/deployment/unraid.md",
+      "destination": "content/deployment/unraid.md",
+      "url": "/deployment/unraid/",
+      "sha256": "3ba171d4c9b0ceed570a39f28d10b40d8c407b23046f800765574929f69ae016"
+    },
+    {
+      "source": "docs/dev/AUTO_UPDATE_PLAN.md",
+      "destination": "content/development/auto-update-plan.md",
+      "url": "/development/auto-update-plan/",
+      "sha256": "d061bec3942c684cc845e94abb853fd8cbe253b843f3ba270fac54472a6596d6"
+    },
+    {
+      "source": "docs/dev/BUILD_WORKFLOW.md",
+      "destination": "content/development/build-workflow.md",
+      "url": "/development/build-workflow/",
+      "sha256": "990fc6ba80a821307f54fa35a78a34d69a308d0bdbb7487501d1608ce733e192"
+    },
+    {
+      "source": "docs/dev/CLOUDFLARE_PROXY_WORKER.md",
+      "destination": "content/development/cloudflare-proxy-worker.md",
+      "url": "/development/cloudflare-proxy-worker/",
+      "sha256": "1334a8dc38b584e0623a0562b111909027aae2d76da820f12f8112b49356f6a3"
+    },
+    {
+      "source": "docs/dev/DEPRECATIONS.md",
+      "destination": "content/development/deprecations.md",
+      "url": "/development/deprecations/",
+      "sha256": "ea53d15c88f1dfb6992b5ac3c15054b01d3ba54a75a7a90c9081b414818ceb98"
+    },
+    {
+      "source": "docs/dev/EPSON_REMOTE_MODE_PLAN.md",
+      "destination": "content/development/epson-remote-mode-plan.md",
+      "url": "/development/epson-remote-mode-plan/",
+      "sha256": "208e622ea5a4c80e1729b0b338ff5db9462c6c0eedd72401c7b68e5e741f24e3"
+    },
+    {
+      "source": "docs/dev/PROJECT_STRUCTURE.md",
+      "destination": "content/development/project-structure.md",
+      "url": "/development/project-structure/",
+      "sha256": "8f1f8fb5edb1d344d460fa01ef3f18c8846e9fda8e68c4de7e78d0d05510deb1"
+    },
+    {
+      "source": "docs/dev/RANGE_SYNTAX.md",
+      "destination": "content/development/range-syntax.md",
+      "url": "/development/range-syntax/",
+      "sha256": "399f67cdd4052bddca222c4fbf2c58086c1468ec9c166d8c4603c9a7fbaf666a"
+    },
+    {
+      "source": "docs/dev/README.md",
+      "destination": "content/development/_index.md",
+      "url": "/development/",
+      "sha256": "8fcef2fd394264f66044f8005e94d7772118354f55ecb70fd3a1e3b597524735"
+    },
+    {
+      "source": "docs/dev/SECURITY_ARCHITECTURE.md",
+      "destination": "content/development/security-architecture.md",
+      "url": "/development/security-architecture/",
+      "sha256": "f02467e59b32321cdcdcdebca92d4685566f3c8d673c43e428de6317d7b2c097"
+    },
+    {
+      "source": "docs/dev/SNMP_REFERENCE.md",
+      "destination": "content/development/snmp-reference.md",
+      "url": "/development/snmp-reference/",
+      "sha256": "8ce1c61ca77bfee4f01b9766b8f8bfff3ed244002a363c4063134a78a12b7a76"
+    },
+    {
+      "source": "docs/dev/SNMP_RESEARCH_NOTES.md",
+      "destination": "content/development/snmp-research-notes.md",
+      "url": "/development/snmp-research-notes/",
+      "sha256": "8e9721f0860baf08b21ca10d61e3a5ebeda2813f229f15ed2fe831ca992e981d"
+    },
+    {
+      "source": "docs/dev/TESTING.md",
+      "destination": "content/development/testing-ci.md",
+      "url": "/development/testing-ci/",
+      "sha256": "f3b4c4e78280d891f111ef48e7f1e001235df065bf5c7df8928f562b16272cc5"
+    },
+    {
+      "source": "docs/dev/TEST_COVERAGE_ANALYSIS.md",
+      "destination": "content/development/test-coverage-analysis.md",
+      "url": "/development/test-coverage-analysis/",
+      "sha256": "732f50af3258a842e34f44334466557038239ea824d16bd9ad03196037b646ca"
+    },
+    {
+      "source": "docs/dev/TODO.md",
+      "destination": "content/development/todo.md",
+      "url": "/development/todo/",
+      "sha256": "6b8adbc083693e0501e2355c89548f4102ad4613709352f9d7798bc3c32f36eb"
+    },
+    {
+      "source": "docs/dev/USB_IMPLEMENTATION.md",
+      "destination": "content/development/usb-implementation.md",
+      "url": "/development/usb-implementation/",
+      "sha256": "854589b9292e3b132c7d2f99890977c21947c2f36dd9d13c36fba17606c8a612"
+    },
+    {
+      "source": "docs/dev/WEBSOCKET_PROXY.md",
+      "destination": "content/development/websocket-proxy.md",
+      "url": "/development/websocket-proxy/",
+      "sha256": "a5658b7c3ad27a57f07b493757cadaf4ef5fe75b7fd03d0679753dd3a4637d65"
+    },
+    {
+      "source": "docs/dev/vendor/EPSON_OID_MAPPING.md",
+      "destination": "content/development/vendor/epson-oid-mapping.md",
+      "url": "/development/vendor/epson-oid-mapping/",
+      "sha256": "d32cd1a96637b99d2b6a0496cd77ad081d8a0646f67375560621a5ba86da0ec9"
+    },
+    {
+      "source": "docs/dev/vendor/KYOCERA_OID_MAPPING.md",
+      "destination": "content/development/vendor/kyocera-oid-mapping.md",
+      "url": "/development/vendor/kyocera-oid-mapping/",
+      "sha256": "998e851c068edec1942f407566722d1aaac5a388199ae8a5c76971f47c127089"
+    },
+    {
+      "source": "docs/dev/vendor/README.md",
+      "destination": "content/development/vendor/_index.md",
+      "url": "/development/vendor/",
+      "sha256": "73fcadaaccbe0e68cd0b5c47ce7498d1c6aa154ca9131f47496eb02ad316a580"
+    },
+    {
+      "source": "docs/dev/vendor/VENDOR_METER_ANALYSIS.md",
+      "destination": "content/development/vendor/vendor-meter-analysis.md",
+      "url": "/development/vendor/vendor-meter-analysis/",
+      "sha256": "2136ede691c44b3a7fc9e8f71156ee7816e236d753f06e45be676fbe218f88f4"
+    },
+    {
+      "source": "server/README.md",
+      "destination": "content/components/server/_index.md",
+      "url": "/components/server/",
+      "sha256": "6819dd61bd3a73601eacbdd4d31dc8512f75a48211af6ddd99baa2a76781838f"
+    },
+    {
+      "source": "tests/E2E_TESTING.md",
+      "destination": "content/development/testing/e2e-testing.md",
+      "url": "/development/testing/e2e-testing/",
+      "sha256": "00c00cba1c487b43324f81d3c851e1922b6ed59f714731293172c5e3147d7958"
+    },
+    {
+      "source": "tests/README.md",
+      "destination": "content/development/testing/_index.md",
+      "url": "/development/testing/",
+      "sha256": "627f79f9629a4a93174fc3c2c5b681ea158a982bfd27888138071a425fb4f815"
+    }
+  ],
+  "assets": [
+    {
+      "source": "docs/dev/Printer-MIB.mib",
+      "destination": "static/media/docs/dev/Printer-MIB.mib"
+    },
+    {
+      "source": "docs/images/banner.png",
+      "destination": "static/media/docs/images/banner.png"
+    },
+    {
+      "source": "docs/images/banner.xcf",
+      "destination": "static/media/docs/images/banner.xcf"
+    },
+    {
+      "source": "docs/screenshots/Agents - PrintMaster Server.png",
+      "destination": "static/media/docs/screenshots/Agents - PrintMaster Server.png"
+    },
+    {
+      "source": "docs/screenshots/Dashboard - PrintMaster Server.png",
+      "destination": "static/media/docs/screenshots/Dashboard - PrintMaster Server.png"
+    },
+    {
+      "source": "docs/screenshots/Devices - PrintMaster Server.png",
+      "destination": "static/media/docs/screenshots/Devices - PrintMaster Server.png"
+    },
+    {
+      "source": "docs/screenshots/Logs - PrintMaster Server.png",
+      "destination": "static/media/docs/screenshots/Logs - PrintMaster Server.png"
+    },
+    {
+      "source": "docs/screenshots/Metrics - PrintMaster Server.png",
+      "destination": "static/media/docs/screenshots/Metrics - PrintMaster Server.png"
+    },
+    {
+      "source": "agent/icon.svg",
+      "destination": "static/images/icon.svg"
+    },
+    {
+      "source": "agent/icon.png",
+      "destination": "static/images/icon.png"
+    },
+    {
+      "source": "LICENSE",
+      "destination": "LICENSE"
+    }
+  ],
+  "repairedLinks": [
+    {
+      "source": "CONTRIBUTING.md",
+      "original": "docs/BUILD_WORKFLOW.md",
+      "replacement": "docs/dev/BUILD_WORKFLOW.md"
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "original": "docs/PROJECT_STRUCTURE.md",
+      "replacement": "docs/dev/PROJECT_STRUCTURE.md"
+    },
+    {
+      "source": "CONTRIBUTING.md",
+      "original": "docs/SNMP_REFERENCE.md",
+      "replacement": "docs/dev/SNMP_REFERENCE.md"
+    },
+    {
+      "source": "agent/README.md",
+      "original": "logger/README.md",
+      "replacement": "common/logger/README.md"
+    },
+    {
+      "source": "agent/README.md",
+      "original": "../docs/API_REFERENCE.md",
+      "replacement": "docs/api/README.md"
+    },
+    {
+      "source": "agent/README.md",
+      "original": "../docs/API_REFERENCE.md",
+      "replacement": "docs/api/README.md"
+    },
+    {
+      "source": "agent/README.md",
+      "original": "logger/README.md",
+      "replacement": "common/logger/README.md"
+    },
+    {
+      "source": "agent/SERVICE.md",
+      "original": "../docs/SERVICE_DEPLOYMENT.md",
+      "replacement": "agent/SERVICE.md"
+    },
+    {
+      "source": "agent/SERVICE.md",
+      "original": "../docs/SECURITY_ARCHITECTURE.md",
+      "replacement": "docs/dev/SECURITY_ARCHITECTURE.md"
+    },
+    {
+      "source": "agent/agent/README.md",
+      "original": "../logger/README.md",
+      "replacement": "common/logger/README.md"
+    },
+    {
+      "source": "agent/agent/README.md",
+      "original": "../../docs/API_REFERENCE.md",
+      "replacement": "docs/api/README.md"
+    },
+    {
+      "source": "agent/scanner/README.md",
+      "original": "../logger/README.md",
+      "replacement": "common/logger/README.md"
+    },
+    {
+      "source": "agent/scanner/README.md",
+      "original": "../../docs/API_REFERENCE.md",
+      "replacement": "docs/api/README.md"
+    },
+    {
+      "source": "agent/storage/README.md",
+      "original": "../../docs/API_REFERENCE.md",
+      "replacement": "docs/api/README.md"
+    },
+    {
+      "source": "common/logger/README.md",
+      "original": "../agent/README.md",
+      "replacement": "agent/README.md"
+    },
+    {
+      "source": "common/logger/README.md",
+      "original": "../scanner/README.md",
+      "replacement": "agent/scanner/README.md"
+    },
+    {
+      "source": "common/logger/README.md",
+      "original": "../../docs/API_REFERENCE.md",
+      "replacement": "docs/api/README.md"
+    },
+    {
+      "source": "docs/FAQ.md",
+      "original": "dev/API.md",
+      "replacement": "docs/api/README.md"
+    },
+    {
+      "source": "docs/FEATURES.md",
+      "original": "dev/API.md",
+      "replacement": "docs/api/README.md"
+    },
+    {
+      "source": "docs/GETTING_STARTED.md",
+      "original": "dev/API.md",
+      "replacement": "docs/api/README.md"
+    },
+    {
+      "source": "docs/INSTALL.md",
+      "original": "dev/UNRAID_DEPLOYMENT.md",
+      "replacement": "docs/deployment/unraid.md"
+    },
+    {
+      "source": "docs/api/README.md",
+      "original": "CONFIGURATION.md",
+      "replacement": "docs/CONFIGURATION.md"
+    },
+    {
+      "source": "docs/api/README.md",
+      "original": "FEATURES.md",
+      "replacement": "docs/FEATURES.md"
+    },
+    {
+      "source": "docs/deployment/docker.md",
+      "original": "../api/environment-variables.md",
+      "replacement": "docs/CONFIGURATION.md#environment-variables"
+    },
+    {
+      "source": "docs/dev/PROJECT_STRUCTURE.md",
+      "original": "../agent/README.md",
+      "replacement": "agent/README.md"
+    },
+    {
+      "source": "docs/dev/PROJECT_STRUCTURE.md",
+      "original": "../server/README.md",
+      "replacement": "server/README.md"
+    },
+    {
+      "source": "docs/dev/PROJECT_STRUCTURE.md",
+      "original": "CONFIGURATION.md",
+      "replacement": "docs/CONFIGURATION.md"
+    },
+    {
+      "source": "docs/dev/PROJECT_STRUCTURE.md",
+      "original": "SERVICE_DEPLOYMENT.md, AGENT_DEPLOYMENT.md",
+      "replacement": "agent/SERVICE.md"
+    }
+  ],
+  "unavailableReferences": [
+    {
+      "source": "CONTRIBUTING.md",
+      "target": "docs/ROADMAP.md"
+    },
+    {
+      "source": "agent/README.md",
+      "target": "../docs/SETTINGS_TODO.md"
+    },
+    {
+      "source": "agent/agent/README.md",
+      "target": "../../docs/LIVE_DISCOVERY_TODO.md"
+    },
+    {
+      "source": "agent/agent/README.md",
+      "target": "../../docs/SETTINGS_TODO.md"
+    },
+    {
+      "source": "agent/scanner/README.md",
+      "target": "../../docs/SETTINGS_TODO.md"
+    },
+    {
+      "source": "agent/scanner/capabilities/README.md",
+      "target": "../../../docs/CAPABILITY_INTEGRATION.md"
+    },
+    {
+      "source": "common/logger/README.md",
+      "target": "../../docs/SETTINGS_TODO.md"
+    },
+    {
+      "source": "docs/dev/PROJECT_STRUCTURE.md",
+      "target": "ROADMAP.md"
+    },
+    {
+      "source": "docs/dev/PROJECT_STRUCTURE.md",
+      "target": "DATABASE_ROTATION.md"
+    }
+  ]
+}

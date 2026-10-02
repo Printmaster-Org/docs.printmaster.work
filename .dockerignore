@@ -1,0 +1,10 @@
+.git
+.github
+node_modules
+public
+resources
+scripts
+README.md
+MIGRATION.md
+migration-manifest.json
+.hugo_build.lock

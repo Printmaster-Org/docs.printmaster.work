@@ -1,0 +1,17 @@
+services:
+  docs:
+    image: ghcr.io/printmaster-org/docs.printmaster.work:latest
+    build:
+      context: .
+      args:
+        BASE_URL: ${DOCS_BASE_URL:-https://docs.printmaster.work/}
+    ports:
+      - "127.0.0.1:8088:8080"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:uid=101,gid=101,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true

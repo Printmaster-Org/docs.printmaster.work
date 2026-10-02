@@ -1,0 +1,12 @@
+{{ define "main" }}
+<div class="article-layout">
+  <article>
+    <div class="eyebrow">{{ with .Parent }}<a href="{{ .RelPermalink }}">{{ .Title }}</a>{{ end }}</div>
+    <h1>{{ .Title }}</h1>
+    {{ if .Params.legacy }}<aside class="notice">Historical implementation notes, imported for reference. Check current guides before relying on planned features.</aside>{{ end }}
+    <div class="prose">{{ .Content }}</div>
+    <div class="page-meta"><a href="{{ site.Params.repository }}/edit/main/content/{{ .File.Path }}">Edit this page ↗</a>{{ with .Params.source }}<a href="{{ $.Site.Params.programRepository }}/blob/{{ $.Params.sourceCommit }}/{{ . }}">Original source ↗</a>{{ end }}</div>
+  </article>
+  {{ if .TableOfContents }}<aside class="toc"><strong>On this page</strong>{{ .TableOfContents }}</aside>{{ end }}
+</div>
+{{ end }}

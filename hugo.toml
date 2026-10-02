@@ -1,0 +1,54 @@
+baseURL = 'https://docs.printmaster.work/'
+languageCode = 'en-us'
+title = 'PrintMaster Docs'
+enableRobotsTXT = true
+disableKinds = ['taxonomy', 'term']
+
+[params]
+  description = 'Deploy, configure, and develop PrintMaster: open-source printer fleet management.'
+  repository = 'https://github.com/Printmaster-Org/docs.printmaster.work'
+  programRepository = 'https://github.com/Printmaster-Org/printmaster'
+
+[outputs]
+  home = ['HTML', 'RSS', 'JSON']
+
+[markup.goldmark.renderer]
+  unsafe = true # Authored docs contain details, tables, and architecture diagrams.
+
+[markup.goldmark.parser.attribute]
+  block = true
+
+[markup.highlight]
+  noClasses = false
+
+[markup.tableOfContents]
+  startLevel = 2
+  endLevel = 3
+
+[sitemap]
+  changeFreq = 'weekly'
+
+[[menus.main]]
+  name = 'Guides'
+  pageRef = '/guides'
+  weight = 10
+[[menus.main]]
+  name = 'Deployment'
+  pageRef = '/deployment'
+  weight = 20
+[[menus.main]]
+  name = 'API'
+  pageRef = '/api'
+  weight = 30
+[[menus.main]]
+  name = 'Development'
+  pageRef = '/development'
+  weight = 40
+[[menus.main]]
+  name = 'Components'
+  pageRef = '/components'
+  weight = 50
+[[menus.main]]
+  name = 'Project'
+  pageRef = '/project'
+  weight = 60
