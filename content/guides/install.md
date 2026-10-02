@@ -30,13 +30,13 @@ This guide covers installing PrintMaster on all supported platforms.
 ```bash
 docker run -d \
   --name printmaster-server \
-  -p 9090:9090 \
+  -p 9443:9443 \
   -v printmaster-data:/var/lib/printmaster/server \
   -e ADMIN_PASSWORD=your-secure-password \
   ghcr.io/printmaster-org/printmaster-server:latest
 ```
 
-Access at `http://localhost:9090` with username `admin` and your chosen password.
+Access at `https://localhost:9443` with username `admin` and your chosen password. The default certificate is self-signed; use a trusted custom certificate or TLS-terminating proxy for production.
 
 ### Agent (Windows)
 
@@ -69,7 +69,7 @@ Docker is the recommended deployment method for the server.
 # Basic setup
 docker run -d \
   --name printmaster-server \
-  -p 9090:9090 \
+  -p 9443:9443 \
   -v printmaster-data:/var/lib/printmaster/server \
   -v printmaster-logs:/var/log/printmaster/server \
   -e ADMIN_PASSWORD=your-secure-password \
@@ -87,7 +87,7 @@ services:
     image: ghcr.io/printmaster-org/printmaster-server:latest
     container_name: printmaster-server
     ports:
-      - "9090:9090"
+      - "9443:9443"
     volumes:
       - printmaster-data:/var/lib/printmaster/server
       - printmaster-logs:/var/log/printmaster/server
@@ -115,10 +115,12 @@ docker compose up -d
 | `LOG_LEVEL` | `info` | Logging level: debug, info, warn, error |
 | `BEHIND_PROXY` | `false` | Set to `true` if behind a reverse proxy |
 | `BIND_ADDRESS` | `0.0.0.0` | Address to bind to |
-| `HTTP_PORT` | `9090` | HTTP port |
-| `HTTPS_PORT` | `9443` | HTTPS port (when TLS enabled) |
+| `SERVER_HTTP_PORT` | `9090` | HTTP backend port (only in HTTP proxy mode) |
+| `SERVER_HTTPS_PORT` | `9443` | Default standalone HTTPS port |
+| `PROXY_USE_HTTPS` | `false` | With `BEHIND_PROXY=true`: HTTP backend if false, HTTPS backend if true |
+| `TLS_MODE` | `self-signed` | `self-signed`, `letsencrypt`, or `custom` |
 
-> **Important**: Set `ADMIN_PASSWORD` before the first run. The password can only be set during initial database creation.
+> **Important**: Set a strong `ADMIN_PASSWORD` before exposing the server. At each startup, bootstrap creates `ADMIN_USER` (default `admin`) only if that username is absent. It never resets an existing user's password or role; use user management for password changes.
 
 #### Behind a Reverse Proxy
 
@@ -127,6 +129,7 @@ If using Nginx Proxy Manager, Traefik, or another reverse proxy:
 ```yaml
 environment:
   - BEHIND_PROXY=true
+  - PROXY_USE_HTTPS=false
   - BIND_ADDRESS=0.0.0.0
 ```
 
@@ -134,6 +137,8 @@ Configure your proxy to:
 - Forward to port 9090
 - Enable WebSocket support (required for real-time features)
 - Handle SSL termination
+
+Publish `9090:9090` instead of `9443:9443` for this HTTP backend, or use a private container network without publishing it. Restrict backend access to the proxy. `PROXY_USE_HTTPS=true` instead selects HTTPS on `9443` for an encrypted upstream.
 
 ### Unraid
 
@@ -145,7 +150,7 @@ Configure your proxy to:
 2. **Manual Docker Setup**:
    - Go to Docker tab → Add Container
    - Repository: `ghcr.io/printmaster-org/printmaster-server:latest`
-   - Port: 9090 → 9090
+   - Direct HTTPS port: 9443 → 9443 (HTTP 9090 requires proxy mode)
    - Path: `/mnt/user/appdata/printmaster-server/data` → `/var/lib/printmaster/server`
    - Path: `/mnt/user/appdata/printmaster-server/logs` → `/var/log/printmaster/server`
 
@@ -318,11 +323,11 @@ docker run -d \
 | Component | Default URL | Default Port |
 |-----------|-------------|--------------|
 | Agent | `http://localhost:8080` | 8080 |
-| Server | `http://localhost:9090` | 9090 |
+| Server | `https://localhost:9443` | 9443 |
 
 ### Server First Login
 
-1. Open `http://your-server:9090`
+1. Open `https://your-server:9443` (self-signed certificate by default), or your proxy's public HTTPS URL
 2. Log in with:
    - Username: `admin`
    - Password: The password you set via `ADMIN_PASSWORD` (default: `printmaster`)
@@ -330,9 +335,9 @@ docker run -d \
 
 ### Connecting an Agent to the Server
 
-1. Open the agent's web UI at `http://agent-ip:8080`
+1. Open the agent's web UI locally at `http://localhost:8080`. Default `local` auth grants admin bypass to loopback requests, not arbitrary remote clients; use server-authenticated access for remote management
 2. Go to **Settings** → **Server Connection**
-3. Enter your server URL: `http://your-server:9090`
+3. Enter your server URL: `https://your-server:9443`, or your proxy's public HTTPS URL
 4. Click **Save**
 
 Or edit the agent's config file:
@@ -340,8 +345,10 @@ Or edit the agent's config file:
 ```toml
 [server]
 enabled = true
-url = "http://your-server:9090"
+url = "https://your-server:9443"
 ```
+
+Complete the agent onboarding/approval flow; setting a URL alone does not authorize it. Server HTTPS certificates must be trusted by the agent. The HTTP uploader supports `[server].ca_path`, but the WebSocket dialer at this snapshot does not propagate that custom CA pool. Prefer a system-trusted certificate for both transports; disabling verification is a development-only workaround, not a production recommendation.
 
 ### Next Steps
 

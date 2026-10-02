@@ -16,3 +16,11 @@ updates:
       docker-images:
         patterns:
           - "*"
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      api-tooling:
+        patterns:
+          - "*"

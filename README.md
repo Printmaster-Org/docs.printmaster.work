@@ -22,9 +22,11 @@ During preparation this repository remains private. GitHub Pages is not enabled 
 
 ## Run locally
 
-With the Hugo version in `.hugo-version` installed:
+With Node.js 24 and the Hugo version in `.hugo-version` installed, install the locked development dependencies and vendor the API viewer before starting Hugo:
 
 ```bash
+npm ci --ignore-scripts
+npm run vendor:api
 hugo server --bind 0.0.0.0 --baseURL http://localhost:1313/
 ```
 
@@ -75,6 +77,8 @@ Edit Markdown under `content/`; the docs repository is the new editorial home. U
 Imported pages retain `source` and `sourceCommit` metadata. Source-code references point to the exact original PrintMaster commit; update them when revising implementation documentation.
 
 ```bash
+npm ci --ignore-scripts
+npm run vendor:api
 npm test
 hugo --gc --minify --panicOnWarning
 npm run check
@@ -82,9 +86,17 @@ docker build -t printmaster-docs:local .
 bash scripts/smoke.sh printmaster-docs:local
 ```
 
-Node.js 22+ is used only for development/CI checks; no npm dependencies or Node runtime are shipped. Docker installs the pinned Hugo release and verifies its archive checksum before building. Update `.hugo-version` and the Dockerfile default together when upgrading Hugo.
+Node.js 24 is build/test tooling only, not a runtime dependency. Development dependencies validate OpenAPI and provide Swagger UI assets. `npm run vendor:api` copies the viewer and its licensing locally; the static site uses no CDN or external validator, and request execution is disabled. No Node runtime or `node_modules` is shipped, only static assets. Repeat vendoring after dependency updates and before each Hugo server/build invocation. Docker performs dependency installation and vendoring in its build stage, installs the pinned Hugo release, and verifies its archive checksum. Update `.hugo-version` and the Dockerfile default together when upgrading Hugo.
 
-## Migration
+The [server API overview](https://docs.printmaster.work/api/) links to the initial five-operation [OpenAPI reference](https://docs.printmaster.work/api/openapi/) and [downloadable YAML](https://docs.printmaster.work/openapi/server.yaml). The [targeted accuracy audit](https://docs.printmaster.work/project/docs-audit/) records operational corrections, evidence, and remaining unaudited scope; it is not certification of all documentation.
+
+## API documentation and accuracy
+
+The public [OpenAPI page](https://docs.printmaster.work/api/openapi/) renders a validated, initial five-operation server contract. See [API_MAINTENANCE.md](API_MAINTENANCE.md) for adding verified operations and the distinction between documenting existing routes and implementing a stable public product API. Request execution is disabled; fleet credentials stay off the hosted page.
+
+See [DOCS_AUDIT.md](DOCS_AUDIT.md) for the targeted accuracy pass, implementation evidence, and remaining unaudited content. A passing static build does not establish product accuracy for every imported document.
+
+## Migration record
 
 The initial import includes **47 authored Markdown documents**, screenshots, banner source/image, Printer-MIB, application icons, and the original MIT license. See [MIGRATION.md](MIGRATION.md) and [migration-manifest.json](migration-manifest.json) for scope, repaired links, source hashes, and cutover steps.
 

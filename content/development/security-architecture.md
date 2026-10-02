@@ -2,11 +2,16 @@
 title: "Security Architecture for Agent-Server Communication"
 source: "docs/dev/SECURITY_ARCHITECTURE.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
+legacy: true
 ---
+
+> **Historical design proposal — planned, not shipped as specified.** This page is retained for context and stable heading anchors, not as a description of current security guarantees or valid configuration. Its MVP/Production/Enterprise labels, code sketches, phases, quotas, retention periods, JSON/YAML examples, mTLS, request signing, certificate rotation, encrypted credential synchronization, and proxy-session isolation are proposed designs, not verified shipped behavior. Some overlapping features now exist, but that does not validate this design as a whole.
+>
+> At reviewed snapshot `565f4c0`, server TLS supports `self-signed`, `letsencrypt`, and `custom`, with a TLS 1.2 minimum; standalone access defaults to HTTPS `9443`. Server configuration is TOML with `[server]`, `[tls]`, `[database]`, and `[security]`, not the YAML below. See the [Configuration Guide](/guides/configuration/), [Docker guide](/deployment/docker/), and [WebSocket proxy notes](/development/websocket-proxy/) for the scoped, source-checked operational guidance. This is not an exhaustive security audit.
 
 ## Overview
 
-This document outlines the security architecture for when the PrintMaster agent communicates with a central server, particularly for the reverse proxy feature where the server may relay connections between users and printers through the agent.
+This historical proposal outlines a desired security architecture for agent-server communication and reverse proxying. All implementation descriptions below belong to that proposal unless independently verified against current source; do not deploy its example configuration or assume the stated controls are enforced.
 
 ## Threat Model
 

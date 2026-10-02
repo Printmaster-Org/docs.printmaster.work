@@ -10,6 +10,8 @@ The PrintMaster system now supports proxying HTTP requests through the WebSocket
 - Agent web UIs from anywhere (even behind NAT/firewalls)
 - Device web UIs (printer admin pages) through the agent's network connection
 
+Transport/HTTPS claims below were checked against source snapshot `565f4c0`; this is not a full protocol audit. Default standalone server access is `https://localhost:9443`. HTTP `9090` is the backend when `BEHIND_PROXY=true` and `PROXY_USE_HTTPS=false`, not the agent's HTTP `8080` port.
+
 ## Architecture
 
 ```
@@ -23,7 +25,7 @@ Browser → Server → WebSocket → Agent → Target (Agent UI or Device)
 2. **Browser makes HTTP request** to server proxy endpoint
 3. **Server converts HTTP request** to WebSocket message (`proxy_request`)
 4. **Server sends message** through WebSocket to connected agent
-5. **Agent receives proxy request** and makes local HTTP request to target
+5. **Agent receives proxy request** and invokes its registered local HTTP handler; device requests then use the agent's device proxy, which supports HTTP and HTTPS targets
 6. **Agent sends HTTP response** back through WebSocket (`proxy_response`)
 7. **Server forwards response** to browser
 
@@ -73,7 +75,7 @@ Browser → Server → WebSocket → Agent → Target (Agent UI or Device)
 GET /api/v1/proxy/agent/{agentID}/{path...}
 ```
 
-Proxies HTTP requests to the agent's own web UI (typically running on `http://localhost:8080`).
+Uses a logical `http://localhost:8080` target to invoke the agent's registered local handler directly. It does not require a network round-trip to a listener on port `8080`.
 
 **Example:**
 ```
@@ -87,6 +89,8 @@ GET /api/v1/proxy/device/{serialNumber}/{path...}
 ```
 
 Proxies HTTP requests to a device's web UI through its associated agent.
+
+The server routes through the agent's `/proxy/{serial}` handler. That handler can use a detected HTTP or HTTPS device URL and has HTTPS fallback behavior. Printer compatibility still depends on redirects, authentication, and vendor-specific content rewriting.
 
 **Example:**
 ```
@@ -152,24 +156,27 @@ Each device card now has an **"Open Web UI"** button that:
 3. **Request Timeouts**: Proxy requests have a 30-second timeout to prevent hanging connections
 4. **Header Filtering**: Hop-by-hop headers are filtered to prevent protocol issues
 
+5. **Encryption**: `https://` server URLs become `wss://`; `http://` URLs become unencrypted `ws://`. Use HTTPS/WSS and a trusted server certificate in production. At this snapshot the WebSocket dialer receives a skip-verification flag, but not the custom CA pool configured for HTTP uploads; `ca_path` alone does not establish WSS trust.
+6. **Device TLS caveat**: The agent's device proxy supports HTTPS, including self-signed printer certificates, but skips certificate verification on those device connections. HTTPS support is not a guarantee of authenticated printer identity or end-to-end certificate validation.
+
 ## Limitations
 
 1. **WebSocket Required**: Proxy only works when agent has active WebSocket connection
-2. **Timeout**: Long-running requests (>30s) will timeout
+2. **Timeout**: Ordinary requests default to 30 seconds; some agent operations use custom timeouts
 3. **Binary Content**: All content is base64-encoded, adding ~33% overhead
-4. **HTTP Only**: HTTPS device UIs must be accessed via HTTP from agent's perspective
-5. **No Streaming**: Response is buffered entirely before being sent back
+4. **Device Compatibility**: HTTP and HTTPS targets are supported; vendor UIs may still need proxy-specific rewriting or authentication handling
+5. **Buffering**: Ordinary responses are buffered. Selected streaming paths use a separate streaming implementation; this is not a general-purpose transparent tunnel
 
 ## Future Enhancements
 
-Potential improvements for future versions:
+Potential improvements beyond the existing HTTP/HTTPS target and selected streaming support:
 
-1. **Streaming Support**: Stream responses instead of buffering
+1. **Broader Streaming Support**: Extend selected streaming paths to more response types
 2. **WebSocket Upgrade**: Support WebSocket connections through the proxy
 3. **Compression**: Add gzip compression for text content
 4. **Caching**: Cache static assets to reduce proxy traffic
-5. **Port Configuration**: Allow agents to specify custom web UI port
-6. **SSL/TLS Support**: Support HTTPS connections to devices
+5. **Port Configuration**: Remove remaining assumptions about the logical localhost target; agent UI requests already use direct handler invocation
+6. **SSL/TLS Verification**: Improve printer certificate validation; HTTPS device connections already exist
 7. **Connection Pooling**: Reuse HTTP connections to improve performance
 
 ## Testing
@@ -178,7 +185,7 @@ To test the proxy feature:
 
 1. **Start the server**: `./printmaster-server`
 2. **Start an agent** with WebSocket enabled: `./printmaster-agent --config config.toml`
-3. **Open the server web UI**: `http://localhost:8080`
+3. **Open the server web UI**: `https://localhost:9443` by default; use your proxy's public HTTPS URL for a proxied deployment
 4. **Navigate to Agents tab**
 5. **Click "Open UI"** on an active agent - should open agent's UI in new window
 6. **Navigate to Devices tab**
@@ -191,7 +198,7 @@ To test the proxy feature:
 - **Device UI**: Check that device has an IP address and associated agent
 
 ### "Agent not connected via WebSocket"
-- Verify agent has `use_websocket = true` in config
+- Verify server mode is enabled, its URL is correct, and agent onboarding/approval is complete; `use_websocket` is not an `AgentConfig` TOML field
 - Check server logs for WebSocket connection status
 - Verify network connectivity between agent and server
 
@@ -210,7 +217,7 @@ To test the proxy feature:
 - **Latency**: Adds ~50-100ms overhead compared to direct access
 - **Throughput**: Limited by WebSocket connection (~10-20 MB/s typical)
 - **Concurrent Requests**: Multiple requests can be in-flight simultaneously
-- **Memory**: Buffers entire response in memory (both agent and server)
+- **Memory**: Ordinary responses are buffered; selected streaming paths behave differently
 
 For large file downloads or high-throughput needs, consider direct access when possible.
 

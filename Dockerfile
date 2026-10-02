@@ -1,3 +1,10 @@
+FROM node:24-alpine AS api-assets
+WORKDIR /tools
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+COPY scripts/vendor-api.mjs ./scripts/vendor-api.mjs
+RUN node scripts/vendor-api.mjs
+
 FROM alpine:3.22 AS build
 ARG HUGO_VERSION=0.150.1
 ARG BASE_URL=https://docs.printmaster.work/
@@ -15,6 +22,7 @@ COPY content ./content
 COPY assets ./assets
 COPY layouts ./layouts
 COPY static ./static
+COPY --from=api-assets /tools/static/vendor/swagger-ui ./static/vendor/swagger-ui
 RUN hugo --gc --minify --panicOnWarning --baseURL "$BASE_URL"
 
 FROM scratch AS artifact

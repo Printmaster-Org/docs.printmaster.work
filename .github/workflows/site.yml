@@ -28,7 +28,9 @@ jobs:
         with:
           node-version: '24'
       - name: Test migration and validation utilities
-        run: npm test
+        run: |
+          npm ci --ignore-scripts
+          npm test
       - name: Read pinned Hugo version
         id: hugo
         run: echo "version=$(cat .hugo-version)" >> "$GITHUB_OUTPUT"

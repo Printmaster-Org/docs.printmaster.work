@@ -11,13 +11,15 @@ Deploy PrintMaster Server using Docker containers with multi-architecture suppor
 ```bash
 docker run -d \
   --name printmaster-server \
-  -p 9090:9090 \
+  -p 9443:9443 \
   -v printmaster-data:/var/lib/printmaster/server \
   -e ADMIN_PASSWORD=your-secure-password \
   ghcr.io/printmaster-org/printmaster-server:latest
 ```
 
-Access at `http://localhost:9090` with username `admin`.
+Access at `https://localhost:9443` with username `admin`. Standalone mode is HTTPS-only with a self-signed certificate by default; HTTP `9090` is a reverse-proxy backend, not the default listener.
+
+Set a strong bootstrap password before exposing the server. At every startup, `ADMIN_USER` (default `admin`) is created only if that username is absent. `ADMIN_PASSWORD` does not reset an existing account's password or role.
 
 ---
 
@@ -35,10 +37,10 @@ Docker automatically pulls the correct architecture for your platform.
 
 ## Image Details
 
-**Base Image**: `gcr.io/distroless/static:nonroot`
-- **Size**: ~30MB (70% smaller than Alpine-based)
-- **Security**: No shell, no package manager, minimal attack surface
-- **User**: Runs as non-root (UID 65532)
+**Runtime base image**: `alpine:3.21`, with a shell, `su-exec`, and SQLite tooling.
+- **User**: The image sets `PUID=0` and `PGID=0`, so it runs as root by default, not UID 65532.
+- **Privilege drop**: Set nonzero `PUID`/`PGID` to run the server under the chosen IDs. The entrypoint starts as root, fixes volume ownership, then uses `su-exec`.
+- **Permissions**: Ensure writable data/log volumes for the selected IDs. Do not assume a distroless or read-only-root-filesystem deployment.
 
 **Image tags:**
 - `latest` - Latest stable release (recommended)
@@ -57,8 +59,7 @@ services:
     image: ghcr.io/printmaster-org/printmaster-server:latest
     container_name: printmaster-server
     ports:
-      - "9090:9090"
-      - "9443:9443"  # HTTPS (optional)
+      - "9443:9443"  # Default standalone HTTPS
     volumes:
       - printmaster-data:/var/lib/printmaster/server
       - printmaster-logs:/var/log/printmaster/server
@@ -67,6 +68,8 @@ services:
       - BIND_ADDRESS=0.0.0.0
       - LOG_LEVEL=info
       - PM_DISABLE_SELFUPDATE=true
+      - PUID=1000  # Choose IDs suitable for your host volumes
+      - PGID=1000
     restart: unless-stopped
 
 volumes:
@@ -88,25 +91,25 @@ docker compose up -d
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ADMIN_PASSWORD` | `printmaster` | **Set before first run!** |
-| `BIND_ADDRESS` | `127.0.0.1` | Set to `0.0.0.0` for external access |
+| `BIND_ADDRESS` | `0.0.0.0` | Bind address; restrict exposure with firewall/proxy |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 
 ### Network & Ports
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SERVER_HTTP_PORT` | `9090` | HTTP port |
-| `SERVER_HTTPS_PORT` | `9443` | HTTPS port |
+| `SERVER_HTTP_PORT` | `9090` | HTTP backend port when `BEHIND_PROXY=true` and `PROXY_USE_HTTPS=false` |
+| `SERVER_HTTPS_PORT` | `9443` | Default standalone HTTPS or encrypted proxy backend |
 | `BEHIND_PROXY` | `false` | Set `true` if behind reverse proxy |
-| `PROXY_USE_HTTPS` | `false` | Proxy terminates SSL |
+| `PROXY_USE_HTTPS` | `false` | `false`: HTTP upstream; `true`: HTTPS upstream on `9443` (with `BEHIND_PROXY=true`) |
 
 ### TLS/HTTPS
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TLS_MODE` | `self-signed` | `none`, `self-signed`, `acme`, `manual` |
-| `TLS_CERT_PATH` | — | Certificate path (manual mode) |
-| `TLS_KEY_PATH` | — | Key path (manual mode) |
+| `TLS_MODE` | `self-signed` | `self-signed`, `letsencrypt`, `custom` |
+| `TLS_CERT_PATH` | — | Certificate path (`custom` mode; mount the file) |
+| `TLS_KEY_PATH` | — | Key path (`custom` mode; mount the file) |
 
 ### Let's Encrypt
 
@@ -116,12 +119,14 @@ docker compose up -d
 | `LETSENCRYPT_EMAIL` | Notification email |
 | `LETSENCRYPT_ACCEPT_TOS` | Accept ToS (`true`) |
 
+Direct Let's Encrypt mode also needs public HTTP challenge access on port `80`; the examples above do not publish it. For TLS termination at a proxy, configure certificates there instead. `none`, `disabled`, `acme`, and `manual` are not supported server TLS modes.
+
 ### Agent Management
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `AUTO_APPROVE_AGENTS` | `false` | Auto-approve new agents |
-| `AGENT_TIMEOUT_MINUTES` | `5` | Timeout before marking offline |
+| `AGENT_TIMEOUT_MINUTES` | `15` | Timeout before marking offline |
 
 ### Container Detection
 
@@ -130,7 +135,7 @@ docker compose up -d
 | `PM_DISABLE_SELFUPDATE` | Disable self-update (recommended for Docker) |
 | `CONTAINER=docker` | Auto-detected, disables self-update |
 
-See [Environment Variables Reference](/guides/configuration/#environment-variables) for the complete list.
+See [Environment Variables Reference](/guides/configuration/#environment-variables) for selected configuration variables, including `SERVER_DB_DRIVER`/`DB_DRIVER` and `SERVER_DB_DSN`/`DB_DSN` for PostgreSQL. SQLite TOML uses `[database].driver` and `path`; PostgreSQL uses `driver = "postgres"` and `dsn`, not `type`/`postgres_url`.
 
 ---
 
@@ -142,13 +147,15 @@ See [Environment Variables Reference](/guides/configuration/#environment-variabl
 environment:
   - BEHIND_PROXY=true
   - BIND_ADDRESS=0.0.0.0
-  - PROXY_USE_HTTPS=true  # If proxy handles SSL
+  - PROXY_USE_HTTPS=false  # Proxy terminates TLS; server upstream is HTTP
 ```
 
 **Reverse proxy requirements:**
 - Forward to port `9090`
 - Enable **WebSocket support** (required for real-time features)
 - Handle SSL termination
+
+Change the port mapping to `9090:9090` for a host proxy, or route privately to `printmaster-server:9090` on a shared container network. Restrict backend access to the proxy. For an HTTPS upstream, set `PROXY_USE_HTTPS=true` and forward to `https://printmaster-server:9443` instead.
 
 ### Nginx Configuration Example
 
@@ -198,7 +205,7 @@ For PostgreSQL major-version migrations and TimescaleDB restore hooks, see
 docker stop printmaster-server
 
 # Backup database
-docker cp printmaster-server:/var/lib/printmaster/server/server.db ./backup-$(date +%Y%m%d).db
+docker cp printmaster-server:/var/lib/printmaster/server/printmaster.db ./backup-$(date +%Y%m%d).db
 
 # Restart
 docker start printmaster-server
@@ -208,15 +215,17 @@ docker start printmaster-server
 
 ## Health Check
 
-The distroless image doesn't include curl/wget. Use external monitoring:
+The server provides a built-in health probe which selects the configured HTTP or HTTPS listener and handles local self-signed TLS:
 
 ```bash
-# From host
-curl -s http://localhost:9090/api/v1/health
+docker exec printmaster-server /printmaster-server -health
+```
 
-# Docker health check (compose v3.8+)
+Add to the Compose service:
+
+```yaml
 healthcheck:
-  test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9090/api/v1/health || exit 1"]
+  test: ["CMD", "/printmaster-server", "-health"]
   interval: 30s
   timeout: 10s
   retries: 3
@@ -260,11 +269,13 @@ docker run -d \
   --network host \
   -v printmaster-agent-data:/var/lib/printmaster/agent \
   -e SERVER_ENABLED=true \
-  -e SERVER_URL=http://your-server:9090 \
+  -e SERVER_URL=https://your-server:9443 \
   ghcr.io/printmaster-org/printmaster-agent:latest
 ```
 
 > **Note**: `--network host` is required for SNMP discovery to work properly.
+
+Complete onboarding and use a certificate trusted by the agent for HTTP uploads and WSS. At this snapshot, the WebSocket client does not propagate the custom CA pool used by the HTTP uploader; do not treat `SERVER_CA_PATH` alone as a complete WSS trust solution.
 
 ---
 

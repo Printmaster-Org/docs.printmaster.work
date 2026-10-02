@@ -2,6 +2,10 @@
 
 Hugo builds a static site. Docker is one hosting option, not a requirement. The site includes no backend, database, or runtime secrets.
 
+## Build prerequisites
+
+Direct Hugo builds require Node.js 24 for build/test tooling and the pinned Hugo version in `.hugo-version`. Before `hugo server` or a production build, run `npm ci --ignore-scripts`, then `npm run vendor:api`. The latter copies Swagger UI and its licensing into local static assets; no CDN, external validator, or Node runtime is needed by the deployed site. The public API viewer has request execution disabled. Docker already performs installation and vendoring in its build stage; the opt-in GitHub Pages job reuses that generated output.
+
 ## Planned launch: public repository + GitHub Pages
 
 The repository is temporarily private during preparation and will become public at launch. **GitHub Pages is the preferred production host:** free for the public repository, with no Docker server or paid organization plan required. Docker remains a fallback; Cloudflare is an optional alternative, not a requirement.
@@ -35,7 +39,7 @@ Use this alternative only if you later prefer Cloudflare hosting. It also suppor
    | --- | --- |
    | Framework preset | Hugo |
    | Root directory | Repository root (leave blank) |
-   | Build command | `npm test && hugo --gc --minify --panicOnWarning && npm run check` |
+   | Build command | `npm ci --ignore-scripts && npm run vendor:api && npm test && hugo --gc --minify --panicOnWarning && npm run check` |
    | Build output directory | `public` |
    | Environment variable | `HUGO_VERSION=0.150.1` (match `.hugo-version`) |
    | Environment variable | `NODE_VERSION=24` |
@@ -45,7 +49,7 @@ Use this alternative only if you later prefer Cloudflare hosting. It also suppor
 7. If Cloudflare manages this zone, let the project create its DNS record. Otherwise add the CNAME instructed by Cloudflare, pointing `docs` to the assigned `<project>.pages.dev` hostname.
 8. Wait for domain verification and TLS issuance, then verify the custom domain.
 
-Subsequent pushes to `main` deploy automatically through Cloudflare. GitHub's Docker CI continues independently; it is not the Cloudflare deployment gate. The Cloudflare build runs the same unit tests and generated-link checks before publishing. If previews should not expose unpublished changes, disable preview deployments or protect them with Access.
+Subsequent pushes to `main` deploy automatically through Cloudflare. GitHub's Docker CI continues independently; it is not the Cloudflare deployment gate. The Cloudflare build explicitly installs locked dependencies without lifecycle scripts, vendors the local API viewer **before Hugo**, and runs the same unit tests and generated-link checks before publishing. Provider dependency installation alone does not replace `npm run vendor:api`. If previews should not expose unpublished changes, disable preview deployments or protect them with Access.
 
 ## Option A: GitHub Pages — preferred public launch
 
@@ -83,6 +87,7 @@ The CI image publication job still builds amd64/arm64 images. Enabling GitHub Pa
 
 - Public domain loads over HTTPS without a certificate warning.
 - Installation, configuration, API, and developer pages load.
+- The OpenAPI viewer at `/api/openapi/`, YAML at `/openapi/server.yaml`, and local Swagger UI assets load without CDN requests.
 - Search, screenshots, theme toggle, and mobile navigation work.
 - Unknown routes return a real 404.
 - Source links point at the expected code repository; private-source edit links require GitHub authorization.
