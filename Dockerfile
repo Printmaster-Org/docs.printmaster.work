@@ -20,7 +20,7 @@ RUN hugo --gc --minify --panicOnWarning --baseURL "$BASE_URL"
 FROM scratch AS artifact
 COPY --from=build /site/public /
 
-FROM nginxinc/nginx-unprivileged:1.28-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:1.31-alpine AS runtime
 LABEL org.opencontainers.image.title="PrintMaster Docs" \
       org.opencontainers.image.source="https://github.com/Printmaster-Org/docs.printmaster.work" \
       org.opencontainers.image.licenses="MIT"
