@@ -1,4 +1,4 @@
-FROM alpine:3.22 AS build
+FROM alpine:3.24 AS build
 ARG HUGO_VERSION=0.150.1
 ARG BASE_URL=https://docs.printmaster.work/
 RUN apk add --no-cache ca-certificates wget \
