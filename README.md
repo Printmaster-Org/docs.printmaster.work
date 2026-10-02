@@ -1,8 +1,24 @@
 # PrintMaster documentation
 
-Self-hosted Hugo documentation for [PrintMaster](https://github.com/Printmaster-Org/printmaster), published at **[docs.printmaster.work](https://docs.printmaster.work/)**.
+Hugo documentation for [PrintMaster](https://github.com/Printmaster-Org/printmaster). Target domain: **[docs.printmaster.work](https://docs.printmaster.work/)**.
 
 The local theme uses PrintMaster's Solarized dark/light palette, icon, panels, and borders. It includes responsive navigation, a table of contents, keyboard-accessible controls, and client-side full-text search. No external theme, fonts, CDN, or JavaScript framework is required.
+
+## Choose hosting
+
+Docker is optional: Hugo produces ordinary static HTML/CSS/JS. See [DEPLOYMENT.md](DEPLOYMENT.md) for all activation steps.
+
+**Planned production host: GitHub Pages**, once this repository becomes public. No paid organization plan or Docker server is needed for that public-repository deployment. Keep the Docker image as an optional self-hosting fallback.
+
+| Option | Private repository | Server required | Activation |
+| --- | --- | --- | --- |
+| GitHub Pages | Organization needs Team/Enterprise; public repos work on Free | No | Enable Pages and opt-in workflow variable |
+| Cloudflare Pages | Supported on Free via GitHub integration | No | Connect the repo and configure a Hugo build |
+| Docker | Supported; authenticate to private GHCR package | Yes | Deploy the existing image and reverse proxy |
+
+During preparation this repository remains private. GitHub Pages is not enabled yet; make the repository public at launch, configure its Pages custom domain, then set `ENABLE_GITHUB_PAGES=true`. No automation changes repository visibility or hosting settings. The workflow only deploys after successful validation on `main`.
+
+**A private source repository does not make the published website private.** Review documentation before enabling public hosting.
 
 ## Run locally
 

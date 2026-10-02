@@ -46,8 +46,8 @@ Do not invent missing content. Restore these only if authoritative historical so
 
 ## Phase 2: publish and cut over
 
-1. Push this repository; confirm GitHub CI passes and the multiarchitecture GHCR image is published.
-2. Configure package visibility, deploy the image, set DNS and TLS for `docs.printmaster.work`.
+1. Push this repository and confirm GitHub CI passes. Keep it private during preparation; review content and Git history before the planned public launch.
+2. Make the repository public when ready, configure GitHub Pages with the `docs.printmaster.work` custom domain, and enable the opt-in Pages workflow. Follow [DEPLOYMENT.md](DEPLOYMENT.md) for DNS/TLS and activation steps. Docker images remain an optional self-hosting alternative.
 3. Verify public navigation/search, screenshots, source links, and operator instructions.
 4. Switch the program README documentation table and contributor pointers to the live site.
 5. Replace old guides with concise canonical-site pointers in a separate program-repo commit. Keep GitHub-recognized security/contribution files and component entry-point READMEs.
