@@ -1,21 +1,33 @@
 openapi: 3.0.3
-x-reviewed-commit: eeb6259f6060c0534798e3d14ac0cd9d289df9a7
+x-reviewed-commit: 864fc3ee040bbb28f25d779c69512c5b6999d421
+x-review-notes: |
+  Reviewed 2026-10-02 against committed PrintMaster security hardening at
+  x-reviewed-commit, which contains the storage, tenant API, server channel,
+  and Agent authentication slices. This is a source revision, not a release.
+  Per-operation x-source identifies reviewed committed handlers. Coverage
+  remains 14 Server operations; Agent's independent seven-operation contract
+  is unchanged. Contract 0.2.1 corrects authorization/tenant documentation and
+  response semantics without new operations, route or machine-protocol bumps.
+  Stricter ownership/auth can deny previously accepted unsafe requests; this
+  compatible documentation patch is not a promise of permissive legacy access.
 info:
   title: PrintMaster Server Integration API
-  version: 0.2.0
+  version: 0.2.1
   description: |
     Verified subset of existing server HTTP endpoints; not a complete
-    API inventory or a new anonymous service. Reviewed against PrintMaster
-    commit eeb6259f6060c0534798e3d14ac0cd9d289df9a7, including all five original
-    authentication/list operations. x-source paths are relative to that source
-    repository, not this documentation repository. Only GET operations were
-    added; existing login/logout POST operations are retained.
+    API inventory or a new anonymous service. Reviewed against committed source
+    864fc3ee040bbb28f25d779c69512c5b6999d421; see x-review-notes.
+    No released binary or comprehensive runtime-security certification is claimed.
+    x-source paths are relative to the program repository, not this docs repo.
+    Operation coverage and existing login/logout POST operations are retained.
     This contract version is independent of the program version. Existing UI
     endpoints have no separate stable public-API compatibility guarantee.
     Use your own HTTPS server. User sessions are not agent registration tokens.
     Schemas labeled partial intentionally allow additional implementation fields.
-    Authorization and tenant filtering differ by endpoint; a session alone does
-    not imply tenant isolation. See each operation's implementation caveats.
+    Caller-derived ownership restrictions now protect reviewed inventory,
+    alerts and reports. Authorization still differs by operation; tenancy
+    reads remain administrator-only. Historical metrics identity, unbounded
+    queries and routes outside this subset require separate review.
   license:
     name: MIT
     url: https://github.com/Printmaster-Org/printmaster/blob/main/LICENSE
@@ -159,9 +171,12 @@ paths:
         users. Same pagination rules as agents/list. Partial core schema;
         additional implementation fields may be returned. Latest metrics are
         best-effort; their retrieval failure does not fail the device list.
-        Snapshot caveat: when a scoped user has no matching agents, the legacy
-        branch skips its agent filter and the paginated store receives an empty
-        agent filter. Do not assume this endpoint guarantees tenant isolation.
+        A restricted caller with zero matching agents receives [] or a devices:
+        [] envelope with total_count=0 and has_more=false; an empty restriction
+        never reaches unrestricted storage queries. Scoped callers cannot see
+        unassigned/foreign agents' devices. Counts and rows share the same
+        agent selection. Latest enrichment still queries by serial; ownership
+        history/reused serials need separate validation.
       parameters:
         - {$ref: '#/components/parameters/Limit'}
         - {$ref: '#/components/parameters/Offset'}
@@ -265,16 +280,26 @@ paths:
       operationId: alertSummary
       x-source: {path: server/alerts/api.go, handler: API.handleAlertSummary}
       tags: [Alerts]
-      summary: Read fleet alert summary
-      description: Requires settings.alerts.read (admin, operator, viewer in the reviewed role policy). Routes are always enabled in this snapshot. The handler uses an empty authorization resource and does not apply caller tenant filtering; summary is global.
+      summary: Read accessible alert summary
+      description: |
+        Requires settings.alerts.read and authenticated caller-derived scope.
+        Admin without tenant_id receives the global summary. Other requests
+        aggregate only visible alerts/rules/channels/maintenance windows;
+        shared records require ownership of every tenant. Empty restricted
+        membership returns zero counts, not fleet data. tenant_id narrows scope;
+        foreign tenant returns 403. Scoped summary omits global quiet-hours
+        state (is_quiet_hours=false); legacy scope-breakdown counters stay zero.
+        Routes remain enabled; this is not a fleet-wide summary for nonadmins.
+      parameters:
+        - {$ref: '#/components/parameters/AlertTenant'}
       responses:
         '200':
-          description: Global alert counts and state; partial schema
+          description: Caller-scoped counts/state, or global summary for an unfiltered admin; partial schema
           content:
             application/json:
               schema: {$ref: '#/components/schemas/AlertSummary'}
         '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
+        '403': {$ref: '#/components/responses/AlertForbidden'}
         '405': {$ref: '#/components/responses/MethodNotAllowed'}
         '500': {$ref: '#/components/responses/AlertServerError'}
   /api/v1/alerts:
@@ -285,12 +310,14 @@ paths:
       summary: List active or acknowledged alerts
       description: |
         API.handleAlerts delegates GET to API.handleListAlerts. Requires
-        settings.alerts.read; no caller tenant filter or tenant-specific
-        authorization check is applied. tenant_id is only an optional DB filter.
+        settings.alerts.read and caller-derived tenant scope. tenant_id may
+        narrow but cannot replace that scope; foreign tenant returns 403.
+        Empty restricted membership yields no alerts. Global/unassigned alerts
+        are admin-only. Visibility is applied before pagination and totals.
         The store restricts results to active/acknowledged; parsed status is
         ignored by ListActiveAlerts. Other nonempty string filters use exact DB
         equality without enum validation. Ordering is severity DESC (lexical),
-        then triggered_at DESC. Positive integer limit enables SQL pagination;
+        then triggered_at DESC. Positive integer limit enables in-memory pagination;
         absent/invalid/nonpositive limit means unlimited. Nonnegative integer
         offset is echoed but only applied with positive limit. No 200-row cap.
       parameters:
@@ -307,9 +334,7 @@ paths:
         - name: type
           in: query
           schema: {type: string}
-        - name: tenant_id
-          in: query
-          schema: {type: string}
+        - {$ref: '#/components/parameters/AlertTenant'}
         - name: limit
           in: query
           schema: {type: integer, default: 0}
@@ -318,21 +343,21 @@ paths:
           schema: {type: integer, default: 0}
       responses:
         '200':
-          description: Always an envelope; count is returned rows, total_count ignores pagination; alerts is null when no rows exist
+          description: Always an envelope; count is returned rows, total_count is visible matching rows before pagination; empty alerts is []
           content:
             application/json:
               schema:
                 type: object
                 required: [alerts, count, total_count, offset, limit, has_more]
                 properties:
-                  alerts: {type: array, nullable: true, items: {$ref: '#/components/schemas/Alert'}}
+                  alerts: {type: array, items: {$ref: '#/components/schemas/Alert'}}
                   count: {type: integer}
                   total_count: {type: integer}
                   offset: {type: integer}
                   limit: {type: integer}
                   has_more: {type: boolean}
         '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
+        '403': {$ref: '#/components/responses/AlertForbidden'}
         '405': {$ref: '#/components/responses/MethodNotAllowed'}
         '500': {$ref: '#/components/responses/AlertServerError'}
   /api/v1/reports/types:
@@ -341,7 +366,7 @@ paths:
       x-source: {path: server/api_reports.go, handler: handleReportTypes}
       tags: [Reports]
       summary: List built-in report type identifiers
-      description: Session authentication only; no additional role or tenant authorization in the handler. Returns strings, not type descriptor objects.
+      description: Requires viewer/operator/admin role and a nonempty tenant membership for nonadmins. Returns static strings, not type descriptor objects; membership-free nonadmins receive 403.
       responses:
         '200':
           description: Built-in type identifiers and their count
@@ -358,14 +383,23 @@ paths:
                       enum: [device_inventory, usage_summary, supplies_status, alert_history, agent_status, fleet_health, usage_by_device, usage_by_agent, usage_by_site, usage_by_tenant, usage_trends, top_printers]
                   count: {type: integer}
         '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '405': {$ref: '#/components/responses/MethodNotAllowed'}
   /api/v1/reports/summary:
     get:
       operationId: reportSummary
       x-source: {path: server/api_reports.go, handler: handleReportSummary}
       tags: [Reports]
-      summary: Read global reporting summary
-      description: Session authentication only; no additional role authorization or caller tenant filtering in the handler.
+      summary: Read accessible reporting summary
+      description: |
+        Requires viewer/operator/admin role and nonempty tenant membership for
+        nonadmins. Admin receives global storage summary. Nonadmins count
+        visible definitions (including shared built-in fleet templates), owned
+        schedules and runs with verified immutable execution tenant scope.
+        Legacy/unmarked and global runs are admin-only. All tenant IDs of an
+        owned definition/run must be accessible, not merely one intersection.
+        Query-supplied tenant_id is not read and cannot broaden scope. Scoped
+        runs_last_24h/failed_runs_last_24h use a rolling 24-hour window.
       responses:
         '200':
           description: Reporting counts and storage/runtime statistics; partial schema
@@ -373,6 +407,7 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/ReportSummary'}
         '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '405': {$ref: '#/components/responses/MethodNotAllowed'}
         '500': {$ref: '#/components/responses/ServerError'}
   /api/v1/reports:
@@ -382,13 +417,18 @@ paths:
       tags: [Reports]
       summary: List saved report definitions
       description: |
-        Session authentication only; no additional role authorization or caller
-        tenant filtering. These are definitions, not generated report results.
+        Requires viewer/operator/admin role; nonadmins need nonempty tenant
+        memberships. Tenant/site/agent/device definitions require access to
+        every stored tenant ID. Built-in fleet definitions with empty tenant
+        ownership are shared read-only templates, not permission to run or
+        download global results. Other global definitions are admin-only.
+        These are definitions, not generated report results.
         Nonempty type, scope, created_by use exact DB equality. A nonempty
         built_in compares true only for the literal string true; all other
         nonempty values select false. Invalid integers are ignored. Positive
-        limit enables pagination without a cap; offset applies only when both
-        limit and offset are positive. Ordering is name ascending. count is the
+        limit caps the visible page without a maximum. Positive offset applies
+        after visibility filtering even without a positive limit; nonpositive
+        offset is ignored. Ordering is name ascending. count is the
         returned row count, not the total matching count. tenant_id is not read.
       parameters:
         - name: type
@@ -411,16 +451,17 @@ paths:
           schema: {type: integer, default: 0}
       responses:
         '200':
-          description: Definitions envelope; reports is null when no rows exist
+          description: Visible definitions envelope; reports is [] when no rows exist
           content:
             application/json:
               schema:
                 type: object
                 required: [reports, count]
                 properties:
-                  reports: {type: array, nullable: true, items: {$ref: '#/components/schemas/ReportDefinition'}}
+                  reports: {type: array, items: {$ref: '#/components/schemas/ReportDefinition'}}
                   count: {type: integer}
         '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
         '405': {$ref: '#/components/responses/MethodNotAllowed'}
         '500': {$ref: '#/components/responses/ServerError'}
   /api/v1/tenants:
@@ -491,6 +532,11 @@ components:
       name: pm_session
       description: Alternative to bearer authentication, not an additional requirement.
   parameters:
+    AlertTenant:
+      name: tenant_id
+      in: query
+      description: Optional exact tenant ID narrowing authenticated scope. Foreign tenant returns 403; omission retains caller scope (all tenants only for global admin).
+      schema: {type: string}
     Serial:
       name: serial
       in: query
@@ -663,6 +709,17 @@ components:
     Forbidden:
       description: Insufficient role or tenant access
       content: {text/plain: {schema: {type: string}}}
+    AlertForbidden:
+      description: Insufficient role (text/plain), or denied tenant/global scope (JSON); caller-supplied tenant cannot broaden access
+      content:
+        text/plain:
+          schema: {type: string}
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error: {type: string}
     MethodNotAllowed:
       description: Unsupported HTTP method
       content: {text/plain: {schema: {type: string}}}

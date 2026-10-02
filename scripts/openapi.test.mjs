@@ -25,6 +25,33 @@ test('Agent OpenAPI uses local credentials, independent routes, and public versi
     if (route !== '/api/version') assert.notDeepEqual(item.get.security, []);
   }
 });
+test('Server hardening patch records committed provenance without expanding operation scope', async () => {
+  const spec = await SwaggerParser.validate(path.join(root, 'static/openapi/server.yaml'));
+  assert.equal(spec.info.version, '0.2.1');
+  assert.equal(spec['x-reviewed-commit'], '864fc3ee040bbb28f25d779c69512c5b6999d421');
+  assert.match(spec['x-review-notes'], /committed PrintMaster security hardening/);
+  assert.match(spec['x-review-notes'], /source revision, not a release/);
+  assert.doesNotMatch(spec['x-review-notes'], /uncommitted|working.tree|source base/);
+  assert.equal(Object.keys(spec.paths).length, 14);
+  for (const route of ['/api/v1/alerts', '/api/v1/reports', '/api/v1/reports/types', '/api/v1/reports/summary']) {
+    assert.ok(spec.paths[route].get.responses['403'], `${route} needs denial response`);
+  }
+  assert.match(spec.paths['/api/v1/devices/list'].get.description, /zero matching agents/);
+  assert.match(spec.paths['/api/v1/alerts'].get.description, /before pagination and totals/);
+  assert.match(spec.paths['/api/v1/reports'].get.description, /every stored tenant ID/);
+  assert.match(spec.paths['/api/v1/reports/summary'].get.description, /Legacy\/unmarked and global runs are admin-only/);
+  for (const [route, collection] of [['/api/v1/alerts', 'alerts'], ['/api/v1/reports', 'reports']]) {
+    const schema = spec.paths[route].get.responses['200'].content['application/json'].schema.properties[collection];
+    assert.equal(schema.type, 'array');
+    assert.notEqual(schema.nullable, true);
+  }
+  const denied = spec.paths['/api/v1/alerts'].get.responses['403'].content;
+  assert.ok(denied['text/plain']);
+  assert.ok(denied['application/json']);
+  const summary = spec.paths['/api/v1/alerts/summary'].get;
+  assert.equal(summary.parameters[0].name, 'tenant_id');
+  assert.match(summary.description, /Empty restricted/);
+});
 test('both contracts retain per-operation source provenance and unique IDs', async () => {
   for (const name of ['server', 'agent']) {
     const spec = await SwaggerParser.validate(path.join(root, `static/openapi/${name}.yaml`));

@@ -21,6 +21,12 @@ Agents discover printers locally, retain a local database, and send inventory, m
 
 The reviewed source also implements onboarding/approval, user sessions, tenant-aware authorization, managed settings, and update policies. Seeded toner rules warn at or below 20% and become critical at or below 5%; dedicated drum/fuser/waste-toner threshold alerts are not implemented in the reviewed evaluator.
 
+### Committed security hardening
+
+The [tenant-isolation guide](/guides/tenant-isolation/) reviews **committed** hardening at [source revision 864fc3e](https://github.com/Printmaster-Org/printmaster/tree/864fc3ee040bbb28f25d779c69512c5b6999d421), not a released binary or a refresh of every operational claim above. Caller-derived inventory/alert/report scoping, authenticated machine writes, atomic ownership guards, proxy credential stripping and per-subscriber event checks are implemented in that revision. Reviewed handlers prevent missing memberships/foreign ownership from becoming unrestricted access. Historical unmarked report runs remain admin-only; global built-in definitions are read-only templates.
+
+Stricter access can return denials/empty results without changing route namespaces or the machine protocol. [Authentication boundaries](/guides/authentication-boundaries/) now describe target-bound password/OIDC issuance/validation, corrected provider role normalization, serialized device-code approval and transactional pending-registration approval. User-session delete ownership races return `409`; report-run lists omit `result_data`, while authorized detail/download preserves bodies. These operations remain outside the read-only contracts. Serial-history identity, direct Agent proxy-header/forwarding trust, device-code crash/recovery limits and external-IdP/live-browser validation remain limitations or release gates. The reviewed OpenAPI scope stays 14 Server and seven Agent operations; these guides do not certify all routes or completed runtime validation.
+
 ## Quick Start
 
 ### Build

@@ -6,7 +6,7 @@ weight: 60
 
 Reviewed PrintMaster source snapshot: **`565f4c0`** (`565f4c0762e467f083f54a9e0e7f6bc23ada56c3`), on **2026-10-02**. This page summarizes the [repository audit record](https://github.com/Printmaster-Org/docs.printmaster.work/blob/main/DOCS_AUDIT.md).
 
-This was a **targeted, source-based operational accuracy pass**, not an exhaustive documentation or security audit, nor a live deployment certification. A follow-up reviewed five server operations and validated their [OpenAPI contract](/api/openapi/); other API operations remain outside scope. Imported `source`/`sourceCommit` metadata records provenance, not proof of accuracy. Runtime code at the reviewed snapshot took precedence over stale README, example, and template comments.
+This was a **targeted, source-based operational accuracy pass**, not an exhaustive documentation or security audit, nor a live deployment certification. Subsequent contract reviews cover 14 Server operations and seven independent Agent reads; other operations remain outside scope. Imported `source`/`sourceCommit` metadata records provenance, not proof of accuracy. Runtime code at the reviewed snapshot took precedence over stale README, example, and template comments.
 
 ## Reviewed Scope
 
@@ -29,13 +29,25 @@ All source links below are pinned to the reviewed **PrintMaster program** commit
 
 ## Validation Boundaries
 
+### Committed hardening review, 2026-10-02
+
+Server contract **0.2.1** and [tenant isolation](/guides/tenant-isolation/) review [committed source revision 864fc3e](https://github.com/Printmaster-Org/printmaster/tree/864fc3ee040bbb28f25d779c69512c5b6999d421), containing the storage, tenant API, Server and Agent security slices and regression tests. This is not a released build identifier. Contract `x-review-notes` records the containing revision; per-operation source metadata is retained. The independent Agent contract remains unchanged at its earlier reviewed revision.
+
+Earlier caveats about empty-agent device-list widening, absent alert/report caller scope and substring report membership are fixed in that committed revision. Reviewed docs now describe scoped totals/pages/summaries, owned report execution/results, HTTP machine identity, atomic storage ownership, explicit bound callbacks, event subscriber checks and proxy credential stripping. Routes/protocol versions and coverage counts are unchanged; stricter auth can deny legacy unsafe requests. See [machine ownership](/api/machine-ownership/) and [authentication boundaries](/guides/authentication-boundaries/).
+
+Final reconciliation confirms OIDC role normalization preserves `viewer`, defaults omitted/empty roles to `viewer`, maps legacy `user` to `operator`, and rejects unknown roles. Password/OIDC login JS and the shared callback-target helper now bind issuance to the stored authorized Agent; OIDC retains the target in state-bound redirect data. Device-code approval serializes token issuance/state mutation; pending-registration approval commits review and token in one SQLite/PostgreSQL transaction. Earlier unbound-redirect and nontransactional pending-review caveats are superseded. Device-code state remains in-memory, with restart/process-crash limits; lost approval responses and historical stranded rows still need administrator recovery.
+
+User-session device deletion now returns plain-text `409` (`Device ownership changed`) for atomic owner conflicts, protecting replacement device/credentials/metrics. Optional Agent deletion happens before the Server transaction and is not rolled back by this conflict. Report-run lists omit `result_data`; authorized detail/download retains result bodies and existing formatting. These routes remain outside the reviewed read-only OpenAPI subset, not newly covered operations or machine-protocol changes.
+
+Remaining limits include serial-only historical metrics/enrichment, Agent external proxy-header/forwarding trust, broad candidate reads, existing Agent-session revocation, external-IdP/live-browser validation and unaudited routes. Committed regression sources were inspected; this docs-only update does not rerun or certify runtime tests. Full Agent/Server, race, both DB dialects and real-route negative authorization/contract tests remain release requirements. Docs validation results belong to the current change report; historical counts below are not reused as current proof. The containing source SHA is recorded above; no released hardening build is claimed.
+
 The original audit record reports 11 passing docs unit tests, a pinned Hugo 0.150.1 Docker build with `--gc --minify --panicOnWarning`, and a generated-site check of 52 HTML pages and 50 search entries with local links/assets/anchors passing. These are historical results for that pass, not current page counts or evidence of runtime correctness. No live printer, agent, or server deployment was exercised.
 
-The original operational pass did **not** review API pages or contracts. The separately documented [server API subset](/api/openapi/) now covers five existing operations at the same snapshot; [download its YAML](/openapi/server.yaml). That limited reference does not make the remaining API surface audited or establish a broad stable API guarantee.
+The original operational pass did **not** review API pages or contracts. The separately documented [server API subset](/api/openapi/) now covers 14 existing operations; [download its YAML](/openapi/server.yaml). The Agent subset covers seven local reads. This limited coverage does not audit the remaining API surface or establish a broad stable API guarantee.
 
 ## Remaining Work — Explicitly Nonexhaustive
 
-- Audit API routes beyond the five-operation subset and retained feature-guide request examples.
+- Audit API routes beyond the 14-Server/seven-Agent subsets and retained feature-guide request examples; complete remaining runtime gates above.
 - Review getting started, troubleshooting, updates, discovery, and other untouched guides.
 - Correct known stale Unraid proxy/environment examples; review database upgrades and other deployment guidance.
 - Check agent component roadmap claims, logger/module overviews, project security examples, and other roadmap/release/development designs.

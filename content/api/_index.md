@@ -7,7 +7,7 @@ source: "docs/api/README.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 ---
 
-Choose the reference for the host and credential you use. Reviewed contracts target PrintMaster snapshot `eeb6259`; these are existing APIs, not new stable product interfaces.
+Choose the reference for the host and credential you use. Server contract 0.2.1 reviews **committed** hardening at source revision `864fc3ee040bbb28f25d779c69512c5b6999d421`, which contains the changes. Agent contract remains the seven-operation `eeb6259` snapshot. These are existing APIs, not new stable product interfaces or a product release announcement.
 
 | Reference | Coverage | Credential |
 | --- | --- | --- |
@@ -35,7 +35,9 @@ The OpenAPI reference describes verified request/response details, pagination, a
 
 ## Authentication
 
-Protected Server operations accept a **user session token** via `Authorization: Bearer <session-token>` **or** the `pm_session` cookie. Local login returns the token and sets the cookie; use the application's SSO flow when local credentials are unavailable. Role/tenant checks differ between handlers. The expanded spec calls out missing filtering and the empty-agent device-scope edge; do not assume a uniform isolation guarantee.
+Protected Server operations accept a **user session token** via `Authorization: Bearer <session-token>` **or** the `pm_session` cookie. Local login returns the token and sets the cookie; use the application's SSO flow when local credentials are unavailable. Committed hardening fixes the empty-agent device-list leak and derives alert/report visibility from the principal before totals/pagination. Shared report templates do not authorize global results; tenant/site list reads remain admin-only. See [tenant isolation](/guides/tenant-isolation/) for exact boundaries, limitations and required tests, and [authentication boundaries](/guides/authentication-boundaries/) for target-bound callback integration and approval recovery limits.
+
+**Compatibility:** stricter auth/ownership can deny previously accepted unsafe access; URLs and machine protocol remain unchanged. The independent contract patch documents corrections, not a product release, permissive-access guarantee or expansion of the reviewed subset.
 
 **Agent bearer tokens are different credentials:** agent-to-server authentication does not grant a user session for these operations. Never publish either kind of credential in documentation or send it to this public docs site.
 
@@ -60,6 +62,8 @@ There is no verified universal requests-per-minute contract for this subset. Con
 - [Server OpenAPI reference](/api/openapi/)
 - [OpenAPI YAML](/openapi/server.yaml)
 - [Targeted documentation accuracy audit](/project/docs-audit/)
+- [Tenant isolation and committed security hardening](/guides/tenant-isolation/)
+- [Machine ownership safeguards](/api/machine-ownership/)
 - [Reviewed server routes and auth implementation](https://github.com/Printmaster-Org/printmaster/blob/565f4c0762e467f083f54a9e0e7f6bc23ada56c3/server/main.go)
 - [Reviewed listener defaults](https://github.com/Printmaster-Org/printmaster/blob/565f4c0762e467f083f54a9e0e7f6bc23ada56c3/server/config.go)
 - [Reviewed local agent auth](https://github.com/Printmaster-Org/printmaster/blob/565f4c0762e467f083f54a9e0e7f6bc23ada56c3/agent/main.go)

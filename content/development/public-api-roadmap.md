@@ -9,6 +9,8 @@ sourceCommit: "eeb6259f6060c0534798e3d14ac0cd9d289df9a7"
 
 This is a proposal for improvements to **Printmaster-Org/printmaster**, not a description of newly implemented functionality or a release commitment. The implementation baseline is [commit eeb6259f6060c0534798e3d14ac0cd9d289df9a7](https://github.com/Printmaster-Org/printmaster/tree/eeb6259f6060c0534798e3d14ac0cd9d289df9a7). All program-source evidence below is pinned to that full revision. The documentation website should publish the contract; it should not become the implementation owner or an intermediary for customer credentials and fleet data.
 
+**Security status refresh, 2026-10-02:** the [tenant-isolation guide](/guides/tenant-isolation/) reviews committed hardening at [source revision 864fc3e](https://github.com/Printmaster-Org/printmaster/tree/864fc3ee040bbb28f25d779c69512c5b6999d421). Empty-agent device filtering, exact report membership, caller-scoped alert/report reads/results, machine ownership and explicit password/OIDC callback validation are implemented there. Evidence below remains pinned to the original research revision; those baseline defects must not be read as still current. Runtime/DB/race validation and remaining serial-history, Agent proxy trust and external-IdP/browser checks remain release requirements. Service credentials, new integration routes and contract generation remain proposals.
+
 The first supported integration surface should be read-only inventory and bounded metrics retrieval from the central server. Existing browser routes, agent ingestion, onboarding, and proxy operations are separate compatibility surfaces. Calling an endpoint a REST API does not by itself establish a stable external contract.
 
 Research included concrete handlers, storage queries, authorization policies, notifier code, and tests. Selected existing tests passed in the server, authorization, storage, and reporting packages: `TestHandleAgentsList_TenantFiltering`, `TestHandleAgentDetails_DeleteRespectsTenantScope`, `TestAuthorizeRolePolicies`, `TestSessionLifecycle`, `TestSortTenantIDs`, the CSV formatter tests listed below, and `TestFormatter_FormatJSON`. This was not a full-suite run. No end-to-end cross-tenant disclosure or SSRF exploit was reproduced. The confirmed control-flow and query gaps below are reasons to add reproducing regression tests before publishing stronger guarantees, not a claim that every route or deployment is vulnerable.
@@ -17,7 +19,7 @@ Research included concrete handlers, storage queries, authorization policies, no
 
 | Priority | Outcome | Publication gate |
 | --- | --- | --- |
-| P0 | Explicit tenant restrictions and regression coverage | Scoped empty results can never become unrestricted queries. |
+| P0 | Validate pending tenant/ownership corrections and remaining boundaries | Scoped empty results stay empty; both DB/race/real-mux gates pass; historical identity and implicit callbacks are resolved or explicitly deferred. |
 | P1 | Separate service credentials | Read scopes, tenant bounds, hashing, expiry, rotation, and revocation are tested. |
 | P1 | Stable inventory and metrics routes | A single response shape and bounded database queries are documented and tested. |
 | P1 | Common errors and request budgets | Invalid inputs, resource limits, and cancellation have predictable behavior. |
@@ -28,6 +30,8 @@ Research included concrete handlers, storage queries, authorization policies, no
 ## P0: Make tenant isolation an explicit query invariant
 
 ### Current evidence and verified gaps
+
+**The committed hardening fixes baseline findings 1–3 below.** Their original descriptions/links are retained as historical evidence and regression rationale, not open implementation tasks. Finding 4 (historical serial identity) remains a limitation. See [current implementation and required tests](/guides/tenant-isolation/) rather than extrapolating historical source links to the current revision.
 
 The central server has real RBAC and tenant checks. [Principal construction and tenant helpers](https://github.com/Printmaster-Org/printmaster/blob/eeb6259f6060c0534798e3d14ac0cd9d289df9a7/server/main.go#L81-L173) distinguish an unrestricted administrator from a non-admin without tenant memberships; `tenantScope` rejects the latter. Tenant membership is exact, case-sensitive ID matching. [Authorization policy](https://github.com/Printmaster-Org/printmaster/blob/eeb6259f6060c0534798e3d14ac0cd9d289df9a7/server/authz/authz.go#L58-L143) checks roles and supplied resource tenant IDs, but skips empty IDs and has no tenant check when `ResourceRef` contains none. This means handler and storage scoping remain essential; authentication or an action check alone is not the isolation boundary.
 
@@ -42,7 +46,9 @@ Existing [handler regressions](https://github.com/Printmaster-Org/printmaster/bl
 
 ### Tenant-isolation components
 
-Update the existing principal/tenant helpers, `handleDevicesList`, storage count/list interfaces, authorization policy, alert API, and report API. Introduce a typed query restriction that explicitly distinguishes unrestricted access from a restricted empty set. Apply that same restriction to items, counts, aggregates, metrics enrichment, and downloads. Prefer tenant-constrained SQL joins over loading the whole fleet and filtering in memory. For reports, use exact membership through a relation table or another dialect-tested representation; explicitly classify globally shared built-in definitions separately from tenant-owned results.
+Implemented pending components include explicit `inventoryAgentScope`/alert `TenantScope`, empty-device selection short circuits, scoped rows/counts/summaries, alert stored/reference checks, report definition/result authorization, immutable execution ownership snapshots and generator data-source filtering. Report storage now matches decoded comma-separated IDs exactly rather than using `LIKE`; this is not a relation-table migration. Global built-in definitions are shared templates, not shared execution results. Storage signatures still interpret empty ID filters as unrestricted; the new HTTP restriction prevents that ambiguous call. Latest device enrichment and history still query by serial.
+
+Remaining improvements: prefer tenant-constrained SQL joins over broad candidate reads/in-memory filtering, verify both dialects and historical ownership/reused serials, and complete implicit callback integration. Do not present the whole initial typed-query/storage redesign as implemented merely because the immediate empty-scope leak is fixed.
 
 Use canonical stored IDs and exact matching consistently. Normalize whitespace at documented input boundaries, not through case folding, substring comparisons, or wildcard matching. A requested tenant, agent, or device filter must narrow the authenticated scope, never replace it. Missing ownership should fail closed for scoped integrations; keep administrator-wide access an explicit policy rather than an accidental empty slice.
 
@@ -56,7 +62,7 @@ Use canonical stored IDs and exact matching consistently. Normalize whitespace a
 
 ### Tenant-isolation compatibility and rollout
 
-Ship the empty-agent regression and fix first, preserving legacy response shapes. Isolation corrections are not optional compatibility flags. Audit alert/report behavior in separate PRs; document tightened access for callers that relied on broad visibility. Keep alerts, reports, and historical metrics outside the supported integration allowlist until their individual gates pass. Schema changes need upgrade/backfill tests for both database dialects and explicit ownership rules for old rows.
+The committed hardening preserves route versions and legacy envelopes while tightening inventory/alert/report ownership; alerts/reports now return empty arrays instead of null collections. Nonadmin report access requires memberships, every owning tenant, and verified execution scope for results. Legacy/unmarked runs are admin-only; scope changes require cloning a definition. Isolation fixes are not optional compatibility flags. Contract 0.2.1 documents these corrections without new routes/protocol versions. Run the listed regression/release gates before calling the hardening released. Alerts/reports/history stay outside the proposed service integration allowlist until their individual contract/identity gates pass; any later schema/backfill work requires both dialects and explicit old-row ownership.
 
 ## P1: Add scoped service credentials without repurposing sessions or agent tokens
 
@@ -195,9 +201,9 @@ The sequence below describes reviewable slices, not a single large rewrite. Each
 
 | Phase / PR | Bounded deliverable | Exit condition |
 | --- | --- | --- |
-| 0 / 1 | Empty-agent device-list regression and explicit restricted-query behavior in both existing branches. | Zero scoped agents returns zero rows/counts; administrator behavior and response shapes remain covered. |
-| 0 / 2 | Tenant-read matrix for alerts/report lists and downloads, with caller-derived scope corrections. | Foreign/omitted scopes cannot broaden reads; each tightened legacy route has tests and migration notes. Split alerts and reports further if necessary. |
-| 0 / 3 | Exact report tenant membership and identity/ownership design fixtures. | Substring/wildcard cases fail to match; both database upgrades are tested. Historical metrics stays deferred if identity needs a larger migration. |
+| 0 / 1 | Implemented pending: empty-agent regression and explicit restriction in both device-list branches. | Validate zero scoped rows/counts, administrator behavior and preserved shapes through registered routes. |
+| 0 / 2 | Implemented pending: caller-derived alert/report visibility, downloads, generation and execution ownership. | Run role/tenant/empty/shared/global/legacy-result matrix; tightened-access docs accompany eventual source release. |
+| 0 / 3 | Implemented pending: decoded exact report membership and atomic machine ownership; historical identity remains gated. | Both dialects/races pass; serial reuse/reassignment/backfill tests precede historical guarantees. |
 | 1 / 4 | Service-credential storage and authenticated create/list/revoke lifecycle. | One-time secret, hash storage, expiry, audit redaction, revocation, and both dialects pass. No new fleet route is exposed yet. |
 | 1 / 5 | Scope-aware credential middleware and integration error/budget primitives. | Token-kind separation, fail-closed authorization, cancellation, 413/429/error schemas pass. |
 | 2 / 6 | Integration inventory API with dedicated DTOs, filters, deterministic pagination, and canonical generated contract. | Real-mux tenant matrix, query budgets, schema conformance, and generated-diff CI pass; preview is explicitly labeled. |
