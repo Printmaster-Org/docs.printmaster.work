@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="{{ "vendor/swagger-ui/swagger-ui.css" | relURL }}">
   {{ $css := resources.Get "css/openapi.css" | minify | fingerprint }}
   <link rel="stylesheet" href="{{ $css.RelPermalink }}">
-  <div id="swagger-ui" data-spec="{{ "openapi/server.yaml" | relURL }}"></div>
+  <div id="swagger-ui" data-spec="{{ .Params.spec | default "openapi/server.yaml" | relURL }}"></div>
   <script src="{{ "vendor/swagger-ui/swagger-ui-bundle.js" | relURL }}" defer></script>
   {{ $js := resources.Get "js/openapi.js" | minify | fingerprint }}
   <script src="{{ $js.RelPermalink }}" defer></script>

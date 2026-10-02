@@ -1,0 +1,548 @@
+openapi: 3.0.3
+x-reviewed-commit: eeb6259f6060c0534798e3d14ac0cd9d289df9a7
+info:
+  title: PrintMaster Local Agent Read-Only API
+  version: 0.1.0
+  description: |
+    Seven existing GET operations verified against the reviewed PrintMaster
+    commit, agent/main.go handlers and agentAuthManager.Wrap installed around
+    http.DefaultServeMux. This is a local Agent contract, not the central
+    Server API, a complete inventory, or a stable public-API guarantee.
+    Contract version is independent of the binary version.
+
+    The only credential accepted by the local wrapper is the opaque
+    pm_agent_session cookie. Authorization Bearer/Basic headers, the Server's
+    pm_session cookie, and agent-to-server registration/upload tokens are not
+    local Agent credentials. There are no additional credential alternatives
+    to model in root security. Sessions are held in Agent memory, expire, and
+    are lost on restart. In server auth mode, Agent login or the validated
+    server callback creates a separate local session cookie; the stored server
+    token is not the cookie value. Local mode does not support password login.
+
+    With allow_local_admin enabled, requestIsLoopback grants a local-admin
+    principal without a cookie. It accepts a loopback IP in RemoteAddr OR the
+    first comma-separated X-Forwarded-For value. This deployment-dependent
+    bypass is not anonymous security on protected operations. Disabled auth
+    mode (or an absent auth manager) bypasses the wrapper entirely.
+
+    shouldBypass also accepts X-PrintMaster-Proxy: server, intended for the
+    internal WebSocket proxy. The wrapper checks the header value directly,
+    without validating its origin; it is not a supported client credential.
+    Do not expose the Agent to untrusted clients or pass untrusted proxy or
+    forwarding headers through a reverse proxy. These are trust-boundary
+    caveats of this source snapshot, not recommended authentication methods.
+
+    Protected requests without an accepted session/local principal return
+    text/plain 401 unless Accept contains text/html, which triggers a 302
+    login redirect. Use Accept: application/json for integration requests.
+    The selected handlers perform no additional role checks. /api/version is
+    explicitly publicExact in newAgentAuthManager and alone overrides security.
+    Configured HTTP-to-HTTPS redirection can also produce a transport-level 302
+    before any operation; use the deployed HTTPS URL and trust its certificate.
+  license:
+    name: MIT
+    url: https://github.com/Printmaster-Org/printmaster/blob/eeb6259f6060c0534798e3d14ac0cd9d289df9a7/LICENSE
+servers:
+  - url: https://{host}:{port}
+    description: Local Agent HTTPS listener; host and port depend on deployment
+    variables:
+      host: {default: '127.0.0.1'}
+      port: {default: '8443'}
+  - url: http://127.0.0.1:{port}
+    description: Loopback HTTP listener, only when enabled; may redirect to HTTPS
+    variables:
+      port: {default: '8080'}
+security:
+  - agentSessionCookie: []
+tags:
+  - name: Devices
+  - name: Metrics
+  - name: Agent
+paths:
+  /devices/list:
+    get:
+      operationId: listSavedAgentDevices
+      tags: [Devices]
+      summary: List saved devices in the local Agent database
+      x-source:
+        path: agent/main.go
+        handler: 'http.HandleFunc("/devices/list", anonymous handler)'
+      description: |
+        No query parameters are read: no pagination, IP filter, or visibility
+        filter. Lists is_saved=true devices, including hidden saved devices.
+        printer_info and info contain the same DeviceToPrinterInfo value.
+        This handler does not fetch latest metrics; use profile or latest for
+        current counters. Unlike the canonical endpoints, it has no method
+        guard; this specification exposes only its read-only GET use.
+      responses:
+        '200':
+          description: Saved-device array; empty database produces []
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/SavedDeviceEntry'}
+        '302': {$ref: '#/components/responses/LoginRedirect'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '500':
+          description: 'Plain text: failed to list devices: followed by storage error and newline'
+          content: {text/plain: {schema: {type: string}}}
+  /devices/discovered:
+    get:
+      operationId: listDiscoveredAgentDevices
+      tags: [Devices]
+      summary: List visible discovered devices, optionally including saved devices
+      x-source:
+        path: agent/main.go
+        handler: 'http.HandleFunc("/devices/discovered", anonymous handler)'
+      description: |
+        Always filters visible=true. Unless include_known is exactly true,
+        also filters is_saved=false. minutes filters last_seen, not first_seen.
+        Latest raw metrics enrich page_count and toner_levels when available;
+        metric lookup errors are ignored. Storage listing errors are logged
+        and returned as HTTP 200 with [], not a 500 response. No method guard;
+        only read-only GET is described here.
+      parameters:
+        - name: minutes
+          in: query
+          description: Positive integer minutes before now for last_seen cutoff. Omitted, malformed, zero, or negative values apply no time filter.
+          schema: {type: integer}
+        - name: include_known
+          in: query
+          description: Only the literal string true includes saved devices; every other value (including omission) excludes them.
+          schema: {type: boolean, default: false}
+      responses:
+        '200':
+          description: PrinterInfo array; empty result or listing failure produces []
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/PrinterInfo'}
+        '302': {$ref: '#/components/responses/LoginRedirect'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /api/devices/profile:
+    get:
+      operationId: getAgentDeviceProfile
+      tags: [Devices]
+      summary: Get canonical device metadata and latest raw metrics
+      x-source:
+        path: agent/main.go
+        handler: 'http.HandleFunc("/api/devices/profile", anonymous handler)'
+      description: Returns the storage Device and MetricsSnapshot directly, without legacy aliases. latest_metrics is null when no raw metrics exist, even if aggregate tiers contain older metrics. No saved/visible filter is applied to the serial lookup.
+      parameters:
+        - {$ref: '#/components/parameters/Serial'}
+      responses:
+        '200':
+          description: Device profile; latest_metrics may be null
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [device, latest_metrics]
+                properties:
+                  device: {$ref: '#/components/schemas/Device'}
+                  latest_metrics:
+                    oneOf:
+                      - {$ref: '#/components/schemas/MetricsSnapshot'}
+                      - type: object
+                        nullable: true
+                        enum: [null]
+        '302': {$ref: '#/components/responses/LoginRedirect'}
+        '400': {$ref: '#/components/responses/MissingSerial'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404':
+          description: 'Plain text: not found followed by newline (storage.ErrNotFound for device)'
+          content: {text/plain: {schema: {type: string, example: "not found\n"}}}
+        '405': {$ref: '#/components/responses/GetOnly'}
+        '500':
+          description: 'Plain text: failed to get device: or failed to get latest metrics: followed by storage error and newline'
+          content: {text/plain: {schema: {type: string}}}
+  /api/devices/metrics/latest:
+    get:
+      operationId: getLatestAgentDeviceMetrics
+      tags: [Metrics]
+      summary: Get most recent snapshot from metrics_raw
+      x-source:
+        path: agent/main.go
+        handler: 'http.HandleFunc("/api/devices/metrics/latest", anonymous handler)'
+      description: SQLiteStore.GetLatestMetrics reads only metrics_raw ordered by timestamp descending. It does not fall back to aggregate tiers or check whether the device is saved/visible. Zero optional counters are omitted by JSON serialization, not necessarily unavailable.
+      parameters:
+        - {$ref: '#/components/parameters/Serial'}
+      responses:
+        '200':
+          description: Latest raw MetricsSnapshot (tier is not set by this storage query)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/MetricsSnapshot'}
+        '302': {$ref: '#/components/responses/LoginRedirect'}
+        '400': {$ref: '#/components/responses/MissingSerial'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NoMetrics'}
+        '405': {$ref: '#/components/responses/GetOnly'}
+        '500':
+          description: 'Plain text: failed to get metrics: followed by storage error and newline'
+          content: {text/plain: {schema: {type: string}}}
+  /api/devices/metrics/history:
+    get:
+      operationId: getAgentDeviceMetricsHistory
+      tags: [Metrics]
+      summary: Get tiered metrics history with optional response downsampling
+      x-source:
+        path: agent/main.go
+        handler: 'http.HandleFunc("/api/devices/metrics/history", anonymous handler)'
+      description: |
+        Both nonempty since and until select a custom RFC3339 range and override
+        period. If either is omitted/empty, both custom values are ignored and
+        period is used. Bounds are inclusive; reversed ranges are not rejected.
+        No device existence check: no matching rows returns JSON null from the
+        SQLite store's nil slice, not 404 or an envelope.
+
+        GetTieredMetricsHistory selects raw/hourly/daily/monthly tables using
+        range endpoints relative to now. It appends each queried tier in that
+        order; rows within each tier are timestamp-ascending, but the combined
+        array is not globally sorted. Do not assume complete coverage of every
+        intermediate tier for wide ranges. raw=true disables only response
+        downsampling; it does not force raw-table data. maxPoints is not a hard
+        result limit: values 1 or 2 disable the downsampler's reduction too.
+      parameters:
+        - {$ref: '#/components/parameters/Serial'}
+        - name: period
+          in: query
+          description: day=24 hours, week=7 days, month=30 days, year=365 days ending now. Omitted, empty, or unrecognized values use week. Ignored when both custom bounds are nonempty.
+          schema: {type: string, default: week}
+        - name: since
+          in: query
+          description: Inclusive RFC3339 start; parsed only when both custom bounds are nonempty.
+          schema: {type: string, format: date-time}
+        - name: until
+          in: query
+          description: Inclusive RFC3339 end; parsed only when both custom bounds are nonempty.
+          schema: {type: string, format: date-time}
+        - name: maxPoints
+          in: query
+          description: Case-sensitive name. Positive integer target; defaults to 200 on omitted, malformed, zero, or negative input. Above 10000 clamps to 10000. Targets below 3 do not reduce data; ignored when raw=true.
+          schema: {type: integer, default: 200}
+        - name: raw
+          in: query
+          description: Only literal true disables response downsampling; every other value enables it. Storage tier selection is unchanged.
+          schema: {type: boolean, default: false}
+      responses:
+        '200':
+          description: Bare tiered snapshot array, or null when no rows match; optional zero counters omitted
+          content:
+            application/json:
+              schema:
+                type: array
+                nullable: true
+                items: {$ref: '#/components/schemas/MetricsSnapshot'}
+        '302': {$ref: '#/components/responses/LoginRedirect'}
+        '400':
+          description: 'Plain text with trailing newline: serial parameter required, invalid since parameter (use RFC3339 format), or invalid until parameter (use RFC3339 format)'
+          content: {text/plain: {schema: {type: string}}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '405': {$ref: '#/components/responses/GetOnly'}
+        '500':
+          description: 'Plain text: failed to get metrics history: followed by storage error and newline'
+          content: {text/plain: {schema: {type: string}}}
+  /api/devices/metrics/bounds:
+    get:
+      operationId: getAgentDeviceMetricsBounds
+      tags: [Metrics]
+      summary: Get timestamp bounds and stored point count across all metric tiers
+      x-source:
+        path: agent/main.go
+        handler: 'http.HandleFunc("/api/devices/metrics/bounds", anonymous handler)'
+      description: Requires a SQLiteStore. Reads min/max timestamps and sums row counts across raw/hourly/daily/monthly tables, not a distinct timestamp count or downsampled history count. No saved/visible or device-existence check.
+      parameters:
+        - {$ref: '#/components/parameters/Serial'}
+      responses:
+        '200':
+          description: UTC RFC3339Nano timestamp bounds and total stored rows
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [serial, min_timestamp, max_timestamp, points]
+                properties:
+                  serial: {type: string}
+                  min_timestamp: {type: string, format: date-time}
+                  max_timestamp: {type: string, format: date-time}
+                  points: {type: integer}
+        '302': {$ref: '#/components/responses/LoginRedirect'}
+        '400': {$ref: '#/components/responses/MissingSerial'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NoMetrics'}
+        '405': {$ref: '#/components/responses/GetOnly'}
+        '500':
+          description: 'Plain text: failed to get metrics bounds: followed by storage error and newline'
+          content: {text/plain: {schema: {type: string}}}
+        '503':
+          description: 'Plain text: storage unavailable followed by newline (store is not a non-nil SQLiteStore)'
+          content: {text/plain: {schema: {type: string, example: "storage unavailable\n"}}}
+  /api/version:
+    get:
+      operationId: getAgentVersion
+      tags: [Agent]
+      summary: Get public Agent build and runtime identifiers
+      x-source:
+        path: agent/main.go
+        handler: 'http.HandleFunc("/api/version", anonymous handler)'
+      description: Explicitly listed in newAgentAuthManager.publicExact; shouldBypass permits anonymous access independently of loopback allowance. All values are strings; build_time is not guaranteed to be an RFC3339 timestamp.
+      security: []
+      responses:
+        '200':
+          description: Build and Go runtime information
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [version, build_time, git_commit, build_type, go_version, os, arch]
+                properties:
+                  version: {type: string}
+                  build_time: {type: string}
+                  git_commit: {type: string}
+                  build_type: {type: string}
+                  go_version: {type: string}
+                  os: {type: string}
+                  arch: {type: string}
+        '405': {$ref: '#/components/responses/GetOnly'}
+components:
+  securitySchemes:
+    agentSessionCookie:
+      type: apiKey
+      in: cookie
+      name: pm_agent_session
+      description: |
+        Opaque local Agent session ID validated by agentSessionManager.Get.
+        Not pm_session, a JWT, a server token, or an agent registration token.
+        Issued with Path=/, HttpOnly, SameSite=Lax, Expires/MaxAge, and Secure
+        when requestIsHTTPS recognizes TLS/context/X-Forwarded-Proto=https.
+        Expiry comes from validated server auth, with a 24-hour fallback.
+        Obtain through Agent login/callback in server auth mode (outside this
+        read-only subset). No Authorization or other credential header is read
+        by sessionFromRequest. Loopback allowance is documented separately,
+        not an alternative anonymous security requirement.
+  parameters:
+    Serial:
+      name: serial
+      in: query
+      required: true
+      description: Exact device serial. Missing or empty value returns 400; handler does not trim whitespace or apply saved/visible filtering.
+      schema: {type: string, minLength: 1}
+  schemas:
+    SavedDeviceEntry:
+      type: object
+      required: [serial, path, printer_info, info, asset_number, location, web_ui_url, device_type, source_type, is_usb, initial_page_count, port_name, driver_name, is_default, is_shared, spooler_status]
+      properties:
+        serial: {type: string}
+        path: {type: string, description: 'Compatibility label: serial plus .json, not a download URL'}
+        printer_info: {$ref: '#/components/schemas/PrinterInfo'}
+        info: {$ref: '#/components/schemas/PrinterInfo'}
+        asset_number: {type: string}
+        location: {type: string}
+        web_ui_url: {type: string}
+        device_type: {type: string}
+        source_type: {type: string}
+        is_usb: {type: boolean}
+        initial_page_count: {type: integer}
+        port_name: {type: string}
+        driver_name: {type: string}
+        is_default: {type: boolean}
+        is_shared: {type: boolean}
+        spooler_status: {type: string}
+    Device:
+      type: object
+      description: storage.Device embeds common/storage.Device. Required fields have no omitempty tag; other fields are omitted when empty/zero. raw_data values are unconstrained implementation JSON.
+      required: [serial, ip, last_seen, created_at, first_seen, is_saved, visible]
+      properties:
+        serial: {type: string}
+        ip: {type: string}
+        manufacturer: {type: string}
+        model: {type: string}
+        hostname: {type: string}
+        firmware: {type: string}
+        mac_address: {type: string}
+        subnet_mask: {type: string}
+        gateway: {type: string}
+        consumables: {type: array, items: {type: string}}
+        status_messages: {type: array, items: {type: string}}
+        last_seen: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+        first_seen: {type: string, format: date-time}
+        discovery_method: {type: string}
+        asset_number: {type: string}
+        location: {type: string}
+        description: {type: string}
+        web_ui_url: {type: string}
+        raw_data: {type: object, additionalProperties: true}
+        device_type: {type: string}
+        source_type: {type: string}
+        is_usb: {type: boolean}
+        initial_page_count: {type: integer}
+        port_name: {type: string}
+        driver_name: {type: string}
+        is_default: {type: boolean}
+        is_shared: {type: boolean}
+        spooler_status: {type: string}
+        usb_webui_available: {type: boolean}
+        dns_servers: {type: array, items: {type: string}}
+        dhcp_server: {type: string}
+        is_saved: {type: boolean}
+        visible: {type: boolean}
+        walk_filename: {type: string}
+        last_scan_id: {type: integer, format: int64}
+        locked_fields:
+          type: array
+          items:
+            type: object
+            required: [field, locked_at]
+            properties:
+              field: {type: string}
+              reason: {type: string}
+              locked_at: {type: string, format: date-time}
+              locked_by: {type: string}
+    MetricsSnapshot:
+      type: object
+      description: |
+        storage.MetricsSnapshot embeds common/storage.MetricsSnapshot.
+        Integer counters use omitempty: zero is absent. Toner map values are
+        interface{} JSON, not guaranteed integer percentages. Detailed agent
+        counters and paper_trays are declared in storage structs but are not
+        populated by the reviewed latest/tiered SQLite SELECT statements.
+      required: [id, serial, timestamp]
+      properties:
+        id: {type: integer, format: int64}
+        serial: {type: string}
+        timestamp: {type: string, format: date-time}
+        page_count: {type: integer}
+        color_pages: {type: integer}
+        mono_pages: {type: integer}
+        scan_count: {type: integer}
+        toner_levels: {type: object, additionalProperties: true}
+        paper_trays: {type: array, items: {$ref: '#/components/schemas/PaperTray'}}
+        fax_pages: {type: integer}
+        copy_pages: {type: integer}
+        other_pages: {type: integer}
+        copy_mono_pages: {type: integer}
+        copy_flatbed_scans: {type: integer}
+        copy_adf_scans: {type: integer}
+        fax_flatbed_scans: {type: integer}
+        fax_adf_scans: {type: integer}
+        scan_to_host_flatbed: {type: integer}
+        scan_to_host_adf: {type: integer}
+        duplex_sheets: {type: integer}
+        jam_events: {type: integer}
+        scanner_jam_events: {type: integer}
+        tier: {type: string, description: Set to raw/hourly/daily/monthly by history; omitted by latest}
+    PrinterInfo:
+      type: object
+      description: |
+        agent.PrinterInfo serialized after storage.DeviceToPrinterInfo; optional
+        fields are omitted when zero/empty. learned_oids is a value struct and
+        may serialize as {} despite omitempty. Not every declared optional
+        field is populated by the conversion. Discovered results additionally
+        fetch latest page_count and integer toner_levels; saved list does not.
+      required: [ip, last_seen, learned_oids]
+      properties:
+        ip: {type: string}
+        manufacturer: {type: string}
+        model: {type: string}
+        serial: {type: string}
+        admin_contact: {type: string}
+        asset_id: {type: string}
+        description: {type: string}
+        location: {type: string}
+        page_count: {type: integer}
+        total_mono_impressions: {type: integer}
+        black_impressions: {type: integer}
+        cyan_impressions: {type: integer}
+        magenta_impressions: {type: integer}
+        yellow_impressions: {type: integer}
+        toner_level_black: {type: integer}
+        toner_level_cyan: {type: integer}
+        toner_level_magenta: {type: integer}
+        toner_level_yellow: {type: integer}
+        toner_desc_black: {type: string}
+        toner_desc_cyan: {type: string}
+        toner_desc_magenta: {type: string}
+        toner_desc_yellow: {type: string}
+        mac_address: {type: string}
+        open_ports: {type: array, items: {type: integer}}
+        advertised_services: {type: array, items: {type: string}}
+        discovery_methods: {type: array, items: {type: string}}
+        last_seen: {type: string, format: date-time}
+        detection_reasons: {type: array, items: {type: string}}
+        mono_impressions: {type: integer}
+        color_impressions: {type: integer}
+        toner_levels: {type: object, additionalProperties: {type: integer}}
+        consumables: {type: array, items: {type: string}}
+        status_messages: {type: array, items: {type: string}}
+        firmware: {type: string}
+        uptime_seconds: {type: integer}
+        duplex_supported: {type: boolean}
+        paper_tray_status: {type: object, additionalProperties: {type: string}}
+        paper_trays: {type: array, items: {$ref: '#/components/schemas/PaperTray'}}
+        toner_alerts: {type: array, items: {type: string}}
+        subnet_mask: {type: string}
+        gateway: {type: string}
+        dns_servers: {type: array, items: {type: string}}
+        dhcp_server: {type: string}
+        hostname: {type: string}
+        meters: {type: object, additionalProperties: {type: integer}}
+        web_ui_url: {type: string}
+        learned_oids:
+          type: object
+          properties:
+            page_count_oid: {type: string}
+            mono_pages_oid: {type: string}
+            color_pages_oid: {type: string}
+            cyan_oid: {type: string}
+            magenta_oid: {type: string}
+            yellow_oid: {type: string}
+            toner_oid_prefix: {type: string}
+            serial_oid: {type: string}
+            model_oid: {type: string}
+            vendor_specific_oids: {type: object, additionalProperties: {type: string}}
+        is_color: {type: boolean}
+        is_mono: {type: boolean}
+        is_copier: {type: boolean}
+        is_scanner: {type: boolean}
+        is_fax: {type: boolean}
+        is_laser: {type: boolean}
+        is_inkjet: {type: boolean}
+        has_duplex: {type: boolean}
+        form_factor: {type: string}
+        device_type: {type: string}
+    PaperTray:
+      type: object
+      description: Same JSON tags in agent.PaperTray and common/storage.PaperTray. Device-reported sentinel values are allowed; no percentage/count minimum is imposed.
+      required: [index, current_level, max_capacity]
+      properties:
+        index: {type: integer}
+        name: {type: string}
+        media_type: {type: string}
+        current_level: {type: integer}
+        max_capacity: {type: integer}
+        level_percent: {type: integer}
+        status: {type: string}
+  responses:
+    LoginRedirect:
+      description: Auth wrapper redirects unauthenticated requests when Accept contains text/html; local /login?return_to=... or configured server login URL. Not a JSON error. Deployment HTTP-to-HTTPS redirects can also occur before auth.
+      headers:
+        Location:
+          description: Login or HTTPS redirect target
+          schema: {type: string}
+      content: {text/html: {schema: {type: string}}}
+    Unauthorized:
+      description: 'Auth wrapper: missing, unknown, or expired pm_agent_session and no applicable bypass/local principal. Plain text unauthorized with newline; not a JSON envelope.'
+      content: {text/plain: {schema: {type: string, example: "unauthorized\n"}}}
+    MissingSerial:
+      description: Missing or empty serial query value
+      content: {text/plain: {schema: {type: string, example: "serial parameter required\n"}}}
+    NoMetrics:
+      description: storage.ErrNotFound; no metrics in the queried storage scope
+      content: {text/plain: {schema: {type: string, example: "no metrics found\n"}}}
+    GetOnly:
+      description: Handler rejects methods other than GET (after auth wrapper)
+      content: {text/plain: {schema: {type: string, example: "GET only\n"}}}

@@ -62,3 +62,9 @@ Do not infer that untouched pages, or every paragraph of an edited page, are acc
 The obsolete API overview was replaced after verifying server routing, user-session authentication, handler query parsing, and response shapes. A public OpenAPI 3.0.3 reference now covers five operations: local login, current user, logout, agent listing, and device listing. These were reviewed against the same snapshot, including pagination envelopes versus legacy arrays, plain-text errors, and user-session bearer/cookie alternatives. This is not a complete API inventory, a new API service, or a compatibility guarantee for existing UI endpoints.
 
 Final integrated validation: 13 tests, OpenAPI schema validation, Docker/Hugo build and hardened-runtime smoke tests, plus generated local-link/anchor checks. Original source documents remain unchanged. Other endpoint contracts still need individual review before inclusion.
+
+## Read-only expansion at eeb6259
+
+Server contract now covers 14 operations, including metrics history/bounds, alerts, reports, tenants, and sites. Agent contract covers seven local reads, with a separate cookie security model. All operations have source-handler metadata pinned to `eeb6259f6060c0534798e3d14ac0cd9d289df9a7`; this refresh does not re-audit every operator guide against that revision.
+
+The expansion explicitly records handler-specific limitations: ignored filters/history bounds, null collections, inconsistent role/tenant checks, and empty-scope device filtering. Documenting an endpoint is not endorsing it as safe for untrusted multi-tenant automation. The product roadmap prioritizes source-level authorization regression tests and fixes. Machine payload contracts and WebSocket AsyncAPI remain pending; protocol page is a route/auth boundary overview only.
