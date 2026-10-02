@@ -6,7 +6,7 @@ Server reference: `/api/openapi/`, contract `/openapi/server.yaml` (14 operation
 
 1. Read the actual route registration, handler, authorization wrapper, and serialized Go types in the program repository. Do not copy unverified old documentation.
 2. Edit the appropriate contract: `static/openapi/server.yaml` or `static/openapi/agent.yaml`. Record method/path, query parameters, response shapes, error statuses/content types, and actual security requirements. Server user sessions, Agent cookies, and machine tokens are separate credential classes. Document missing authorization/filtering checks rather than implying they exist.
-3. Record `x-reviewed-commit` and each operation's `x-source` path/handler. The OpenAPI `info.version` tracks the contract, not the binary version. Update the explicit coverage regression test when adding operations. Static provenance checks are not live handler contract tests.
+3. Record `x-reviewed-commit` and each operation's `x-source` path/handler against the actual containing program revision. Current Server hardening is pinned to `864fc3ee040bbb28f25d779c69512c5b6999d421`; never confuse a committed source revision with a released binary. Keep historical baseline citations explicitly labeled. The OpenAPI `info.version` tracks the contract, not the binary version. Server 0.2.1 is a compatible documentation correction patch: 14 operations unchanged, stricter ownership/auth and accurate empty-list/error responses; no route/protocol bump. Update explicit coverage regressions when adding operations, and semantics regressions when correcting existing operations. Static provenance checks are not live handler contract tests.
 4. Run validation and build checks:
 
    ```bash
@@ -25,6 +25,6 @@ The viewer uses locally installed Swagger UI assets and a lockfile; no public CD
 
 This pass documents existing server routes. To offer a separately supported public API, implement that contract in the **program repository**, decide versioning/deprecation guarantees, select an appropriate automation credential model, add handler/authorization contract tests, and validate tenant isolation. Do not simply declare current internal/UI routes permanently stable.
 
-Concrete implementation proposals, source modules, acceptance tests, and compatible PR-sized rollout are in `content/development/public-api-roadmap.md`. Address tenant isolation/trusted-proxy findings before expanding multi-tenant automation. Protocol OpenAPI and WebSocket AsyncAPI remain separate follow-ups.
+Concrete implementation proposals, source modules, acceptance tests, and compatible PR-sized rollout are in `content/development/public-api-roadmap.md`. Pending fixes and remaining tenant/history/proxy/callback validation gates are summarized in `content/guides/tenant-isolation.md`; do not leave fixed baseline caveats labeled current. Protocol OpenAPI and WebSocket AsyncAPI remain separate follow-ups.
 
 Try-it-out stays disabled on the public reference. Use a local API client against your HTTPS server; never paste production credentials into a hosted documentation page. Enabling cross-origin browser execution later needs a deliberate CORS/auth/CSRF review in the server, not just a UI toggle.

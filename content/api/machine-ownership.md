@@ -1,0 +1,45 @@
+---
+title: Machine ownership safeguards
+description: Agent registration, device ownership, metrics ordering, and WebSocket sender binding.
+weight: 35
+---
+
+These safeguards apply to the Server's machine storage and Agent WebSocket channel. They do not define a new HTTP or Agent↔Server protocol version, and do not expand the reviewed Server user-session or Agent-local OpenAPI subsets.
+
+## Storage ownership
+
+- A new agent registration establishes its agent ID, machine token, and tenant binding. An existing ID can re-register only with the **same nonempty token and same tenant**. Re-registration updates machine metadata and preserves a user-set display name; it does not rotate the token or transfer ownership. The conflict check and write are one SQL operation on SQLite and PostgreSQL.
+- A device serial belongs to one agent. Same-owner uploads update discovered fields without replacing stored device credentials. Another agent cannot claim an existing serial, even when both agents share a tenant. Serial collisions and actual device moves require explicit administrative resolution; uploads are not an ownership-transfer mechanism.
+- A metric snapshot is accepted only when its serial already exists and belongs to the snapshot's agent ID. Missing devices and foreign-agent serials are rejected atomically. Older persisted snapshots remain valid once the matching device exists; no new timestamp freshness rule is imposed.
+- Storage reports rejected machine writes through `storage.ErrOwnershipConflict`. This internal Go error has handler-specific HTTP handling: device deletion maps an ownership race to `409`, while batch uploads retain partial-success counts. Do not infer a uniform HTTP status for all rejected machine writes.
+
+### Async uploads and recovery
+
+Upload device records before their metrics. If device persistence fails, retry device persistence, then retry the corresponding metrics; a missing serial must not be accepted merely because its agent is registered. The current Agent upload worker uploads devices first, but continues to metrics after device-upload failures, so missing-device metrics can be rejected and require a later successful cycle. An HTTP success alone does not establish that every row was stored; inspect batch counts/errors.
+
+Re-enrollment with a newly generated machine token under an existing agent ID is deliberately rejected. Token loss, agent replacement, tenant moves, and colliding serials require an authorized administrative recovery/transfer workflow; do not work around the checks by silently overwriting existing ownership.
+
+## WebSocket ownership
+
+- `device_deleted` uses the token-authenticated agent identity, checks device ownership, and performs an owner-qualified SQL delete. Foreign/missing devices and failed deletes produce no successful deletion notification. Device credentials follow the existing device foreign-key cascade; these changes do not redefine metrics-retention behavior.
+- Proxy responses, stream chunks, and stream-end messages must match a pending request's target agent. All current Server dispatchers encode that target in their pending request key as `agentID-UnixNano`. Validation uses the exact ID before the final numeric suffix, not a prefix match, and requires a pending-key lookup. Payload `agent_id` claims cannot override the authenticated sender. Foreign responses cannot consume or terminate another agent's request.
+- This binding depends on the current **server-generated request-key format**. A future opaque-ID migration must introduce explicit pending-request owner metadata and update all three dispatchers together. No wire message types or fields change here.
+- The Agent WebSocket channel handles heartbeat, proxy replies/streams, progress, and deletion notifications. Device and metrics batch uploads currently use HTTP, not separate WebSocket upload handlers.
+
+## Pending registration reviews
+
+Implementation: `server/tenancy/handlers.go` calls `server/storage/pending_approval.go::ApprovePendingRegistrationWithToken`; SQLite/PostgreSQL pending-approval and security-correctness review tests are additional source evidence, not claimed execution results.
+
+Approval/rejection succeeds only for an existing row whose current status is `pending`. The status predicate and update are atomic, and the storage layer checks affected rows. Missing rows, invalid statuses, repeated reviews, and concurrent losing reviews return an error without overwriting the winning reviewer, timestamp, or notes. The HTTP approval path now commits review state and a 24-hour one-time join token together through `ApprovePendingRegistrationWithToken`; issuance failure rolls back review, allowing retry. The older review-only storage method remains available but is no longer used by this HTTP approval handler.
+
+## HTTP integration requirement
+
+**User-session device deletion:** `POST` or `DELETE /api/v1/devices/delete` authorizes `agents.delete` against the device's stored Agent before deletion. For an owned server record, `DeleteDeviceForAgentWithMetrics` performs an owner-qualified device delete and optional `metrics_history` cleanup in one transaction on SQLite/PostgreSQL; credentials follow the device foreign-key cascade. A disappeared/replaced owner between lookup and deletion returns `409` with plain-text `Device ownership changed`, preserving the replacement device, credentials and metrics and sending no success event. Other storage failures return `500`. A missing server record can still use an authorized request `agent_id` for Agent-only deletion; unowned server records remain global-admin-only through the existing delete path. Optional Agent proxy deletion happens **before** the Server transaction and is not rolled back by a Server `409`; this is not an atomic cross-process delete. This operation remains outside the reviewed read-only OpenAPI subset.
+
+**Storage guards alone do not establish authenticated HTTP ownership.** The pending device/metrics batch handlers now read the authenticated Agent from context **before writing**, reject mismatched payload `agent_id` with `403`, and persist IDs from that Agent—not request JSON. Missing authenticated context returns `401`. Their routes use machine-token middleware, not user-session auth. Individual rejected rows are skipped; HTTP `200` with `success: true` does not mean every row persisted. Compare `received` and `stored`; the handlers do not return per-row error details.
+
+Agent credential retrieval now requires a nonempty authenticated Agent tenant and an exactly matching credential tenant, in addition to device ownership; mismatch returns `403`, including legacy unscoped credentials. Legacy `POST /api/v1/agents/register` is disabled and returns `403` JSON directing callers to join-token enrollment. Join-token enrollment rejects existing IDs with `409` before ordinary token consumption, with an atomic storage collision guard for races. Same-token/same-tenant storage re-registration is not an exposed token-refresh or transfer endpoint. Concurrent losing enrollment may already have consumed a join token. Pending-review/token issuance is transactional, but a lost success response cannot replay the raw secret, and historical stranded rows are not repaired automatically. Administrators can issue replacement join tokens. See [authentication boundaries](/guides/authentication-boundaries/) for recovery and device-code crash limits.
+
+These HTTP integrations are committed in the reviewed source revision; this is not a product release claim. Negative authorization/race tests and both DB dialects remain release validation requirements. See [tenant isolation](/guides/tenant-isolation/) for the combined implementation and limitations.
+
+Implementation reviewed at [committed source revision 864fc3e](https://github.com/Printmaster-Org/printmaster/tree/864fc3ee040bbb28f25d779c69512c5b6999d421), containing the machine storage, HTTP and channel hardening. Sources: `server/main.go`, `server/tenancy/handlers.go`, `server/storage/base_store.go`, `server/storage/machine_ownership_test.go`, `server/storage/machine_ownership_postgres_test.go`, `server/storage/tenant_enrollment_security_test.go`, `server/tenant_server_boundaries_test.go`, `server/websocket.go`, and `server/websocket_tenant_test.go`. Committed tests are reviewed evidence, not claimed execution results from this documentation pass. See the [machine protocol overview](/api/protocol/) for route and credential boundaries.

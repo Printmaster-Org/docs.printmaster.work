@@ -6,13 +6,13 @@ weight: 30
 
 Machine endpoints are hosted on the **Server** and consumed by Agents. They are distinct from both the Server's user-session integration API and the Agent's local API. This page is a verified route/authentication overview, **not a complete payload contract** or AsyncAPI specification.
 
-Reviewed snapshot: `eeb6259f6060c0534798e3d14ac0cd9d289df9a7`.
+Route overview originally reviewed at `eeb6259f6060c0534798e3d14ac0cd9d289df9a7`. Ownership/auth additions below were reviewed at [committed hardening revision 864fc3e](https://github.com/Printmaster-Org/printmaster/tree/864fc3ee040bbb28f25d779c69512c5b6999d421). Historical links below retain the baseline route/client provenance; the security guides identify the containing hardening revision. Neither source snapshot is a product release claim.
 
 ## Route families
 
 | Server route | Purpose | Authentication boundary |
 | --- | --- | --- |
-| `/api/v1/agents/register` | Agent registration | Registration handler; do not infer anonymous unrestricted enrollment from its lack of user-session wrapper |
+| `/api/v1/agents/register` | Disabled legacy registration | POST returns `403` JSON directing callers to join-token enrollment; no anonymous token issuance |
 | `/api/v1/agents/register-with-token` | Join-token enrollment | Join token validated by registration handler |
 | `/api/v1/agents/heartbeat` | Machine liveness | Agent bearer token, not user session |
 | `/api/v1/devices/batch` | Device uploads | Agent bearer token |
@@ -34,7 +34,13 @@ Sources: [server route registrations](https://github.com/Printmaster-Org/printma
 
 Use HTTPS/WSS with trusted certificates. Review enrollment handlers and configuration before making those routes reachable externally. Do not publish token values, printer credentials, or production payload dumps.
 
+Device-code approval and machine-bound user login are separate boundaries. See [authentication and enrollment boundaries](/guides/authentication-boundaries/) for tenant/role policy, explicit-only OIDC linking, supported target-bound password/OIDC redirects, required validator ownership fields, serialized device approval, and transactional pending-review token issuance. Hardened validation rejects unbound grants; no machine protocol-version bump is implied. These auth operations remain outside the reviewed read-only OpenAPI subsets.
+
+The [machine ownership safeguards](/api/machine-ownership/) describe atomic storage checks, WebSocket sender binding, async metrics ordering and implemented authenticated-identity binding for HTTP uploads. Existing Agent IDs are not replaced by join-token enrollment; batch success can be partial (`received` versus `stored`). The [tenant-isolation guide](/guides/tenant-isolation/) records combined implementation, compatibility and limitations without expanding this payload-contract scope.
+
 ## Next contract work
+
+User-session `POST`/`DELETE /api/v1/devices/delete` is **not** a machine-token operation. Its owner-qualified Server transaction can return plain-text `409` when ownership changed; optional Agent proxy deletion occurs earlier and is not part of that transaction. Report-run lists are also user-session operations: they omit `result_data`, while authorized detail/download still retrieves the result body. See [tenant isolation](/guides/tenant-isolation/) for compatibility and read-only contract exclusions; neither behavior introduces a machine message or protocol version.
 
 Review machine request/response structs and handler tests before adding a separate protocol OpenAPI spec. Document WebSocket message types, acknowledgments, errors, reconnect behavior, and compatibility using **AsyncAPI**; an HTTP upgrade alone does not specify the message protocol.
 
