@@ -24,3 +24,25 @@ test('every imported page has its own route and retains source metadata', () => 
   }
   for (const asset of manifest.assets) assert.ok(fs.existsSync(path.join(root, asset.destination)), asset.source);
 });
+
+test('Pages publication is explicitly opt-in and production-only', () => {
+  const workflow = read('.github/workflows/site.yml');
+  const job = workflow.split('  deploy-pages:')[1]?.split('\n  publish:')[0];
+  assert.ok(job, 'Pages job exists');
+  assert.ok(job.includes("vars.ENABLE_GITHUB_PAGES == 'true'"));
+  assert.ok(job.includes("github.event_name != 'pull_request'"));
+  assert.ok(job.includes("github.ref == 'refs/heads/main'"));
+  assert.ok(job.includes('needs: validate'));
+  assert.ok(job.includes('name: documentation-site'));
+  assert.ok(job.includes('pages: write'));
+  assert.ok(job.includes('id-token: write'));
+  assert.ok(job.includes('cancel-in-progress: false'));
+  assert.ok(!job.includes('enablement: true'), 'Do not automatically enable public hosting');
+});
+
+test('all workflow actions remain pinned to immutable commits', () => {
+  const workflow = read('.github/workflows/site.yml');
+  for (const match of workflow.matchAll(/uses:\s+(\S+)/g)) {
+    assert.match(match[1], /^[\w-]+\/[\w-]+@[a-f0-9]{40}$/);
+  }
+});
