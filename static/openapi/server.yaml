@@ -1,14 +1,21 @@
 openapi: 3.0.3
+x-reviewed-commit: eeb6259f6060c0534798e3d14ac0cd9d289df9a7
 info:
   title: PrintMaster Server Integration API
-  version: 0.1.0
+  version: 0.2.0
   description: |
-    Initial, verified subset of existing server HTTP endpoints; not a complete
+    Verified subset of existing server HTTP endpoints; not a complete
     API inventory or a new anonymous service. Reviewed against PrintMaster
-    commit 565f4c0762e467f083f54a9e0e7f6bc23ada56c3 (server/main.go).
+    commit eeb6259f6060c0534798e3d14ac0cd9d289df9a7, including all five original
+    authentication/list operations. x-source paths are relative to that source
+    repository, not this documentation repository. Only GET operations were
+    added; existing login/logout POST operations are retained.
     This contract version is independent of the program version. Existing UI
     endpoints have no separate stable public-API compatibility guarantee.
     Use your own HTTPS server. User sessions are not agent registration tokens.
+    Schemas labeled partial intentionally allow additional implementation fields.
+    Authorization and tenant filtering differ by endpoint; a session alone does
+    not imply tenant isolation. See each operation's implementation caveats.
   license:
     name: MIT
     url: https://github.com/Printmaster-Org/printmaster/blob/main/LICENSE
@@ -24,10 +31,15 @@ security:
 tags:
   - name: Authentication
   - name: Fleet
+  - name: Metrics
+  - name: Alerts
+  - name: Reports
+  - name: Tenancy
 paths:
   /api/v1/auth/login:
     post:
       operationId: login
+      x-source: {path: server/main.go, handler: handleAuthLogin}
       tags: [Authentication]
       summary: Create a local user session
       description: Returns a session token and sets pm_session. Use SSO in the application when local credentials are unavailable. Successful sessions are created for 24 hours in this snapshot.
@@ -65,8 +77,10 @@ paths:
   /api/v1/auth/me:
     get:
       operationId: currentUser
+      x-source: {path: server/main.go, handler: handleAuthMe}
       tags: [Authentication]
       summary: Inspect current user session
+      description: Session authentication only. The handler does not restrict the HTTP method; GET is the documented read operation.
       responses:
         '200':
           description: User and tenant context, without a password hash
@@ -86,11 +100,17 @@ paths:
   /api/v1/auth/logout:
     post:
       operationId: logout
+      x-source: {path: server/main.go, handler: handleAuthLogout}
       tags: [Authentication]
       summary: Delete current session and expire cookie
+      description: Session deletion errors are ignored; success does not confirm storage deletion.
       responses:
         '200':
           description: Session terminated
+          headers:
+            Set-Cookie:
+              description: Expires pm_session at the Unix epoch; HttpOnly; Secure when request is recognized as HTTPS; SameSite=Lax
+              schema: {type: string}
           content:
             application/json:
               schema:
@@ -102,9 +122,10 @@ paths:
   /api/v1/agents/list:
     get:
       operationId: listAgents
+      x-source: {path: server/main.go, handler: handleAgentsList}
       tags: [Fleet]
       summary: List agents accessible to the user
-      description: Requires agents.read authorization. Supplying limit enables pagination; omitting limit returns a legacy array. Invalid/nonpositive limit becomes 50, values over 200 clamp to 200; negative offset becomes zero. Agent token fields are blanked.
+      description: Requires agents.read authorization and a tenant scope for non-admin users. A nonempty limit enables pagination; missing or empty limit returns a legacy array. Invalid/nonpositive limit becomes 50, values over 200 clamp to 200; negative offset becomes zero. Agent token fields are blanked. Results are filtered to the caller's tenant scope.
       parameters:
         - {$ref: '#/components/parameters/Limit'}
         - {$ref: '#/components/parameters/Offset'}
@@ -130,9 +151,17 @@ paths:
   /api/v1/devices/list:
     get:
       operationId: listDevices
+      x-source: {path: server/main.go, handler: handleDevicesList}
       tags: [Fleet]
       summary: List fleet devices with available latest metrics
-      description: Requires devices.read authorization. Same pagination rules as agents/list. Schema intentionally describes only verified core fields; additional implementation fields may be returned. Tenant permissions are enforced by the deployed server, not this documentation site.
+      description: |
+        Requires devices.read authorization and a tenant scope for non-admin
+        users. Same pagination rules as agents/list. Partial core schema;
+        additional implementation fields may be returned. Latest metrics are
+        best-effort; their retrieval failure does not fail the device list.
+        Snapshot caveat: when a scoped user has no matching agents, the legacy
+        branch skips its agent filter and the paginated store receives an empty
+        agent filter. Do not assume this endpoint guarantees tenant isolation.
       parameters:
         - {$ref: '#/components/parameters/Limit'}
         - {$ref: '#/components/parameters/Offset'}
@@ -155,22 +184,323 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
         '405': {$ref: '#/components/responses/MethodNotAllowed'}
         '500': {$ref: '#/components/responses/ServerError'}
+  /api/devices/metrics/history:
+    get:
+      operationId: deviceMetricsHistory
+      x-source: {path: server/main.go, handler: handleMetricsHistory}
+      tags: [Metrics]
+      summary: Read uploaded device metrics history
+      description: |
+        Requires metrics.history.read and a tenant scope for non-admin users;
+        scoped requests check the device's owning agent tenant. Uses the server
+        DB, not a live agent query. since overrides period. Unknown period falls
+        back to week. until is not read by the handler, despite its source
+        comment; there is no upper time bound. Rows are timestamp-ascending.
+        raw=true disables downsampling. Otherwise maxPoints defaults to 200,
+        invalid/nonpositive values retain 200, and values above 10000 clamp.
+        maxPoints 1 or 2 bypasses downsampling, so it is not a strict row limit.
+        Empty history is null with the reviewed store. Admin requests do not
+        check device existence before querying history.
+      parameters:
+        - {$ref: '#/components/parameters/Serial'}
+        - name: since
+          in: query
+          description: RFC3339 lower bound, inclusive; nonempty invalid value returns 400.
+          schema: {type: string, format: date-time}
+        - name: period
+          in: query
+          description: Used only without a nonempty since; day=24h, week=7d, month=30d, year=365d. Unknown values use week.
+          schema: {type: string, default: week}
+        - name: maxPoints
+          in: query
+          schema: {type: integer, default: 200}
+        - name: raw
+          in: query
+          description: Only the literal string true disables downsampling.
+          schema: {type: string, default: 'false'}
+      responses:
+        '200':
+          description: Timestamp-ascending snapshots, possibly downsampled; null when no rows exist
+          content:
+            application/json:
+              schema:
+                type: array
+                nullable: true
+                items: {$ref: '#/components/schemas/MetricsSnapshot'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/devices/metrics/bounds:
+    get:
+      operationId: deviceMetricsBounds
+      x-source: {path: server/main.go, handler: handleMetricsBounds}
+      tags: [Metrics]
+      summary: Read stored device metrics timestamp bounds and count
+      description: Requires metrics.history.read and a tenant scope for non-admin users; scoped requests check the device's owning agent tenant. Store errors, including absent metrics, become 404. Admin requests do not check device existence first.
+      parameters:
+        - {$ref: '#/components/parameters/Serial'}
+      responses:
+        '200':
+          description: Bounds formatted as UTC RFC3339Nano and stored row count
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [serial, min_timestamp, max_timestamp, points]
+                properties:
+                  serial: {type: string}
+                  min_timestamp: {type: string, format: date-time}
+                  max_timestamp: {type: string, format: date-time}
+                  points: {type: integer, format: int64}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+  /api/v1/alerts/summary:
+    get:
+      operationId: alertSummary
+      x-source: {path: server/alerts/api.go, handler: API.handleAlertSummary}
+      tags: [Alerts]
+      summary: Read fleet alert summary
+      description: Requires settings.alerts.read (admin, operator, viewer in the reviewed role policy). Routes are always enabled in this snapshot. The handler uses an empty authorization resource and does not apply caller tenant filtering; summary is global.
+      responses:
+        '200':
+          description: Global alert counts and state; partial schema
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AlertSummary'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+        '500': {$ref: '#/components/responses/AlertServerError'}
+  /api/v1/alerts:
+    get:
+      operationId: listAlerts
+      x-source: {path: server/alerts/api.go, handler: API.handleAlerts}
+      tags: [Alerts]
+      summary: List active or acknowledged alerts
+      description: |
+        API.handleAlerts delegates GET to API.handleListAlerts. Requires
+        settings.alerts.read; no caller tenant filter or tenant-specific
+        authorization check is applied. tenant_id is only an optional DB filter.
+        The store restricts results to active/acknowledged; parsed status is
+        ignored by ListActiveAlerts. Other nonempty string filters use exact DB
+        equality without enum validation. Ordering is severity DESC (lexical),
+        then triggered_at DESC. Positive integer limit enables SQL pagination;
+        absent/invalid/nonpositive limit means unlimited. Nonnegative integer
+        offset is echoed but only applied with positive limit. No 200-row cap.
+      parameters:
+        - name: status
+          in: query
+          description: Parsed by the handler but ignored by the reviewed store; not a historical-alert selector.
+          schema: {type: string}
+        - name: severity
+          in: query
+          schema: {type: string}
+        - name: scope
+          in: query
+          schema: {type: string}
+        - name: type
+          in: query
+          schema: {type: string}
+        - name: tenant_id
+          in: query
+          schema: {type: string}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 0}
+        - name: offset
+          in: query
+          schema: {type: integer, default: 0}
+      responses:
+        '200':
+          description: Always an envelope; count is returned rows, total_count ignores pagination; alerts is null when no rows exist
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [alerts, count, total_count, offset, limit, has_more]
+                properties:
+                  alerts: {type: array, nullable: true, items: {$ref: '#/components/schemas/Alert'}}
+                  count: {type: integer}
+                  total_count: {type: integer}
+                  offset: {type: integer}
+                  limit: {type: integer}
+                  has_more: {type: boolean}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+        '500': {$ref: '#/components/responses/AlertServerError'}
+  /api/v1/reports/types:
+    get:
+      operationId: reportTypes
+      x-source: {path: server/api_reports.go, handler: handleReportTypes}
+      tags: [Reports]
+      summary: List built-in report type identifiers
+      description: Session authentication only; no additional role or tenant authorization in the handler. Returns strings, not type descriptor objects.
+      responses:
+        '200':
+          description: Built-in type identifiers and their count
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [types, count]
+                properties:
+                  types:
+                    type: array
+                    items:
+                      type: string
+                      enum: [device_inventory, usage_summary, supplies_status, alert_history, agent_status, fleet_health, usage_by_device, usage_by_agent, usage_by_site, usage_by_tenant, usage_trends, top_printers]
+                  count: {type: integer}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+  /api/v1/reports/summary:
+    get:
+      operationId: reportSummary
+      x-source: {path: server/api_reports.go, handler: handleReportSummary}
+      tags: [Reports]
+      summary: Read global reporting summary
+      description: Session authentication only; no additional role authorization or caller tenant filtering in the handler.
+      responses:
+        '200':
+          description: Reporting counts and storage/runtime statistics; partial schema
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ReportSummary'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/v1/reports:
+    get:
+      operationId: listReports
+      x-source: {path: server/api_reports.go, handler: handleReports}
+      tags: [Reports]
+      summary: List saved report definitions
+      description: |
+        Session authentication only; no additional role authorization or caller
+        tenant filtering. These are definitions, not generated report results.
+        Nonempty type, scope, created_by use exact DB equality. A nonempty
+        built_in compares true only for the literal string true; all other
+        nonempty values select false. Invalid integers are ignored. Positive
+        limit enables pagination without a cap; offset applies only when both
+        limit and offset are positive. Ordering is name ascending. count is the
+        returned row count, not the total matching count. tenant_id is not read.
+      parameters:
+        - name: type
+          in: query
+          schema: {type: string}
+        - name: scope
+          in: query
+          schema: {type: string}
+        - name: created_by
+          in: query
+          schema: {type: string}
+        - name: built_in
+          in: query
+          schema: {type: string}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 0}
+        - name: offset
+          in: query
+          schema: {type: integer, default: 0}
+      responses:
+        '200':
+          description: Definitions envelope; reports is null when no rows exist
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reports, count]
+                properties:
+                  reports: {type: array, nullable: true, items: {$ref: '#/components/schemas/ReportDefinition'}}
+                  count: {type: integer}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/v1/tenants:
+    get:
+      operationId: listTenants
+      x-source: {path: server/tenancy/handlers.go, handler: handleTenants}
+      tags: [Tenancy]
+      summary: List tenants
+      description: Requires enabled tenancy and tenants.read (admin only in the reviewed role policy). No query parameters or pagination are read. DB ordering is created_at descending. Authentication runs before the tenancy-enabled check; disabled tenancy returns 404 for authenticated requests.
+      responses:
+        '200':
+          description: Tenant array, null when no DB rows exist; partial item schema
+          content:
+            application/json:
+              schema:
+                type: array
+                nullable: true
+                items: {$ref: '#/components/schemas/Tenant'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '405':
+          description: Unsupported method; empty body
+        '500':
+          description: Failed to list tenants; JSON-shaped body without an application/json header (Go may infer text/plain)
+          content:
+            text/plain:
+              schema: {type: string, example: '{"error":"failed to list tenants"}'}
+  /api/v1/tenants/{tenantID}/sites:
+    get:
+      operationId: listTenantSites
+      x-source: {path: server/tenancy/sites.go, handler: handleSitesCollection}
+      tags: [Tenancy]
+      summary: List sites belonging to a tenant
+      description: Routed via handleTenantRoute and registered sites subresource. Requires enabled tenancy and tenants.read for tenantID (admin only in the reviewed role policy). No query parameters or pagination are read. No tenant-existence check is made; an unknown tenant can return an empty array. Agent counts are best-effort; lookup errors are ignored and zero counts are omitted.
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        '200':
+          description: Sites array; empty results are always an empty array, not null; partial item schema
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Site'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '405':
+          description: Unsupported method; empty body
+        '500':
+          description: Failed to list sites; text/plain JSON-shaped error via http.Error
+          content:
+            text/plain:
+              schema: {type: string, example: '{"error":"failed to list sites"}'}
 components:
   securitySchemes:
     sessionBearer:
       type: http
       scheme: bearer
-      description: User session token returned by login; not a JWT or an agent token. Exact Bearer prefix required.
+      description: User session token returned by login; not a JWT or an agent token. Exact Bearer prefix required. A recognized bearer header takes precedence over the cookie; an invalid bearer token does not fall back to a valid cookie. An unrecognized header format falls back to the cookie.
     sessionCookie:
       type: apiKey
       in: cookie
       name: pm_session
       description: Alternative to bearer authentication, not an additional requirement.
   parameters:
+    Serial:
+      name: serial
+      in: query
+      required: true
+      description: Nonempty device serial; missing or empty value returns 400.
+      schema: {type: string, minLength: 1}
     Limit:
       name: limit
       in: query
-      description: Include to request paginated results. Use 1–200; invalid/nonpositive values become 50.
+      description: Nonempty value requests paginated fleet results. Use 1–200; invalid/nonpositive values become 50, values above 200 clamp; empty value uses the legacy array.
       schema: {type: integer, minimum: 1, maximum: 200}
     Offset:
       name: offset
@@ -180,6 +510,7 @@ components:
   schemas:
     Agent:
       type: object
+      description: Partial verified list-response schema; additional fields may be returned.
       additionalProperties: true
       properties:
         id: {type: integer, format: int64}
@@ -195,12 +526,125 @@ components:
         token: {type: string, description: Always blank in list response}
     Device:
       type: object
+      description: Partial verified device-list schema; additional device and latest-metrics fields may be returned.
       additionalProperties: true
       properties:
         serial: {type: string}
         agent_id: {type: string}
         manufacturer: {type: string}
         model: {type: string}
+    MetricsSnapshot:
+      type: object
+      description: Partial verified snapshot schema. Zero counters and empty agent_id/toner_levels are omitted; id may be zero because the history query does not select it.
+      additionalProperties: true
+      required: [id, serial, timestamp]
+      properties:
+        id: {type: integer, format: int64}
+        serial: {type: string}
+        agent_id: {type: string}
+        timestamp: {type: string, format: date-time}
+        page_count: {type: integer}
+        color_pages: {type: integer}
+        mono_pages: {type: integer}
+        scan_count: {type: integer}
+        toner_levels: {type: object, additionalProperties: true}
+    Alert:
+      type: object
+      description: Partial verified alert schema; additional alert lifecycle/notification fields may be returned.
+      additionalProperties: true
+      properties:
+        id: {type: integer, format: int64}
+        type: {type: string}
+        severity: {type: string}
+        scope: {type: string}
+        status: {type: string}
+        tenant_id: {type: string}
+        site_id: {type: string}
+        agent_id: {type: string}
+        device_serial: {type: string}
+        title: {type: string}
+        message: {type: string}
+        triggered_at: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    AlertSummary:
+      type: object
+      description: Partial verified summary schema; scope breakdowns and additional state fields may be returned. Map fields can be null.
+      additionalProperties: true
+      properties:
+        active_count: {type: integer}
+        acknowledged_count: {type: integer}
+        critical_count: {type: integer}
+        warning_count: {type: integer}
+        info_count: {type: integer}
+        resolved_today_count: {type: integer}
+        suppressed_count: {type: integer}
+        active_rules: {type: integer}
+        active_channels: {type: integer}
+        alerts_by_type: {type: object, nullable: true, additionalProperties: {type: integer}}
+        alerts_by_scope: {type: object, nullable: true, additionalProperties: {type: integer}}
+        is_quiet_hours: {type: boolean}
+        has_maintenance: {type: boolean}
+    ReportDefinition:
+      type: object
+      description: Partial verified definition schema; report options, delivery configuration and additional fields may be returned.
+      additionalProperties: true
+      properties:
+        id: {type: integer, format: int64}
+        name: {type: string}
+        description: {type: string}
+        type: {type: string}
+        format: {type: string}
+        scope: {type: string}
+        tenant_ids: {type: array, items: {type: string}}
+        site_ids: {type: array, items: {type: string}}
+        agent_ids: {type: array, items: {type: string}}
+        created_by: {type: string}
+        is_built_in: {type: boolean}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    ReportSummary:
+      type: object
+      description: Partial verified summary schema; additional schedule/run statistics may be returned.
+      additionalProperties: true
+      properties:
+        total_reports: {type: integer}
+        built_in_reports: {type: integer}
+        custom_reports: {type: integer}
+        active_schedules: {type: integer}
+        total_schedules: {type: integer}
+        total_runs: {type: integer}
+        runs_today: {type: integer}
+        runs_last_24h: {type: integer}
+        failed_runs_today: {type: integer}
+        failed_runs_last_24h: {type: integer}
+        successful_runs: {type: integer}
+        average_run_time_ms: {type: integer, format: int64}
+        storage_used_bytes: {type: integer, format: int64}
+        reports_by_type: {type: object, nullable: true, additionalProperties: {type: integer}}
+    Tenant:
+      type: object
+      description: Partial verified tenant schema; contact, billing and additional fields may be returned.
+      additionalProperties: true
+      properties:
+        id: {type: string}
+        name: {type: string}
+        description: {type: string}
+        login_domain: {type: string}
+        created_at: {type: string, format: date-time}
+    Site:
+      type: object
+      description: Partial verified site schema; filter rules and additional fields may be returned. Zero agent_count/device_count are omitted.
+      additionalProperties: true
+      properties:
+        id: {type: string}
+        tenant_id: {type: string}
+        name: {type: string}
+        description: {type: string}
+        address: {type: string}
+        created_at: {type: string, format: date-time}
+        agent_count: {type: integer}
+        device_count: {type: integer}
     Pagination:
       type: object
       required: [total_count, has_more, limit, offset]
@@ -211,7 +655,7 @@ components:
         offset: {type: integer}
   responses:
     BadRequest:
-      description: Invalid JSON or missing credentials
+      description: Invalid JSON, missing credentials/serial, or invalid since timestamp, depending on the operation
       content: {text/plain: {schema: {type: string}}}
     Unauthorized:
       description: Missing/invalid session or credentials
@@ -222,6 +666,20 @@ components:
     MethodNotAllowed:
       description: Unsupported HTTP method
       content: {text/plain: {schema: {type: string}}}
+    NotFound:
+      description: Device/owning agent unavailable to a scoped metrics request, metrics bounds unavailable, or tenancy disabled, depending on the operation
+      content: {text/plain: {schema: {type: string}}}
+    AlertServerError:
+      description: Failed to get/count/list alerts; JSON error from the alert handler (authorization-not-configured errors, if miswired, are text/plain)
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error: {type: string}
+        text/plain:
+          schema: {type: string}
     ServerError:
-      description: Storage or session creation failed
+      description: Storage, session creation, or authorization configuration failed
       content: {text/plain: {schema: {type: string}}}

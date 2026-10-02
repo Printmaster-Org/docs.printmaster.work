@@ -1,19 +1,27 @@
 ---
 title: "API Reference"
-description: "Verified server integration overview and initial OpenAPI subset."
+description: "Separate Server, Agent-local, and machine-protocol references."
 weight: 30
 icon: "⇄"
 source: "docs/api/README.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 ---
 
-Start with the [server OpenAPI reference](/api/openapi/) or [download the OpenAPI YAML](/openapi/server.yaml). This is an **initial verified subset of five existing operations**, not a complete endpoint inventory or a new API service. Reviewed against PrintMaster snapshot `565f4c0`; the contract version is independent of the program release. Existing UI endpoints have **no separate broad, stable public-API compatibility guarantee**.
+Choose the reference for the host and credential you use. Reviewed contracts target PrintMaster snapshot `eeb6259`; these are existing APIs, not new stable product interfaces.
+
+| Reference | Coverage | Credential |
+| --- | --- | --- |
+| [Server OpenAPI](/api/openapi/) | 14 operations: sessions, lists, metrics, alerts, reports, tenancy | Server user session |
+| [Agent OpenAPI](/api/agent/) | 7 local read operations: devices, profiles, metrics, version | Agent session cookie or allowed loopback access |
+| [Agent↔Server protocol](/api/protocol/) | Enrollment/upload/update/WebSocket route overview; payload contract pending | Join/agent tokens |
+
+Existing UI endpoints have **no separate broad, stable public-API compatibility guarantee**. See the [concrete product API roadmap](/development/public-api-roadmap/) for proposed changes in the program repository.
 
 ## Server API
 
 The default standalone server uses **`https://localhost:9443`**. Replace localhost with your server's hostname for remote clients and configure trusted TLS. HTTP on port **9090** is optional: it requires reverse-proxy mode (`BEHIND_PROXY=true`, `PROXY_USE_HTTPS=false`), with public HTTPS terminated at your trusted proxy. `PROXY_USE_HTTPS=true` selects HTTPS upstream instead. See [configuration](/guides/configuration/).
 
-The current specification covers only:
+The specification includes these core operations plus read-only metrics, alerts, reports, tenants, and sites:
 
 | Operation | Method and path |
 | --- | --- |
@@ -27,13 +35,13 @@ The OpenAPI reference describes verified request/response details, pagination, a
 
 ## Authentication
 
-Protected operations in this subset accept a **user session token** via `Authorization: Bearer <session-token>` **or** the `pm_session` cookie. Local login returns the token and sets the cookie; use the application's SSO flow when local credentials are unavailable. Role and tenant permissions still apply, including `agents.read` and `devices.read` for the fleet lists.
+Protected Server operations accept a **user session token** via `Authorization: Bearer <session-token>` **or** the `pm_session` cookie. Local login returns the token and sets the cookie; use the application's SSO flow when local credentials are unavailable. Role/tenant checks differ between handlers. The expanded spec calls out missing filtering and the empty-agent device-scope edge; do not assume a uniform isolation guarantee.
 
 **Agent bearer tokens are different credentials:** agent-to-server authentication does not grant a user session for these operations. Never publish either kind of credential in documentation or send it to this public docs site.
 
 ## Agent API
 
-Local agent routes are outside this server specification. In local auth mode, protected routes do not allow unrestricted remote access: loopback admin bypass requires `allow_local_admin = true`. The current loopback check also examines forwarding headers; restrict direct agent access and sanitize those headers at a trusted proxy. Disabled auth is unsafe on untrusted networks. See [agent auth configuration](/guides/configuration/#authentication-settings).
+Local Agent routes have a [separate specification](/api/agent/) and `pm_agent_session` cookie authentication. In local auth mode, loopback admin bypass requires `allow_local_admin = true`. The wrapper also examines forwarding headers; restrict direct agent access and sanitize those headers at a trusted proxy. Disabled auth is unsafe on untrusted networks. See [agent auth configuration](/guides/configuration/#authentication-settings).
 
 ## Error Responses
 

@@ -92,7 +92,7 @@ The [server API overview](https://docs.printmaster.work/api/) links to the initi
 
 ## API documentation and accuracy
 
-The public [OpenAPI page](https://docs.printmaster.work/api/openapi/) renders a validated, initial five-operation server contract. See [API_MAINTENANCE.md](API_MAINTENANCE.md) for adding verified operations and the distinction between documenting existing routes and implementing a stable public product API. Request execution is disabled; fleet credentials stay off the hosted page.
+Public [Server OpenAPI](https://docs.printmaster.work/api/openapi/) covers 14 operations; [Agent OpenAPI](https://docs.printmaster.work/api/agent/) covers 7 local reads. A [machine-protocol guide](https://docs.printmaster.work/api/protocol/) separates enrollment/upload tokens from user credentials. See [API_MAINTENANCE.md](API_MAINTENANCE.md) for contract maintenance and the [product API roadmap](content/development/public-api-roadmap.md) for concrete program changes. Request execution remains disabled; fleet credentials stay off the hosted page.
 
 See [DOCS_AUDIT.md](DOCS_AUDIT.md) for the targeted accuracy pass, implementation evidence, and remaining unaudited content. A passing static build does not establish product accuracy for every imported document.
 

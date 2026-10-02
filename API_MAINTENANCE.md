@@ -1,12 +1,12 @@
 # Maintaining the public OpenAPI reference
 
-The public page is `/api/openapi/`; the downloadable contract is `/openapi/server.yaml`. Both work on GitHub Pages and Docker because they are static assets. Publishing them does not implement new endpoints or change authentication on PrintMaster servers.
+Server reference: `/api/openapi/`, contract `/openapi/server.yaml` (14 operations). Agent reference: `/api/agent/`, contract `/openapi/agent.yaml` (7 operations). `/api/protocol/` explains machine communication but is not a complete payload specification. These work on GitHub Pages and Docker as static assets; publishing them does not implement endpoints or change authentication.
 
 ## Add or revise an operation
 
 1. Read the actual route registration, handler, authorization wrapper, and serialized Go types in the program repository. Do not copy unverified old documentation.
-2. Edit `static/openapi/server.yaml`: record method/path, query parameters, required body fields, response shapes, HTTP error statuses/content types, and security requirements. Use user-session authentication only where the route actually uses it; agent tokens are a separate credential class.
-3. Record the reviewed program commit in the spec description and audit notes. The OpenAPI `info.version` tracks this contract, not the binary version. Initial coverage is deliberately limited to five reviewed operations; update the coverage regression test when adding more.
+2. Edit the appropriate contract: `static/openapi/server.yaml` or `static/openapi/agent.yaml`. Record method/path, query parameters, response shapes, error statuses/content types, and actual security requirements. Server user sessions, Agent cookies, and machine tokens are separate credential classes. Document missing authorization/filtering checks rather than implying they exist.
+3. Record `x-reviewed-commit` and each operation's `x-source` path/handler. The OpenAPI `info.version` tracks the contract, not the binary version. Update the explicit coverage regression test when adding operations. Static provenance checks are not live handler contract tests.
 4. Run validation and build checks:
 
    ```bash
@@ -24,5 +24,7 @@ The viewer uses locally installed Swagger UI assets and a lockfile; no public CD
 ## Documentation versus a stable public product API
 
 This pass documents existing server routes. To offer a separately supported public API, implement that contract in the **program repository**, decide versioning/deprecation guarantees, select an appropriate automation credential model, add handler/authorization contract tests, and validate tenant isolation. Do not simply declare current internal/UI routes permanently stable.
+
+Concrete implementation proposals, source modules, acceptance tests, and compatible PR-sized rollout are in `content/development/public-api-roadmap.md`. Address tenant isolation/trusted-proxy findings before expanding multi-tenant automation. Protocol OpenAPI and WebSocket AsyncAPI remain separate follow-ups.
 
 Try-it-out stays disabled on the public reference. Use a local API client against your HTTPS server; never paste production credentials into a hosted documentation page. Enabling cross-origin browser execution later needs a deliberate CORS/auth/CSRF review in the server, not just a UI toggle.
