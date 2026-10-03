@@ -56,3 +56,9 @@ The original operational pass did **not** review API pages or contracts. The sep
 - Review migration records, imported source docs, templates, and package/release/installer configuration separately; none was certified by the operational pass.
 
 Do not infer that untouched pages, or every paragraph of a corrected page, are accurate from this record. Recheck source behavior when upgrading beyond `565f4c0`.
+
+## Report query-scope performance follow-up, 2026-10-03
+
+Program source commit [`4fef992`](https://github.com/Printmaster-Org/printmaster/commit/4fef9920109e30c691589531dc143311bbe4b785) moves tenant-scoped report reads for agents, devices, tenants, sites, and alerts into exact storage predicates. Site membership now uses a single SQL query with `EXISTS` rather than per-agent site lookups; site inventory fetches selected sites in one batch. Empty tenant scopes remain empty. SQLite and PostgreSQL tests cover cross-tenant and mismatched site cases.
+
+No HTTP behavior, OpenAPI coverage, route, product, or protocol version changed. Generated report data and alert histories still materialize in memory; per-device metric retrieval and historical ownership limitations remain. Program validation: full Server tests passed; PostgreSQL report-security integration tests passed with the `integration` build tag. This follow-up is not a release or runtime certification.
