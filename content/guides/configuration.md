@@ -437,10 +437,13 @@ Most settings can be changed through the web interface:
 
 ### Server UI
 
-- **Settings** → **General**: Basic server settings
-- **Settings** → **Authentication**: User management
-- **Settings** → **Updates**: Fleet update policies
-- **Settings** → **Integrations**: Webhooks and API
+- **Admin** → **Users**: Local accounts and invitations
+- **Admin** → **Access**: OIDC providers, role reference, and active sessions
+- **Admin** → **Tenants**: Tenant accounts and assignments
+- **Admin** → **Fleet**: Managed discovery settings, overrides, and agent update policy
+- **Admin** → **Server**: Instance settings, grouped by category: Network & Proxy, Authentication & Rate Limits, TLS & Certificates, Logging Level, Release Intake, Server Self-Update, SMTP Notifications, and Administrator Notifications
+- **Admin** → **Alerts**: Alert rules, channels, escalation, and notification behavior
+- **Admin** → **Audit**: Administrative activity records
 
 UI persistence and activation depend on the setting. Some changes require restart; server environment-set keys cannot be overridden by managed settings.
 
