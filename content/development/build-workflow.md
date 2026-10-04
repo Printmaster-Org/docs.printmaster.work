@@ -195,27 +195,35 @@ During `0.x.x` versions, breaking changes are acceptable in MINOR releases since
   - Server releases: `server-v0.2.0`
   - Combined releases: `v0.2.0` (both bumped together)
 
-## CI/CD Integration (Future)
+## CI/CD Integration
 
-When you add GitHub Actions:
+This section was reviewed against PrintMaster commit
+[`f556dd3`](https://github.com/Printmaster-Org/printmaster/commit/f556dd33e1e671ad49ec6c381a834d7a6942c438).
+The imported sections elsewhere on this page retain their original source metadata.
 
-```yaml
-# .github/workflows/release.yml
-on:
-  push:
-    tags:
-      - 'v*'
+The program's `ci.yml` workflow runs on pushes to `main`, component release
+tags (`agent-vX.Y.Z` and `server-vX.Y.Z`), pull requests targeting `main`, and
+manual dispatch. Its aggregate **CI Passed** job succeeds only when the Agent,
+Server, JavaScript, mock E2E, and Docker E2E jobs succeed; Agent and Server also
+depend on the Common job.
 
-jobs:
-  release:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build Release
-        run: .\build.ps1 agent
-      - name: Create GitHub Release
-        # ... attach binaries
-```
+The `cd-agent.yml` and `cd-server.yml` workflows run on `main`, their respective
+component release tags, or manual dispatch. Before building binaries or
+publishing container images, each waits for **CI Passed** on the exact triggering
+commit (`github.sha`), not a moving branch ref.
+
+Both gates use `matiasalbarello/wait-on-check-action-ts` v1.2.0, pinned to commit
+`8087812521cdb59ebc7751984b31b17209b30eeb`. This action runs natively on Node.js 24
+and needs only the workflow's `GITHUB_TOKEN` with `checks: read` (the gate job also
+retains `contents: read`). It polls every 15 seconds and accepts only `success`;
+skipped, cancelled, or failed checks do not unblock CD. Missing checks are not
+accepted: discovery can wait up to 900 seconds, with a 15-minute step timeout
+capping the entire discovery-and-completion wait. The action itself fails on
+disallowed conclusions or exhausted discovery; GitHub stops the step on timeout.
+No separate conclusion-output guard is needed.
+
+For manual CD runs, ensure CI has also run on the selected commit. Dispatching CD
+alone does not start CI, and an absent **CI Passed** check blocks publication.
 
 ## Troubleshooting
 
