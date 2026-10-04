@@ -157,6 +157,8 @@ This document captures the agreed strategy for server- and agent-driven updates,
    - **Check for Update**: POST `/api/autoupdate/check`, identical to the server-driven `check_update` command.
    - **Force Reinstall**: POST `/api/autoupdate/force` with reason `agent_ui_force_reinstall`, which bypasses version/policy guards but still enforces disk-space, hashing, and restart health checks.
 - Buttons automatically disable when the auto-update manager is unavailable (agent offline, policy disabled, etc.) or when a run is already in progress, preventing conflicting operations.
+- The Agent manager holds exclusive operation ownership from manifest lookup through installation. Overlapping scheduled checks, manual checks, and forced reinstalls return an `update operation already in progress` error inside the manager; a `pending` status does not release ownership. Requests are rejected rather than queued. Scheduled checks retain their normal rescheduling behavior.
+- The local POST handlers above still acknowledge background dispatch with HTTP `200` (`check_triggered` or `force_triggered`), not installation success or a synchronous busy response. A later manager busy error is logged; inspect status/logs before retrying. Server-delivered commands report manager errors through update progress. These write operations are outside the reviewed [Agent OpenAPI read subset](/api/agent/); no route, authorization, or response-schema change is introduced by operation locking.
 - Callouts highlight when a newer build is available so onsite staff know when a manual reinstall will have an effect.
 
 This plan should be treated as a living document; check off tasks as they land and adjust phases as we learn more from early prototypes.
