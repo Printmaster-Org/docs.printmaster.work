@@ -225,6 +225,20 @@ No separate conclusion-output guard is needed.
 For manual CD runs, ensure CI has also run on the selected commit. Dispatching CD
 alone does not start CI, and an absent **CI Passed** check blocks publication.
 
+### Agent development release publication
+
+Reviewed fix: [source commit 9e4b46c](https://github.com/Printmaster-Org/printmaster/commit/9e4b46c619a086fd62c1788b85decfaba712a7dd), separate from persistent Fleet channel/bootstrap commit `589e269fb1cd18a48383cd6e757bc32bdab4159b`. Validation: actionlint v1.7.7 passed workflow expressions/job wiring (external shellcheck/pyflakes disabled), Bash syntax passed, independent YAML parsing passed, and 52 Jest tests passed, including main/tag dependency cases, failed dependencies, full asset staging and missing/empty binary rejection. The canonical docs tests and fresh Hugo/Docker link/anchor/runtime smoke checks passed. This validates source/configuration locally; no new remote dev-release publication is claimed from this validation.
+
+**CD Agent** builds Linux amd64/arm64, Windows amd64 and macOS amd64/arm64 binaries plus the Docker manifest after CI. A successful `main` run then creates GitHub prerelease `agent-v<base-version>-dev.<short-sha>`, explicitly targeting the built full SHA. No product VERSION bump is needed for dev publication.
+
+**Skip root cause:** CD Agent [run 37357026728](https://github.com/Printmaster-Org/printmaster/actions/runs/37357026728) completed binaries/Docker successfully but skipped **Build RPM Packages (Fedora)** and **Create Agent Dev Release**. RPM is stable-tag-only, while dev publication incorrectly depended on RPM success. GitHub's implicit successful-dependency gate skipped dev publication on `main`. The fix removes only that tag-only dependency; binary/Docker success remains mandatory. Failed/cancelled dependencies cannot publish. Stable releases still require RPM packaging.
+
+Dev asset staging copies every supplied `printmaster-*` distributable and requires nonempty binaries for all five matrix targets. Missing/empty binaries or unmatched uploads fail rather than publishing an empty prerelease. Debian packages are included when built; Windows MSI/RPM remain stable-tag-only. This does not add dev MSI/RPM or dev package-repository publication. Docker retains `main` and `dev-<short-sha>` tags.
+
+Previously skipped releases are not backfilled automatically. Publish a new `main` push containing the fix, or dispatch **CD Agent** on updated `main` after its CI succeeds; verify **Create Agent Dev Release** and attached binaries. Re-running an old run uses its old workflow revision and is not reliable recovery. Local lint/tests do not prove GitHub publication.
+
+To consume dev binaries, enable Server prerelease intake, restart when required, sync cache and select the Agent channel. See [persistent Fleet channels and old-Agent bootstrap](/guides/configuration/#agent-update-channels). Product, Docker and HTTP/machine protocol versions remain independent; no protocol/contract version changes are introduced here.
+
 ## Troubleshooting
 
 ### "Uncommitted changes detected"
