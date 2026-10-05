@@ -38,6 +38,21 @@ Requests contain at most 30 serials in this UI (the API maximum is 100), with at
 
 The Devices overview uses authorized index device/agent counts and indexed page-count totals. It does not claim connected-agent counts, fleet-global throughput or complete fresh supply totals. Compact summary cards are keyboard-accessible actions: Agents opens agent filtering, Devices clears filters, Total Pages sorts by indexed page count. Cards remain available on mobile.
 
+## Deleting devices
+
+Right-click a device and choose **Delete Device**, or select multiple devices and right-click a selected row/card to choose **Delete N Devices**. Both paths use the same in-page confirmation modal, not a native browser confirmation. Cancel makes no deletion requests and preserves selection.
+
+The modal offers two initially unchecked options:
+
+- **Also delete metrics history** requests explicit historical metrics cleanup. Leaving it unchecked does not override the database's existing foreign-key cascade policy; it is not a guarantee that history survives device deletion.
+- **Also delete from agent** requests removal from the owning Agent's local database when connected over WebSocket. For a mixed selection it applies to devices with an associated Agent; unowned records are server-only. Offline Agents or failed Agent deletions do not prevent deletion of an existing Server record, and the Server response reports whether Agent removal succeeded. Devices may be rediscovered on the next scan or re-uploaded if they remain on the Agent.
+
+Bulk deletion sends one `POST /api/v1/devices/delete` JSON request per serial, with `agent_id`, `delete_metrics`, and `delete_from_agent`. It continues after individual failures, clears selection, refreshes inventory, and reports deleted/failed counts. This is not an atomic bulk or cross-process operation. Server authorization uses each device's stored owner, not the browser's claimed `agent_id`; unowned Server records require a global administrator.
+
+Server-initiated Agent deletion suppresses the redundant Agent-to-Server deletion notification, avoiding a double-delete race that could incorrectly report `409 Device ownership changed`. A real disappearance/ownership replacement between lookup and the owner-qualified Server delete still returns `409`; refresh inventory before retrying. See [deletion ownership and ordering](/api/machine-ownership/#http-integration-requirement). This write route remains outside the reviewed read-only OpenAPI subset; no HTTP/protocol/product version changes are introduced.
+
 ## Compatibility and implementation
+
+Deletion marker forwarding and the shared single/bulk delete flow were reviewed at [source commit e52340a](https://github.com/Printmaster-Org/printmaster/commit/e52340a6bc52561d94cdd5ad521f733632d99cfb). Validation passed the full Server Go suite, authenticated WebSocket deletion and ownership-race regressions, 47 JavaScript tests, and 12 desktop context-menu tests across Chromium (two viewport sizes), Firefox and WebKit; six mobile context-menu cases were intentionally skipped. These are source validation results, not a deployed-release claim.
 
 Requires the Server inventory routes introduced by backend [`bdf1f8f`](https://github.com/Printmaster-Org/printmaster/commit/bdf1f8fea22e91d490238d9ab266f2690070c82d): `GET /api/v1/devices/index`, `POST /api/v1/devices/rows`, `POST /api/v1/devices/metrics/query`. The shared Server UI/controller implementation was reviewed at [`11f502c`](https://github.com/Printmaster-Org/printmaster/commit/11f502c). There is no fallback to legacy all-device list loading. Other tabs and Agent-local inventory are outside this frontend slice. See [shared controller reuse](/development/shared-progressive-loading/).
