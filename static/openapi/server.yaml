@@ -1,25 +1,32 @@
 openapi: 3.0.3
-x-reviewed-commit: 864fc3ee040bbb28f25d779c69512c5b6999d421
+x-reviewed-commit: bdf1f8fea22e91d490238d9ab266f2690070c82d
 x-review-notes: |
   Reviewed 2026-10-02 against committed PrintMaster security hardening at
-  x-reviewed-commit, which contains the storage, tenant API, server channel,
+  864fc3ee040bbb28f25d779c69512c5b6999d421, containing storage, tenant API, server channel,
   and Agent authentication slices. This is a source revision, not a release.
   Per-operation x-source identifies reviewed committed handlers. Coverage
-  remains 14 Server operations; Agent's independent seven-operation contract
-  is unchanged. Contract 0.2.1 corrects authorization/tenant documentation and
-  response semantics without new operations, route or machine-protocol bumps.
+  now includes 17 Server operations: the three progressive inventory reads
+  and scoped legacy device list were additionally reviewed on 2026-10-05
+  at x-reviewed-commit (bdf1f8fea22e91d490238d9ab266f2690070c82d).
+  Their x-source.commit pins the newly reviewed implementation.
+  Other operations retain the 864fc3ee040bbb28f25d779c69512c5b6999d421 review;
+  this is not a new whole-API audit. Agent's seven-operation contract is unchanged.
+  Product versions and the machine protocol are unchanged.
   Stricter ownership/auth can deny previously accepted unsafe requests; this
-  compatible documentation patch is not a promise of permissive legacy access.
+  additive contract revision is not a promise of permissive legacy access.
 info:
   title: PrintMaster Server Integration API
-  version: 0.2.1
+  version: 0.3.0
   description: |
     Verified subset of existing server HTTP endpoints; not a complete
     API inventory or a new anonymous service. Reviewed against committed source
-    864fc3ee040bbb28f25d779c69512c5b6999d421; see x-review-notes.
+    bdf1f8fea22e91d490238d9ab266f2690070c82d for inventory only;
+    other operations retain the 864fc3ee040bbb28f25d779c69512c5b6999d421
+    review; see x-review-notes.
     No released binary or comprehensive runtime-security certification is claimed.
     x-source paths are relative to the program repository, not this docs repo.
-    Operation coverage and existing login/logout POST operations are retained.
+    Coverage adds three progressive inventory operations; existing operations
+    and login/logout POST operations are retained.
     This contract version is independent of the program version. Existing UI
     endpoints have no separate stable public-API compatibility guarantee.
     Use your own HTTPS server. User sessions are not agent registration tokens.
@@ -163,7 +170,7 @@ paths:
   /api/v1/devices/list:
     get:
       operationId: listDevices
-      x-source: {path: server/main.go, handler: handleDevicesList}
+      x-source: {path: server/main.go, handler: handleDevicesList, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d}
       tags: [Fleet]
       summary: List fleet devices with available latest metrics
       description: |
@@ -175,8 +182,13 @@ paths:
         [] envelope with total_count=0 and has_more=false; an empty restriction
         never reaches unrestricted storage queries. Scoped callers cannot see
         unassigned/foreign agents' devices. Counts and rows share the same
-        agent selection. Latest enrichment still queries by serial; ownership
-        history/reused serials need separate validation.
+        SQL tenant predicate joined through agents. Reads no longer load all
+        devices then filter. Ordered last_seen descending, serial ascending.
+        Latest enrichment uses indexed points matching both serial and the
+        current device agent_id; foreign-owner legacy metrics are excluded.
+        Historical ownership ledgers remain outside this operation. Legacy
+        no-limit lists remain unbounded; metric keys are internally chunked.
+        Scoped storage unavailable returns 500, never an unrestricted fallback.
       parameters:
         - {$ref: '#/components/parameters/Limit'}
         - {$ref: '#/components/parameters/Offset'}
@@ -195,6 +207,104 @@ paths:
                         required: [devices]
                         properties:
                           devices: {type: array, items: {$ref: '#/components/schemas/Device'}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/v1/devices/index:
+    get:
+      operationId: devicesIndex
+      x-source: {path: server/inventory_api.go, handler: handleDevicesIndex, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d}
+      tags: [Fleet]
+      summary: Lightweight caller-visible inventory index
+      description: |
+        Viewer or higher user session, reauthorized on every request. Nonadmins
+        need tenant memberships. SQL joins owning agents and matches exact
+        caller tenant IDs; empty matching scope returns [], not unrestricted
+        data. Returns all visible lightweight metadata for client search/sort/
+        filter, not a paginated snapshot. No query filters are implemented.
+        Ordered last_seen descending, serial ascending. page_count is the latest
+        current-owner-matched indexed metric (timestamp descending, page_count
+        descending for ties), zero when absent. No raw_data, consumables or toner
+        metrics are selected. Status messages are always an array. Empty optional
+        strings are present as empty strings; is_usb and page_count are present.
+        Agent-machine bearer credentials cannot authorize this operation.
+      responses:
+        '200':
+          description: Non-null lightweight metadata array, including []
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: '#/components/schemas/DeviceIndex'}}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/v1/devices/rows:
+    post:
+      operationId: queryDeviceRows
+      x-source: {path: server/inventory_api.go, handler: handleDevicesRows, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d}
+      tags: [Fleet]
+      summary: Hydrate selected inventory rows before lazy metrics
+      description: |
+        Viewer or higher user session; auth and exact caller tenant scope are
+        recalculated per request and enforced in the same device SELECT.
+        Serial identifiers are exact, not trimmed or case-folded. Duplicates
+        collapse; at most 100 distinct serials, body at most 65536 bytes.
+        Missing/null serials, blank keys, non-string keys, unknown JSON fields,
+        trailing JSON and malformed/oversized bodies return plain-text 400.
+        [] is valid. Unauthorized/missing serials are silently omitted, not
+        reported individually. Ordered last_seen descending, serial ascending,
+        not request order. Full stored DeviceWithMetrics inventory fields,
+        including consumables and raw_data, plus latest owner-matched page_count
+        only. No top-level toner_levels, color_pages, mono_pages, scan_count or
+        last_metrics_at. raw_data is the original inventory blob, not sanitized
+        metric content. Zero page_count is omitted by the legacy Go omitempty
+        tag; zero is also the fallback when no matching snapshot exists.
+        No metrics beyond page count are queried for row hydration.
+        initial_page_count is not selected and is therefore omitted.
+        JSON decoding is independent of the request Content-Type header.
+      requestBody: {$ref: '#/components/requestBodies/InventoryKeys'}
+      responses:
+        '200':
+          description: Non-null full inventory row array, including []
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: '#/components/schemas/DeviceRow'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '405': {$ref: '#/components/responses/MethodNotAllowed'}
+        '500': {$ref: '#/components/responses/ServerError'}
+  /api/v1/devices/metrics/query:
+    post:
+      operationId: queryDeviceMetrics
+      x-source: {path: server/inventory_api.go, handler: handleDevicesMetricsQuery, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d}
+      tags: [Metrics]
+      summary: Lazy latest metrics for selected visible devices
+      description: |
+        Same viewer-or-higher user session, per-request authorization, exact
+        serial validation, 100-distinct-key and 65536-byte body limits as rows.
+        Scope is enforced in the same SELECT by joining current device owners
+        through agents. Latest point matches serial AND current agent_id using
+        an owner/time index, not MAX over the full history. Ties use page_count,
+        color_pages, mono_pages, scan_count, toner_levels descending; identical
+        serialized values are equivalent. Ordered device last_seen descending,
+        serial ascending. Missing/unauthorized devices and devices without an
+        owner-matched snapshot are omitted. Empty result is []. Storage errors
+        return 500, not partial results or an unrestricted fallback. ID is 0
+        because this projection does not select storage IDs (Timescale may drop
+        them); zero counters and absent toner are omitted, not measured-null
+        values. fax_pages and tier are not selected. timestamp is metric time.
+        This is latest-only, not a historical ownership or tenant ledger.
+        JSON decoding is independent of the request Content-Type header.
+      requestBody: {$ref: '#/components/requestBodies/InventoryKeys'}
+      responses:
+        '200':
+          description: Non-null latest owner-matched MetricsSnapshot array
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: '#/components/schemas/InventoryMetrics'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '405': {$ref: '#/components/responses/MethodNotAllowed'}
@@ -521,6 +631,21 @@ paths:
             text/plain:
               schema: {type: string, example: '{"error":"failed to list sites"}'}
 components:
+  requestBodies:
+    InventoryKeys:
+      required: true
+      description: One JSON object; maximum 65536 bytes, maximum 100 distinct exact nonblank serials. Duplicates allowed and collapsed; [] allowed.
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [serials]
+            properties:
+              serials:
+                type: array
+                x-max-distinct-items: 100
+                items: {type: string, minLength: 1, pattern: '\S'}
   securitySchemes:
     sessionBearer:
       type: http
@@ -554,6 +679,78 @@ components:
       description: Used only with limit. Invalid or negative values become zero.
       schema: {type: integer, minimum: 0, default: 0}
   schemas:
+    DeviceIndex:
+      type: object
+      additionalProperties: false
+      required: [serial, agent_id, ip, manufacturer, model, hostname, location, asset_number, last_seen, status_messages, device_type, source_type, is_usb, spooler_status, page_count]
+      properties:
+        serial: {type: string}
+        agent_id: {type: string}
+        ip: {type: string}
+        manufacturer: {type: string}
+        model: {type: string}
+        hostname: {type: string}
+        location: {type: string}
+        asset_number: {type: string}
+        last_seen: {type: string, format: date-time}
+        status_messages: {type: array, items: {type: string}}
+        device_type: {type: string}
+        source_type: {type: string}
+        is_usb: {type: boolean}
+        spooler_status: {type: string}
+        page_count: {type: integer, description: Latest current-owner count; zero when absent}
+    DeviceRow:
+      type: object
+      description: Full persisted inventory projection; optional zero/empty fields omitted. Page count only; other top-level metrics deferred.
+      additionalProperties: false
+      required: [serial, agent_id, ip, last_seen, first_seen, created_at]
+      properties:
+        serial: {type: string}
+        agent_id: {type: string}
+        ip: {type: string}
+        manufacturer: {type: string}
+        model: {type: string}
+        hostname: {type: string}
+        firmware: {type: string}
+        mac_address: {type: string}
+        subnet_mask: {type: string}
+        gateway: {type: string}
+        consumables: {type: array, items: {type: string}}
+        status_messages: {type: array, items: {type: string}}
+        last_seen: {type: string, format: date-time}
+        first_seen: {type: string, format: date-time}
+        created_at: {type: string, format: date-time}
+        discovery_method: {type: string}
+        asset_number: {type: string}
+        location: {type: string}
+        description: {type: string}
+        web_ui_url: {type: string}
+        raw_data: {type: object, additionalProperties: true}
+        device_type: {type: string}
+        source_type: {type: string}
+        is_usb: {type: boolean}
+        port_name: {type: string}
+        driver_name: {type: string}
+        is_default: {type: boolean}
+        is_shared: {type: boolean}
+        spooler_status: {type: string}
+        usb_webui_available: {type: boolean}
+        page_count: {type: integer}
+    InventoryMetrics:
+      type: object
+      additionalProperties: false
+      description: Exact latest inventory projection. Storage id is not selected; zero counters and empty agent_id/toner_levels are omitted. No fax_pages or tier.
+      required: [id, serial, timestamp]
+      properties:
+        id: {type: integer, format: int64, enum: [0]}
+        serial: {type: string}
+        agent_id: {type: string}
+        timestamp: {type: string, format: date-time}
+        page_count: {type: integer}
+        color_pages: {type: integer}
+        mono_pages: {type: integer}
+        scan_count: {type: integer}
+        toner_levels: {type: object, additionalProperties: true}
     Agent:
       type: object
       description: Partial verified list-response schema; additional fields may be returned.
