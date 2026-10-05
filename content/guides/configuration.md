@@ -445,6 +445,20 @@ Most settings can be changed through the web interface:
 - **Admin** → **Alert Setup**: Alert rules, channels, escalation, and notification behavior
 - **Admin** → **Audit**: Administrative activity records
 
+### Agent update channels
+
+Implemented/reviewed at [source commit 685f0fe](https://github.com/Printmaster-Org/printmaster/commit/685f0feccd16b02916cb814f6cdea6d91693738c): Server update modal/command authorization, release intake/manifest selection, prerelease Server setting, single Fleet policy editor, and Agent operation-scoped channel installation. This is not a released/deployed binary claim.
+
+Fleet has **one scope-aware Auto-Update Policy editor** for global defaults and tenant overrides. Its cadence, pinning, maintenance window and rollout controls share the main **Save Changes** action. The separate **Agent Release Cache** panel only displays/syncs cached artifacts; it is not another policy editor. This removes the older reduced editor whose saves replaced maintenance/rollout values with defaults. No stored policies are reset by this cleanup.
+
+For a manual channel install, right-click a connected Agent and choose **Update Agent**. The confirmation offers **Configured channel (respect update policy)**, **Stable**, **Beta / Release Candidate**, and **Development**. The configured option retains the existing `check_update` behavior; an explicit channel is a **one-shot forced install** of that platform/architecture's latest cached manifest. It can reinstall or downgrade and bypasses maintenance windows/version pins. It does not persist a fleet/Agent scheduled-channel change. To follow a channel on scheduled checks, configure the Agent's existing `[auto_update].channel` (`stable`, `beta`, `dev`, or empty for build-derived defaults).
+
+**Prerelease prerequisite:** in **Admin → Server → Release Intake**, set **Include Beta / Dev Releases** to **Enabled**, save, restart the Server, then use **Sync from GitHub** in Agent Release Cache. Automatic follows the Server build type; release builds normally exclude prereleases, dev builds include them. Environment-set `releases.include_prerelease` remains locked. Intake classifies `-dev`/`-dev.*` as `dev`, other prerelease versions (including beta/rc/alpha) as `beta`, and versions without prerelease identifiers as `stable`. Existing cached beta artifacts/manifests incorrectly marked stable are repaired/re-signed when synced; stale mislabeled prerelease manifests are rejected for stable selection. A channel with no cached artifact cannot install.
+
+**Compatibility:** explicit channel selection uses the new `install_channel` Agent command. Older Agents ignore it rather than silently install their configured channel. Bootstrap them with an updated installer/binary, or configure their existing TOML channel and restart before using their existing update flow. Server command acknowledgment means dispatched, not installed; monitor progress/logs. Docker Agents still require container-image updates. Package-managed Agents use their existing package-repository update path, which must contain the requested version; channel selection does not add repositories or guarantee a downgrade works through a package manager. Beta/dev builds should be validated on a small test fleet before broader deployment.
+
+These command/configuration writes remain outside the reviewed read-only OpenAPI subsets. User-session Agent commands retain role/tenant authorization; machine manifests/downloads use Agent credentials. `install_channel` adds a command name, not an HTTP route or a breaking machine-message envelope change; existing commands remain supported. No product, contract or protocol version is bumped solely for this additive capability.
+
 UI persistence and activation depend on the setting. Some changes require restart; server environment-set keys cannot be overridden by managed settings.
 
 ---
