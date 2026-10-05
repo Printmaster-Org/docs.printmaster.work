@@ -26,6 +26,7 @@ These docs are now in the parent [/docs](/guides/) folder:
 - [Unraid Deployment](/deployment/unraid/) – Unraid-specific setup
 
 ## Architecture & Internals
+- [Shared progressive loading](/development/shared-progressive-loading/) – Reusable demand controller, adapters, limits and memory semantics
 - [SECURITY_ARCHITECTURE.md](/development/security-architecture/) – Authentication/authorization design
 - [WEBSOCKET_PROXY.md](/development/websocket-proxy/) – Server proxy tunnel details
 - [SNMP_REFERENCE.md](/development/snmp-reference/) – OIDs, vendor detection, discovery process

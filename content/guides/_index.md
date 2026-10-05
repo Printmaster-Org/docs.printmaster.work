@@ -25,6 +25,7 @@ Cross-platform printer/copier fleet management for MSPs, MPS providers, and IT d
 | Document | Description |
 |----------|-------------|
 | [Features Guide](/guides/features/) | All features explained with examples |
+| [Devices](/guides/devices/) | Progressive authorized inventory, filters, supplies and loading states |
 | [Configuration](/guides/configuration/) | Config files, environment variables, UI settings |
 | [Troubleshooting](/guides/troubleshooting/) | Common issues and solutions |
 | [FAQ](/guides/faq/) | Frequently asked questions |
