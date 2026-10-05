@@ -142,6 +142,18 @@ This document captures the agreed strategy for server- and agent-driven updates,
 
 ## Force Reinstall Controls
 
+### Manual release-channel installation and policy consolidation
+
+Source: [685f0fe](https://github.com/Printmaster-Org/printmaster/commit/685f0feccd16b02916cb814f6cdea6d91693738c). Validation passed full Agent and Server Go suites, focused channel/operation race-detector tests, 47 JavaScript unit tests, and 78 progressive inventory/context-menu browser tests across six configured projects (six mobile context-menu cases intentionally skipped). Regressions cover invalid/mismatched channel rejection, unchanged scheduled channel, tenant command denial, prerelease setting validation/restart metadata, cached beta re-signing/stable isolation, modal cancellation and policy-save preservation of maintenance/rollout fields. These are source/mock/fixture results, not a real multi-platform installation or package-repository compatibility certification.
+
+The Server **Update Agent** action now prompts for configured-channel checks or a one-shot **Stable**, **Beta / Release Candidate**, or **Development** install. Explicit selection dispatches `install_channel` with `channel` and `reason`, while the default preserves `check_update`. Server validates exact `stable`/`beta`/`dev` values after role/tenant authorization; payload data cannot replace the authorized command name. Agent validation repeats before dispatch. The manager retains whole-operation ownership, selects the channel without mutating scheduled configuration, rejects wrong-channel manifests, then reuses the existing forced-install pipeline. Existing forced-install preflight/integrity/platform limitations remain; this is not a new installer/repository implementation or signature-verification certification.
+
+Beta/rc/other prerelease artifacts no longer fall into stable intake. Existing cached channel metadata is repaired and affected manifests re-signed during sync; stable manifest selection excludes stale mislabeled prerelease versions. Development remains its own `dev` channel. Server UI exposes the existing prerelease-intake setting with explicit restart requirement, validation and environment-lock handling.
+
+Fleet Settings now owns the only complete scope-aware policy editor. Removed reduced duplicate loader/renderer/save code, preventing that editor from overwriting maintenance windows and rollout settings with defaults. The cache panel remains separately available as **Agent Release Cache**. Policy schemas/storage are unchanged; channels selected for manual installs are not a new fleet policy field.
+
+Older Agents require bootstrap updating (or their existing TOML channel configuration) before accepting `install_channel`; they do not silently interpret it as `force_update`. See [configuration workflow and compatibility](/guides/configuration/#agent-update-channels) for operational prerequisites and limitations.
+
 - The server UI now exposes a **Force Reinstall** action on each agent detail view. This button is only enabled when the agent maintains an active WebSocket session so the command can be delivered instantly.
 - Clicking the action prompts for confirmation, then issues a `force_update` command over the agent command channel. The payload includes a simple reason tag (currently `server_ui_force_reinstall`) for downstream logging and auditing.
 - Upon receiving the command, the agent's auto-update manager bypasses the usual `isUpdateNeeded` guard and downloads/reinstalls the latest manifest even when the reported version already matches. Maintenance-window and version-pin policies are intentionally skipped for this manual override, but disk-space checks, hashing, staging, and telemetry reporting still run.

@@ -40,6 +40,14 @@ The [machine ownership safeguards](/api/machine-ownership/) describe atomic stor
 
 ## Next contract work
 
+### Explicit channel update command
+
+Reviewed at [source commit 685f0fe](https://github.com/Printmaster-Org/printmaster/commit/685f0feccd16b02916cb814f6cdea6d91693738c), specifically `server/main.go::handleAgentCommand`, `agent/autoupdate_worker.go::handleServerCommand`, `agent/autoupdate/manager.go::ForceInstallLatestFromChannel`, `server/releases/intake_worker.go` and `server/releases/manager.go`. This additive command review does not expand the read-only OpenAPI subsets or certify every machine operation.
+
+The existing token-authenticated WebSocket command envelope now supports `command: install_channel` with `channel: stable|beta|dev` and an optional `reason`. It requests a one-shot forced install; scheduled Agent channel/policy remains unchanged. Existing `check_update` and `force_update` stay supported. Older Agents ignore the new command, so bootstrap an updated Agent before expecting channel selection. The Server's user-session `POST /api/v1/agents/command/{agentID}` validates channel after Agent-write role/tenant authorization and acknowledges dispatch only. These command writes are outside Server/Agent read-only OpenAPI subsets.
+
+Agent manifest requests continue to send the selected channel through the existing machine-token endpoint. Missing cached manifests or mismatched channel responses fail rather than falling back to stable. Enable prerelease intake, restart Server and sync artifacts before requesting beta/dev; cached legacy beta channel metadata/signatures are repaired during sync. No credential/message-envelope migration or protocol-version bump is needed for this additive command; old command behavior is retained. See [channel rollout implementation](/development/auto-update-plan/#manual-release-channel-installation-and-policy-consolidation).
+
 ### Device observation timestamps
 
 Reviewed at [source commit 090483d](https://github.com/Printmaster-Org/printmaster/commit/090483d79ed57c20019126ac4a6d0df1c245cb3f) for the Agent liveness worker, guarded storage writes, existing device upload and Server batch ingestion. This review is limited to observation freshness, not a new complete machine payload contract.
