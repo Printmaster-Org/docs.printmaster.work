@@ -1,6 +1,12 @@
 openapi: 3.0.3
 x-reviewed-commit: bdf1f8fea22e91d490238d9ab266f2690070c82d
+x-observation-reviewed-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
 x-review-notes: |
+  Observation-freshness follow-up reviewed at x-observation-reviewed-commit:
+  Agent serial-confirmed probes refresh stored last_seen without changing
+  inventory schemas/auth; dashboard offline/unknown classification remains
+  outside this subset. Affected x-source.observation-commit records this
+  limited upstream timestamp review, not a new whole-operation audit.
   Reviewed 2026-10-02 against committed PrintMaster security hardening at
   864fc3ee040bbb28f25d779c69512c5b6999d421, containing storage, tenant API, server channel,
   and Agent authentication slices. This is a source revision, not a release.
@@ -170,7 +176,7 @@ paths:
   /api/v1/devices/list:
     get:
       operationId: listDevices
-      x-source: {path: server/main.go, handler: handleDevicesList, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d}
+      x-source: {path: server/main.go, handler: handleDevicesList, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f}
       tags: [Fleet]
       summary: List fleet devices with available latest metrics
       description: |
@@ -214,7 +220,7 @@ paths:
   /api/v1/devices/index:
     get:
       operationId: devicesIndex
-      x-source: {path: server/inventory_api.go, handler: handleDevicesIndex, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d}
+      x-source: {path: server/inventory_api.go, handler: handleDevicesIndex, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f}
       tags: [Fleet]
       summary: Lightweight caller-visible inventory index
       description: |
@@ -242,7 +248,7 @@ paths:
   /api/v1/devices/rows:
     post:
       operationId: queryDeviceRows
-      x-source: {path: server/inventory_api.go, handler: handleDevicesRows, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d}
+      x-source: {path: server/inventory_api.go, handler: handleDevicesRows, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f}
       tags: [Fleet]
       summary: Hydrate selected inventory rows before lazy metrics
       description: |
@@ -681,6 +687,7 @@ components:
   schemas:
     DeviceIndex:
       type: object
+      description: Stored inventory observations. last_seen is not upload receipt or latest metric time; clients derive freshness. Cached status_messages do not guarantee current reachability. See /guides/devices/ for Agent monitoring limitations.
       additionalProperties: false
       required: [serial, agent_id, ip, manufacturer, model, hostname, location, asset_number, last_seen, status_messages, device_type, source_type, is_usb, spooler_status, page_count]
       properties:
@@ -692,7 +699,7 @@ components:
         hostname: {type: string}
         location: {type: string}
         asset_number: {type: string}
-        last_seen: {type: string, format: date-time}
+        last_seen: {type: string, format: date-time, description: Stored device observation time; updated Agents refresh on serial-confirmed liveness success. Failed probes do not refresh it.}
         status_messages: {type: array, items: {type: string}}
         device_type: {type: string}
         source_type: {type: string}
@@ -701,7 +708,7 @@ components:
         page_count: {type: integer, description: Latest current-owner count; zero when absent}
     DeviceRow:
       type: object
-      description: Full persisted inventory projection; optional zero/empty fields omitted. Page count only; other top-level metrics deferred.
+      description: Full persisted inventory projection; optional zero/empty fields omitted. Page count only; other top-level metrics deferred. last_seen is a stored device observation, not upload receipt or metric time; no computed online/offline field is added.
       additionalProperties: false
       required: [serial, agent_id, ip, last_seen, first_seen, created_at]
       properties:

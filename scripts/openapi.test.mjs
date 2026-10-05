@@ -56,7 +56,7 @@ test('progressive inventory separates lightweight index, row data and lazy metri
   const spec = await SwaggerParser.validate(path.join(root, 'static/openapi/server.yaml'));
   const revision = 'bdf1f8fea22e91d490238d9ab266f2690070c82d';
   const legacy = spec.paths['/api/v1/devices/list'].get;
-  assert.deepEqual(legacy['x-source'], {path: 'server/main.go', handler: 'handleDevicesList', commit: revision});
+  assert.deepEqual(legacy['x-source'], {path: 'server/main.go', handler: 'handleDevicesList', commit: revision, 'observation-commit': spec['x-observation-reviewed-commit']});
   assert.match(spec['x-review-notes'], /Other operations retain the 864fc3ee040bbb28f25d779c69512c5b6999d421 review/);
   for (const [route, method] of [['/api/v1/devices/index', 'get'], ['/api/v1/devices/rows', 'post'], ['/api/v1/devices/metrics/query', 'post']]) {
     const op = spec.paths[route][method];
@@ -86,6 +86,8 @@ test('progressive inventory separates lightweight index, row data and lazy metri
   assert.equal(index.additionalProperties, false);
   assert.equal(index.properties.page_count.type, 'integer');
   assert.equal(index.properties.status_messages.type, 'array');
+  assert.match(index.properties.last_seen.description, /serial-confirmed/);
+  assert.match(index.description, /not upload receipt/);
   assert.equal(index.properties.raw_data, undefined);
   assert.equal(index.properties.toner_levels, undefined);
   const row = spec.components.schemas.DeviceRow;
@@ -130,6 +132,20 @@ test('both contracts retain per-operation source provenance and unique IDs', asy
       }
     }
     assert.equal(new Set(ids).size, ids.length);
+  }
+});
+test('observation freshness review is scoped independently of baseline contracts', async () => {
+  for (const [name, paths] of [
+    ['server', ['/api/v1/devices/list', '/api/v1/devices/index', '/api/v1/devices/rows']],
+    ['agent', ['/devices/list', '/devices/discovered', '/api/devices/profile']],
+  ]) {
+    const spec = await SwaggerParser.validate(path.join(root, `static/openapi/${name}.yaml`));
+    assert.equal(spec['x-observation-reviewed-commit'], '090483d79ed57c20019126ac4a6d0df1c245cb3f');
+    assert.notEqual(spec['x-reviewed-commit'], spec['x-observation-reviewed-commit']);
+    for (const route of paths) {
+      const operation = spec.paths[route].get || spec.paths[route].post;
+      assert.equal(operation['x-source']['observation-commit'], spec['x-observation-reviewed-commit']);
+    }
   }
 });
 test('each reference selects its own local specification', () => {
