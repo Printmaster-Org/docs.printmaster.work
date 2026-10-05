@@ -20,6 +20,14 @@ Optional textual metadata is represented as an empty string; booleans and page c
 
 The index includes all caller-visible metadata, so fleet-size response growth remains unbounded. It does not implement server-side search/filter/pagination or a transactional snapshot across subsequent requests.
 
+### Observation freshness
+
+Observation semantics below were reviewed at [source commit 090483d](https://github.com/Printmaster-Org/printmaster/commit/090483d79ed57c20019126ac4a6d0df1c245cb3f), specifically `agent/liveness_worker.go`, `agent/agent/identity.go`, `agent/storage/sqlite.go`, `agent/upload_worker.go`, and Server ingestion/index/dashboard handlers. The contract's original inventory handler/schema provenance remains pinned separately; this follow-up does not re-audit all 17 operations or change contract 0.3.0.
+
+`last_seen` is a stored device-observation timestamp, not the Server's upload-receipt time or the latest metric timestamp. Updated Agents refresh it through bounded, serial-confirmed liveness GETs for visible network printers; failed/mismatched probes and save/unsave operations do not advance it. Existing Agents and local/spooler sources retain their own observation paths. The Server index/row/list shapes and query authorization are unchanged; `status_messages` and `raw_data` remain cached scan data, not freshly probed faults. No new `online` field or Server-side liveness filter is added. The Server UI derives Offline from 15-minute-old observations and Unknown from unusable timestamps; API consumers must apply their own documented freshness policy. See [reachability details and limitations](/guides/devices/#device-reachability-and-stale-scans).
+
+The dashboard's device-summary `status` now includes `offline` and `unknown` rather than defaulting every retained scan to `healthy`; this dashboard operation remains **outside** the reviewed 17-operation OpenAPI subset. No route, credential, product or protocol version changes are made.
+
 ## Hydrate rows before lazy metrics
 
 `POST /api/v1/devices/rows` accepts:

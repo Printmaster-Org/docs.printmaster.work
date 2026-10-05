@@ -40,6 +40,12 @@ The [machine ownership safeguards](/api/machine-ownership/) describe atomic stor
 
 ## Next contract work
 
+### Device observation timestamps
+
+Reviewed at [source commit 090483d](https://github.com/Printmaster-Org/printmaster/commit/090483d79ed57c20019126ac4a6d0df1c245cb3f) for the Agent liveness worker, guarded storage writes, existing device upload and Server batch ingestion. This review is limited to observation freshness, not a new complete machine payload contract.
+
+Updated Agents perform compact serial-confirmed liveness checks independently of optional discovery/metrics schedules. Successful observations advance device `last_seen`, then travel through the existing `/api/v1/devices/batch` upload (default five-minute upload cycle). Failed probes, IP reuse with a different serial, and save/unsave operations do not refresh that timestamp. Heartbeat/upload receipt alone is not printer liveness. No message type, payload field or machine-protocol version is added. Offline/Unknown UI/dashboard classifications are described in [device reachability](/guides/devices/#device-reachability-and-stale-scans); cached SNMP history is retained.
+
 User-session `POST`/`DELETE /api/v1/devices/delete` is **not** a machine-token operation. Its owner-qualified Server transaction can return plain-text `409` when ownership changed; optional Agent proxy deletion occurs earlier and is not part of that transaction. Report-run lists are also user-session operations: they omit `result_data`, while authorized detail/download still retrieves the result body. See [tenant isolation](/guides/tenant-isolation/) for compatibility and read-only contract exclusions; neither behavior introduces a machine message or protocol version.
 
 Review machine request/response structs and handler tests before adding a separate protocol OpenAPI spec. Document WebSocket message types, acknowledgments, errors, reconnect behavior, and compatibility using **AsyncAPI**; an HTTP upgrade alone does not specify the message protocol.

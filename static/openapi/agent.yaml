@@ -1,5 +1,12 @@
 openapi: 3.0.3
 x-reviewed-commit: eeb6259f6060c0534798e3d14ac0cd9d289df9a7
+x-observation-reviewed-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
+x-review-notes: |
+  Stored observation freshness reviewed at x-observation-reviewed-commit for
+  liveness_worker.go, storage/sqlite.go, device serialization and affected
+  list/discovered/profile handlers. x-source.observation-commit records this
+  limited upstream timestamp review; original handler/auth/schema provenance
+  remains x-reviewed-commit. Seven operations and contract 0.1.0 unchanged.
 info:
   title: PrintMaster Local Agent Read-Only API
   version: 0.1.0
@@ -67,9 +74,13 @@ paths:
       x-source:
         path: agent/main.go
         handler: 'http.HandleFunc("/devices/list", anonymous handler)'
+        observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
       description: |
         No query parameters are read: no pagination, IP filter, or visibility
         filter. Lists is_saved=true devices, including hidden saved devices.
+        last_seen is a stored device observation, not save or metrics time.
+        Visible network devices may be refreshed by serial-confirmed liveness
+        checks; hidden devices are excluded from that monitoring worker.
         printer_info and info contain the same DeviceToPrinterInfo value.
         This handler does not fetch latest metrics; use profile or latest for
         current counters. Unlike the canonical endpoints, it has no method
@@ -95,9 +106,15 @@ paths:
       x-source:
         path: agent/main.go
         handler: 'http.HandleFunc("/devices/discovered", anonymous handler)'
+        observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
       description: |
         Always filters visible=true. Unless include_known is exactly true,
         also filters is_saved=false. minutes filters last_seen, not first_seen.
+        Updated Agents refresh last_seen on serial-confirmed liveness checks,
+        independent of Metrics Monitoring; failed probes and save/unsave do not
+        refresh it. This can include older discoveries recently confirmed alive.
+        No computed online/offline field is added. See /guides/devices/ for
+        polling cadence, identity limitations and excluded local device types.
         Latest raw metrics enrich page_count and toner_levels when available;
         metric lookup errors are ignored. Storage listing errors are logged
         and returned as HTTP 200 with [], not a 500 response. No method guard;
@@ -129,6 +146,7 @@ paths:
       x-source:
         path: agent/main.go
         handler: 'http.HandleFunc("/api/devices/profile", anonymous handler)'
+        observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
       description: Returns the storage Device and MetricsSnapshot directly, without legacy aliases. latest_metrics is null when no raw metrics exist, even if aggregate tiers contain older metrics. No saved/visible filter is applied to the serial lookup.
       parameters:
         - {$ref: '#/components/parameters/Serial'}
