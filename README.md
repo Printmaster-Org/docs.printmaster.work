@@ -76,6 +76,8 @@ Edit Markdown under `content/`; the docs repository is the new editorial home. U
 
 Imported pages retain `source` and `sourceCommit` metadata. Source-code references point to the exact original PrintMaster commit; update them when revising implementation documentation.
 
+All HTML layouts inherit `layouts/_default/baseof.html`, which includes `layouts/partials/footer.html`. The shared footer adds the **Site stats** link to <https://stats.docs.printmaster.work/> and loads the async GoatCounter script from `//gc.zgo.at/count.js`, reporting page views to `https://stats.docs.printmaster.work/count`. This includes the homepage, guides, API references, and 404 page, but not search JSON, feeds, downloadable files, or `/healthz`. Analytics requires JavaScript and may be blocked by browser privacy settings; documentation remains usable without it. The custom stats hostname needs its GoatCounter CNAME and HTTPS configuration; dashboard visibility is controlled in GoatCounter. This analytics integration applies to the hosted docs, not self-hosted Agent/Server UIs.
+
 ```bash
 npm ci --ignore-scripts
 npm run vendor:api
@@ -86,7 +88,7 @@ docker build -t printmaster-docs:local .
 bash scripts/smoke.sh printmaster-docs:local
 ```
 
-Node.js 24 is build/test tooling only, not a runtime dependency. Development dependencies validate OpenAPI and provide Swagger UI assets. `npm run vendor:api` copies the viewer and its licensing locally; the static site uses no CDN or external validator, and request execution is disabled. No Node runtime or `node_modules` is shipped, only static assets. Repeat vendoring after dependency updates and before each Hugo server/build invocation. Docker performs dependency installation and vendoring in its build stage, installs the pinned Hugo release, and verifies its archive checksum. Update `.hugo-version` and the Dockerfile default together when upgrading Hugo.
+Node.js 24 is build/test tooling only, not a runtime dependency. Development dependencies validate OpenAPI and provide Swagger UI assets. `npm run vendor:api` copies the viewer and its licensing locally; the API viewer uses no CDN or external validator, and request execution is disabled. GoatCounter is the separate external analytics script described above. No Node runtime or `node_modules` is shipped, only static assets. Repeat vendoring after dependency updates and before each Hugo server/build invocation. Docker performs dependency installation and vendoring in its build stage, installs the pinned Hugo release, and verifies its archive checksum. Update `.hugo-version` and the Dockerfile default together when upgrading Hugo.
 
 The [server API overview](https://docs.printmaster.work/api/) links to the 17-operation [OpenAPI reference](https://docs.printmaster.work/api/openapi/) and [downloadable YAML](https://docs.printmaster.work/openapi/server.yaml). The [targeted accuracy audit](https://docs.printmaster.work/project/docs-audit/) records operational corrections, evidence, and remaining unaudited scope; it is not certification of all documentation.
 

@@ -7,6 +7,23 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
+test('all HTML layouts inherit the shared analytics footer', () => {
+  const base = read('layouts/_default/baseof.html');
+  assert.equal(base.split('{{ partial "footer.html" . }}').length - 1, 1);
+  assert.ok(!base.includes('data-goatcounter'));
+  const footer = read('layouts/partials/footer.html');
+  assert.equal(footer.split('data-goatcounter=').length - 1, 1);
+  assert.ok(footer.includes('data-goatcounter="https://stats.docs.printmaster.work/count"'));
+  assert.ok(footer.includes('async src="//gc.zgo.at/count.js"'));
+  assert.ok(footer.includes('href="https://stats.docs.printmaster.work/">Site stats</a>'));
+  for (const file of fs.readdirSync(path.join(root, 'layouts'), { recursive: true })) {
+    if (!file.endsWith('.html') || file.startsWith('partials' + path.sep) || file === path.join('_default', 'baseof.html')) continue;
+    const layout = read(path.join('layouts', file));
+    assert.ok(layout.includes('{{ define "main" }}'), `${file} must inherit the shared base layout`);
+    assert.ok(!layout.includes('data-goatcounter'), `${file} must not duplicate analytics`);
+  }
+});
+
 test('CI pin and standalone Docker Hugo default stay identical', () => {
   const version = read('.hugo-version').trim();
   assert.match(version, /^\d+\.\d+\.\d+$/);
