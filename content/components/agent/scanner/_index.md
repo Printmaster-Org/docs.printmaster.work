@@ -8,6 +8,32 @@ sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 
 The scanner module is responsible for device detection, SNMP querying, and printer information extraction. It provides a vendor-aware, configurable scanning system.
 
+## Serial-label fallback (reviewed behavior)
+
+The runtime discovery parser can extract a fallback serial from explicitly labeled
+PDU text when a direct serial is unavailable. Accepted case-insensitive labels are
+`SN`, `S/N`, `Serial`, `SerialNumber`, and `Serial Number`. The label must have word
+boundaries and a nonempty separator of colon, equals sign, or whitespace before
+the value: `SN:ABC123`, `S/N ABC123`, and `Serial Number: ABC123` are valid examples.
+`SNMPv2` and `SN123456` are not labels; an invalid token does not hide a later valid
+label in the same text.
+
+The existing value matcher (4–40 ASCII letters/digits/hyphens) and UUID/OID/supply
+model rejection remain unchanged. Direct serial OIDs, structured vendor device-ID
+parsing, and the separate known-device liveness identity validator are unchanged.
+An IP match alone does not establish serial identity. MIB-walk analysis tools have
+separate legacy matchers and are outside this runtime correction.
+
+Offline regression coverage exercises the production matcher without the full
+parser's web-UI probes. See the [SNMP reference](/development/snmp-reference/#serial-label-fallback)
+for the compatibility impact and reviewed implementation revision.
+
+**Review scope:** this section covers only serial-label extraction. Historical
+architecture/examples below still need reconciliation during pipeline consolidation;
+no coordinator, stage-skip policy, persistence, or metrics-scheduling change is
+implemented by this fix. The page's imported `sourceCommit` remains its original
+provenance, not a claim that all content was re-reviewed.
+
 ## Architecture Overview
 
 ```

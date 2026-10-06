@@ -46,6 +46,39 @@ This approach keeps discovery fast on large networks while still capturing rich 
 
 ## Vendor Detection
 
+### Serial-label fallback
+
+The runtime discovery parser accepts explicit case-insensitive serial labels in
+PDU text: `SN`, `S/N`, `Serial`, `SerialNumber`, and `Serial Number`. Each label must
+begin and end at a word boundary and have a nonempty colon/equals/whitespace
+separator before its value. `SN:ABC123`, `S/N ABC123`, and
+`Serial Number: ABC123` yield `ABC123`; `SNMPv2` must not yield `MPv2`, and
+`SN123456` is not a labeled serial. A valid label later in the text still matches.
+
+The fallback retains its existing 4–40 character ASCII letter/digit/hyphen matcher
+and subsequent UUID, OID, and supply-model rejection. It does not alter direct
+Printer-MIB serial OIDs, structured vendor device-ID parsing, vendor OID lists,
+or the separate known-device liveness identity validator. Serial guesses remain
+heuristics; network IP or protocol support alone is not identity evidence.
+
+**Compatibility:** formerly accepted unlabeled concatenations no longer supply
+fallback serials. Spaced `Serial Number` labels now capture the actual value,
+not the word `Number`. This fixes parsing for future observations; it does not
+repair previously persisted false identities. HTTP routes/schemas, machine
+protocol, metrics cadence, and product/contract versions are unchanged.
+
+**Reviewed scope:** runtime matcher and offline `TestSerialLabelBoundaries`
+regressions only. MIB-walk tooling uses separate legacy regexes; inspected but
+not changed in this slice. See the [scanner guide](/components/agent/scanner/#serial-label-fallback-reviewed-behavior).
+The paired program revision is
+[`429b1f1732ad9a011eaff91f3504cb2de39691af`](https://github.com/Printmaster-Org/printmaster/commit/429b1f1732ad9a011eaff91f3504cb2de39691af);
+reviewed sources are
+[`agent/agent/parse.go`](https://github.com/Printmaster-Org/printmaster/blob/429b1f1732ad9a011eaff91f3504cb2de39691af/agent/agent/parse.go)
+and
+[`agent/agent/parse_test.go`](https://github.com/Printmaster-Org/printmaster/blob/429b1f1732ad9a011eaff91f3504cb2de39691af/agent/agent/parse_test.go).
+The imported `sourceCommit` above records historical provenance, not a new
+whole-reference audit.
+
 ### Vendor Enterprise OIDs
 
 **Supported Vendors:**
