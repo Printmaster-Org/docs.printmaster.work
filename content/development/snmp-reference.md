@@ -110,6 +110,14 @@ limited to `agent/scanner/work.go`, `agent/scanner/coordinator.go`, their offlin
 tests and the source-local scanner README. This is not a released binary,
 whole-reference audit or runtime migration certification.
 
+Staged partial storage was reviewed at
+[`520234c9423cc000a6d0e8cb12116f05aff74d58`](https://github.com/Printmaster-Org/printmaster/commit/520234c9423cc000a6d0e8cb12116f05aff74d58)
+(`agent/storage/stage_commit.go` and tests). Typed source adapters were reviewed at
+[`40a5f5ce86417a299caec30b9fc9642f7dc04efd`](https://github.com/Printmaster-Org/printmaster/commit/40a5f5ce86417a299caec30b9fc9642f7dc04efd)
+(`agent/agent` mDNS/SSDP/WS-Discovery/trap/LLMNR browsers and tests). SNMP traps
+are admitted only for Printer-MIB (`1.3.6.1.2.1.43`) or known printer-vendor
+enterprise OIDs; other traps no longer enqueue discovery work.
+
 ### Vendor Enterprise OIDs
 
 **Supported Vendors:**

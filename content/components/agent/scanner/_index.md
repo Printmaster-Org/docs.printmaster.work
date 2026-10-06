@@ -92,8 +92,48 @@ cover admission/coalescing, stages, identity conflicts, commit and shutdown;
 serials, raw protocol payloads, credentials and backend error text are excluded.
 Offline fake-backend tests and race tests cover these ownership contracts.
 
-**Review scope:** planner/coordinator library only. Runtime adapters, partial
-storage and production migration require separate completed slices. Historical
+#### Partial persistence
+
+The Agent SQLite store adds a staged scanner commit that writes only facts the
+work item obtained, atomically: optional device patch, scan snapshot and metrics
+snapshot. Absent or blank fields never erase stored data. Locked fields, user
+notes/location/asset, visibility, saved state, classification and page-count
+baselines are not scanner-patchable. Identity-only work records no scan history,
+metrics or last-seen time; liveness-only work advances only last-seen.
+
+Creating a device or changing its address requires a scanner-validated serial.
+The expected address guards the **previously stored** address (compare-and-set),
+not the newly observed destination; liveness updates and moves require it. If
+any other serial—including hidden or saved devices—already holds the destination
+address, the whole commit is rejected. Serials are opaque keys: separators,
+control characters and surrounding whitespace are rejected rather than altered.
+
+Metrics follow the existing snapshot drop rules (all-zero counters, decreases
+over 5% with a minimum of 10, breakdown mismatches over 10% with a minimum of
+100). A dropped sample does not roll back other facts; a fixed reason is logged.
+Logs carry counts/reasons only, never serials, addresses or metadata. Upload wake
+is permitted only after a successful commit.
+
+#### Network source adapters
+
+mDNS, SSDP, WS-Discovery, SNMP trap and LLMNR listeners now produce typed
+observations that retain protocol evidence instead of a bare IP: mDNS service,
+instance, host, port, TXT and addresses; SSDP USN, search/notification type,
+location, sender and filter decision; WS-Discovery endpoint, types, scopes,
+XAddrs and sender; trap version, type, trap/enterprise OIDs and varbinds; LLMNR
+hostname, sender and answer. Only Printer-MIB or known-vendor traps are admitted.
+WS-Discovery uses IPv4 XAddrs only; it never falls back to the sender address.
+
+A local receipt time is attached only to target-bound, well-formed responses.
+Announcements, LLMNR queries and URL-only targets carry no receipt and cannot
+skip TCP reachability; the coordinator revalidates every hint. Each listener
+delivers observations serially from one owner goroutine, throttles each IP for
+10 minutes after accepted submissions, and stops/joins its sockets on
+cancellation. Local socket/setup errors are logged; packet contents are not.
+Legacy IP-only entry points remain only until production wiring migrates.
+
+**Review scope:** planner/coordinator library, staged storage commit and source adapters only.
+Production wiring of these pieces requires a separate completed slice. Historical
 examples below are not the new library's API. The original imported `sourceCommit`
 does not certify this whole page; the paired source revision is recorded in the
 [SNMP reference](/development/snmp-reference/#consolidation-foundation-trust-boundary).
