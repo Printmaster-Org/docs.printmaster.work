@@ -40,6 +40,30 @@ The [machine ownership safeguards](/api/machine-ownership/) describe atomic stor
 
 ## Next contract work
 
+### Upload worker wake and shutdown
+
+The Agent uploader adds an optional nonblocking wake capability after successful
+local storage commits. The existing default five-minute upload schedule and
+payload/auth/route contracts are unchanged. Wakes coalesce into a one-slot queue
+with a fixed one-second batching window; repeated wake requests do not reset that
+window, and a scheduled upload satisfies a pending wake without resetting cadence.
+
+The wake channel is never closed, so late producers remain safe during/after
+shutdown. Explicit stop cancels in-flight HTTP/store work and retry waits and
+joins worker loops; parent-context cancellation also exits those loops. Explicit
+stop is still needed for WebSocket cleanup and status reset. Worker instances are
+not restartable after stop; create a new one. Cancellation does not guarantee a
+final flush or successful delivery. No queue replay, idempotency or protocol-version
+change is introduced. This foundation supplies the capability; scanner call-site
+wiring remains a separate, uncommitted migration.
+
+Review scope is the uploader implementation and isolated wake/lifecycle regression
+tests only, not a whole-protocol audit or new released binary claim.
+Paired source revision:
+[`e5abae72f29352c10268f9f0d3b43ed8b31a9ea8`](https://github.com/Printmaster-Org/printmaster/commit/e5abae72f29352c10268f9f0d3b43ed8b31a9ea8),
+limited to `agent/upload_worker.go`, `agent/upload_worker_wake_test.go` and the
+source-local scanner documentation.
+
 ### Explicit channel update command
 
 Persistent-channel/legacy-manifest follow-up: [source commit 589e269](https://github.com/Printmaster-Org/printmaster/commit/589e269fb1cd18a48383cd6e757bc32bdab4159b), reviewing `common/settings`, existing settings resolver/storage, `server/main.go::handleAgentUpdateManifest`, Agent manifest client and dynamic channel provider. Earlier one-shot-command review remains separate below; no whole-protocol audit is implied.

@@ -38,6 +38,18 @@ provenance, not a claim that all content was re-reviewed.
 
 ### Consolidation foundation (not yet wired into Agent startup)
 
+#### Uploader wake foundation
+
+The upload worker provides a nonblocking, one-slot coalescing `Wake()` capability
+for successful local commits. A fixed one-second batching window prevents wake
+storms from delaying uploads indefinitely. Periodic cadence remains unchanged;
+a scheduled upload can satisfy the pending wake. The channel is never closed,
+including shutdown, so late producers are safe. Stop cancels active delivery and
+retry waits and joins loops; it does not guarantee a final flush. Use a fresh
+worker instance after stopping. Scanner call-site migration is still pending in
+the committed foundation; see [delivery timing](/api/protocol/#upload-worker-wake-and-shutdown)
+for the narrowly reviewed scope and source revision.
+
 The new scanner library has a pure typed planner and a bounded coordinator with
 injected probe, SNMP query, commit and uploader-wake callbacks. This is a library
 foundation, **not a claim that production discovery has migrated**. Existing
