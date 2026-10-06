@@ -79,6 +79,37 @@ and
 The imported `sourceCommit` above records historical provenance, not a new
 whole-reference audit.
 
+### Consolidation foundation trust boundary
+
+The typed planner/coordinator library adds an independently tested stage model;
+it is not yet wired into Agent startup in the committed foundation slice.
+Production endpoint/query/persistence semantics are not changed by that slice.
+The coordinator accepts wire operations, not caller-injected successful stages.
+Identity is validated from approved serial OIDs or structured device IDs; known
+IP alone never permits a serial skip. Contradictory serials stop attribution.
+Fallback serial-label heuristics described above do not confer validated identity.
+
+Reachability may use a valid, target-bound source response received locally within
+30 seconds, only through the explicit adapter-receipt intake. Ordinary requests,
+stale/future/zero receipts and indirect advertised addresses do not skip TCP.
+Evidence is checked before dispatch; an in-flight identity read is not rewound
+when its admission receipt ages. Backend/query callbacks must propagate context
+cancellation. Query retries are bounded and separate from metrics scheduling.
+
+Same-item detail/enrichment can satisfy requested metrics only when every
+requested field has valid fresh evidence. Missing counters are not zero values;
+zero obtained counters are valid. Metrics and identity never reuse another item's
+cached evidence. Commit/wake callbacks are injected and ordered; no actual partial
+storage implementation or uploader migration is claimed in this library slice.
+See the [scanner foundation contracts](/components/agent/scanner/#consolidation-foundation-not-yet-wired-into-agent-startup)
+for queue ownership, cancellation, logging and validation coverage.
+
+Reviewed foundation source:
+[`f0ee9b1ef976720bfa016bd885a743cb0da056c6`](https://github.com/Printmaster-Org/printmaster/commit/f0ee9b1ef976720bfa016bd885a743cb0da056c6),
+limited to `agent/scanner/work.go`, `agent/scanner/coordinator.go`, their offline
+tests and the source-local scanner README. This is not a released binary,
+whole-reference audit or runtime migration certification.
+
 ### Vendor Enterprise OIDs
 
 **Supported Vendors:**

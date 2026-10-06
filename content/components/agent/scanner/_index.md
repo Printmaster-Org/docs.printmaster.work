@@ -36,6 +36,56 @@ provenance, not a claim that all content was re-reviewed.
 
 ## Architecture Overview
 
+### Consolidation foundation (not yet wired into Agent startup)
+
+The new scanner library has a pure typed planner and a bounded coordinator with
+injected probe, SNMP query, commit and uploader-wake callbacks. This is a library
+foundation, **not a claim that production discovery has migrated**. Existing
+Agent endpoints, settings, responses and storage behavior are unchanged by adding
+the library. USB/spooler remains a separate physical-source adapter.
+
+Work follows reachability → identity → detail → optional metrics. Observations
+contain target/source/raw hints, not completed stages. `KnownDeviceHint` is only
+a hint: IP never establishes identity. Fresh identity reads validate an approved
+serial OID or structured vendor ID against the expected serial. A conflicting
+serial prevents attribution/commit; no cross-item identity cache exists. Later
+detail may retain the same item's identity, never a contradictory serial.
+
+`Do` ignores hints for reachability skipping. `DoSource` is reserved for an
+actual source adapter's receipt callback; typed metadata is not authentication.
+Skipping requires validated message shape and a target-bound local receipt at
+most 30 seconds old. Zero/future receipts, malformed messages and indirect
+advertised targets cannot satisfy reachability. Queued evidence is rechecked at
+dispatch, but expiry cannot rewind an already running identity read. Adapters
+must not invent fresh timestamps for cached hints. Failed TCP is not proof of
+offline status; explicit policy can allow SNMP after TCP failure.
+
+Quick/liveness request identity; full adds detail/metrics; live allows reuse of
+essential enrichment; manual remains essential unless explicitly upgraded.
+Metrics execute only when requested/due. All requested fields must be present
+and fresh within the same item for reuse; zero is a valid obtained counter,
+not a substitute for an absent field. Scheduling is outside the planner. Outcomes
+distinguish not-checked, succeeded, negative, skipped with reason and failed.
+
+The coordinator owns admission, bounded pending work, shared worker concurrency
+and per-IP serialization. Exact active requests coalesce; compatible queued work
+unions intents; active upgrades become fresh followups. One subscriber's cancel
+does not cancel others; the last subscriber cancels its work. Saturation is an
+explicit error. The owner closes/joins the coordinator; callbacks must honor
+context cancellation and never close it recursively.
+
+Read-only work never commits or wakes delivery. A successful injected local
+commit precedes wake; delivery must not block scanner workers. Foundation logs
+cover admission/coalescing, stages, identity conflicts, commit and shutdown;
+serials, raw protocol payloads, credentials and backend error text are excluded.
+Offline fake-backend tests and race tests cover these ownership contracts.
+
+**Review scope:** planner/coordinator library only. Runtime adapters, partial
+storage and production migration require separate completed slices. Historical
+examples below are not the new library's API. The original imported `sourceCommit`
+does not certify this whole page; the paired source revision is recorded in the
+[SNMP reference](/development/snmp-reference/#consolidation-foundation-trust-boundary).
+
 ```
 scanner/
 ├── detector.go          # Device type detection (IsPrinter? confidence scoring)
