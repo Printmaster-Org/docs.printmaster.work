@@ -81,9 +81,13 @@ whole-reference audit.
 
 ### Consolidation foundation trust boundary
 
-The typed planner/coordinator library adds an independently tested stage model;
-it is not yet wired into Agent startup in the committed foundation slice.
-Production endpoint/query/persistence semantics are not changed by that slice.
+The typed planner/coordinator stage model now drives all Agent network discovery,
+refresh, liveness and metrics (runtime migration
+[`1c1563e`](https://github.com/Printmaster-Org/printmaster/commit/1c1563e),
+legacy pipeline removal
+[`3fb1732`](https://github.com/Printmaster-Org/printmaster/commit/3fb1732);
+stale-address storage fix
+[`6241595`](https://github.com/Printmaster-Org/printmaster/commit/6241595)).
 The coordinator accepts wire operations, not caller-injected successful stages.
 Identity is validated from approved serial OIDs or structured device IDs; known
 IP alone never permits a serial skip. Contradictory serials stop attribution.

@@ -54,8 +54,7 @@ joins worker loops; parent-context cancellation also exits those loops. Explicit
 stop is still needed for WebSocket cleanup and status reset. Worker instances are
 not restartable after stop; create a new one. Cancellation does not guarantee a
 final flush or successful delivery. No queue replay, idempotency or protocol-version
-change is introduced. This foundation supplies the capability; scanner call-site
-wiring remains a separate, uncommitted migration.
+change is introduced. The scanner runtime calls wake after each successful local commit.
 
 Review scope is the uploader implementation and isolated wake/lifecycle regression
 tests only, not a whole-protocol audit or new released binary claim.
