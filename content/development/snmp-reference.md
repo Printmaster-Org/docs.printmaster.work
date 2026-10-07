@@ -105,7 +105,7 @@ requested field has valid fresh evidence. Missing counters are not zero values;
 zero obtained counters are valid. Metrics and identity never reuse another item's
 cached evidence. Commit/wake callbacks are injected and ordered; no actual partial
 storage implementation or uploader migration is claimed in this library slice.
-See the [scanner foundation contracts](/components/agent/scanner/#consolidation-foundation-not-yet-wired-into-agent-startup)
+See the [scanner foundation contracts](/components/agent/scanner/#coordinator-pipeline-production)
 for queue ownership, cancellation, logging and validation coverage.
 
 Reviewed foundation source:
