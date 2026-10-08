@@ -66,6 +66,15 @@ Start-Process 'http://localhost:8080'
 
 ### VS Code Tasks (Ctrl+Shift+B)
 
+JavaScript validation uses separate runners: `npm run test:js` runs Jest unit
+tests, and `npm run test:playwright` runs browser tests under
+`common/web/__tests__/playwright`. CI runs the cross-browser variant,
+`npm run test:playwright:all`. Device selection/details controls are checked by
+Playwright with column pinning and horizontal scrolling; browser checks must
+not be placed under Jest's unit-test directories as standalone scripts.
+This runner separation and device-control regression were verified against
+[source commit cb88bee](https://github.com/Printmaster-Org/printmaster/commit/cb88bee07d0393563b250a2b9d00263363d3ff54).
+
 - **Build: Agent (Dev)** - Default build task
 - **Build: Server (Dev)** - Build server
 - **Build: Both (Dev)** - Build both components
