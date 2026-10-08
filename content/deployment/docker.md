@@ -6,6 +6,62 @@ sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 
 Deploy PrintMaster Server using Docker containers with multi-architecture support.
 
+## Package overview and release channels
+
+- [PrintMaster Server on GHCR](https://github.com/printmaster-org/printmaster/pkgs/container/printmaster-server):
+  central multi-site printer fleet monitoring, dashboards, and Agent management.
+- [PrintMaster Agent on GHCR](https://github.com/printmaster-org/printmaster/pkgs/container/printmaster-agent):
+  site-local printer discovery, SNMP metrics, and reporting to a central Server.
+
+Both packages use the same channels:
+
+| Channel | Moving image tag | Versioned image tag | Intended use |
+|---------|------------------|---------------------|--------------|
+| Stable | `latest` | `0.32.0` | Production deployments |
+| Beta | `beta` | `0.32.0-beta.1` | Small test fleets before Stable |
+| Dev | `main` | `dev-<short-sha>` | Developer/debugging use, not general consumption |
+
+Version examples describe naming, not already-published releases. Docker version
+tags do **not** have a `v` prefix. Stable also publishes a `major.minor` alias.
+Beta never moves Stable aliases, and Dev stays separate from both. Pin a
+versioned tag for predictable deployments instead of a moving alias.
+
+The [public downloads page](https://printmaster.work/downloads) features Stable
+and lists Beta separately. Dev is available only inside a collapsed
+**Developer builds (Dev)** section. Beta Agent releases have no MSI: use the
+Windows executable, versioned DEB/RPM assets, or Docker image. APT/DNF
+repository installation commands remain Stable-only.
+
+### Image metadata and changelog links
+
+CD applies OCI metadata to each architecture's image and to the combined
+multi-architecture index: title, product description, MIT license, source and
+documentation URLs, version, full source revision, creation time, and channel
+(`work.printmaster.image.channel`). `org.opencontainers.image.url` points to the
+specific component's GitHub Release, which contains the generated changelog.
+This links to existing release notes rather than copying or replacing them.
+
+GHCR shows a short text description (maximum 512 characters), not a Docker
+Hub-style rich README. The description includes documentation and release-note
+links; the linked source README and this page provide the fuller package
+overview. Multi-architecture descriptions require index annotations, not just
+Docker labels. Local Docker builds include basic labels; CD adds the exact
+publishing metadata. Existing image versions are not modified retroactively.
+
+Inspect a published version:
+
+```bash
+docker pull ghcr.io/printmaster-org/printmaster-server:0.32.0-beta.1
+docker image inspect ghcr.io/printmaster-org/printmaster-server:0.32.0-beta.1 \
+  --format '{{json .Config.Labels}}'
+docker buildx imagetools inspect ghcr.io/printmaster-org/printmaster-server:0.32.0-beta.1 \
+  --raw
+```
+
+Replace the example tag with an existing release. The index's `annotations`
+contain the package metadata; the pulled architecture's image has the labels.
+Release-note links become available when CD completes release publication.
+
 ## Quick Start
 
 ```bash
@@ -31,20 +87,19 @@ All images are built for multiple architectures automatically:
 |--------------|----------|----------|
 | `linux/amd64` | x86_64 servers | Intel/AMD servers, cloud VMs |
 | `linux/arm64` | ARM 64-bit | Apple Silicon, AWS Graviton, Raspberry Pi 4+ |
-| `linux/arm/v7` | ARM 32-bit | Raspberry Pi 3/4 (32-bit OS) |
 
 Docker automatically pulls the correct architecture for your platform.
 
 ## Image Details
 
-**Runtime base image**: `alpine:3.21`, with a shell, `su-exec`, and SQLite tooling.
+**Runtime base image**: `alpine:3.24`, with a shell, `su-exec`, and SQLite tooling.
 - **User**: The image sets `PUID=0` and `PGID=0`, so it runs as root by default, not UID 65532.
 - **Privilege drop**: Set nonzero `PUID`/`PGID` to run the server under the chosen IDs. The entrypoint starts as root, fixes volume ownership, then uses `su-exec`.
 - **Permissions**: Ensure writable data/log volumes for the selected IDs. Do not assume a distroless or read-only-root-filesystem deployment.
 
 **Image tags:**
 - `latest` - Latest stable release (recommended)
-- `v0.23.6` - Specific version
+- `0.32.0` - Specific Stable version (example; see the channel table above)
 
 ---
 
@@ -284,4 +339,3 @@ Complete onboarding and use a certificate trusted by the agent for HTTP uploads 
 - [Unraid Deployment](/deployment/unraid/)
 - [Installation Guide](/guides/install/)
 - [Configuration Guide](/guides/configuration/)
-
