@@ -64,6 +64,13 @@ After the scan completes, discovered printers will appear in the Devices list sh
 - Page counts
 - Toner/ink levels
 
+The agent offers card and table views of saved devices. These screenshots use
+synthetic printers rather than a live customer fleet.
+
+![Agent device cards with consumable levels](/media/docs/screenshots/Devices%20-%20PrintMaster%20Agent.png)
+
+![Agent saved devices in table view](/media/docs/screenshots/Device%20Table%20-%20PrintMaster%20Agent.png)
+
 ---
 
 ## Server + Agent Setup
@@ -117,6 +124,8 @@ Restart the agent after saving.
 2. You should see your connected agent with a green status indicator
 3. The agent will begin uploading device data automatically
 
+![Server fleet agents with connection status and version information](/media/docs/screenshots/Agents%20-%20PrintMaster%20Server.png)
+
 ---
 
 ## Discovering Printers
@@ -146,6 +155,11 @@ You can specify which networks to scan:
 ### Discovery Settings
 
 Fine-tune discovery in **Settings** → **Discovery Settings**:
+
+The current Settings page groups automatic discovery, passive discovery, and
+metrics monitoring controls. The example below uses demo configuration.
+
+![Agent discovery settings and metrics monitoring controls](/media/docs/screenshots/Settings%20-%20PrintMaster%20Agent.png)
 
 | Setting | Description |
 |---------|-------------|
@@ -248,4 +262,3 @@ If you see WebSocket connection errors:
 3. Ensure the server's WebSocket port is accessible
 
 See the full [Troubleshooting Guide](/guides/troubleshooting/) for more solutions.
-
