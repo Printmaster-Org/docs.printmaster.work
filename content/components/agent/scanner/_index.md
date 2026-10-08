@@ -28,11 +28,9 @@ Offline regression coverage exercises the production matcher without the full
 parser's web-UI probes. See the [SNMP reference](/development/snmp-reference/#serial-label-fallback)
 for the compatibility impact and reviewed implementation revision.
 
-**Review scope:** this section covers only serial-label extraction. Historical
-architecture/examples below still need reconciliation during pipeline consolidation;
-no coordinator, stage-skip policy, persistence, or metrics-scheduling change is
-implemented by this fix. The page's imported `sourceCommit` remains its original
-provenance, not a claim that all content was re-reviewed.
+The serial-label matcher is one part of scanner identity validation. Production
+architecture and runtime wiring are described below; MIB-walk analysis tools
+remain separate diagnostic code.
 
 ## Architecture Overview
 
@@ -128,33 +126,34 @@ skip TCP reachability; the coordinator revalidates every hint. Each listener
 delivers observations serially from one owner goroutine, throttles each IP for
 10 minutes after accepted submissions, and stops/joins its sockets on
 cancellation. Local socket/setup errors are logged; packet contents are not.
-Legacy IP-only entry points remain only until production wiring migrates.
 
-**Review scope:** planner/coordinator library, staged storage commit and source adapters only.
-Production wiring of these pieces requires a separate completed slice. Historical
-examples below are not the new library's API. The original imported `sourceCommit`
-does not certify this whole page; the paired source revision is recorded in the
-[SNMP reference](/development/snmp-reference/#consolidation-foundation-trust-boundary).
+#### Production wiring
+
+One `scannerRuntime` owns the Agent coordinator. Range discovery, live sources,
+manual refresh and preview, identity refresh, known-device liveness, and metrics
+queries use it. The `ip_scanning_enabled` setting gates scanner requests; optional
+full MIB walks for issue reports remain separate diagnostic operations and are
+also gated. USB/spooler printers stay on their own adapter.
+
+- The in-memory IP index supplies learned OID/vendor query hints only, never
+  identity. A contradictory stale learned OID is retried without hints.
+- Disabling IP scanning stops periodic discovery, live listeners, and metric
+  rescans; generation checks keep rapid stop/start transitions safe.
+- Explicit expected serials must match validated identity; address moves compare
+  against the stored prior IP.
+- Successful staged commits refresh the index, broadcast SSE, and wake uploads.
+- Live listeners throttle accepted observations per IP, preserve adapter receipt
+  time, and submit scans off the listener goroutine.
+- Persisted enrichment includes normalized facts and compact discovery evidence,
+  not raw PDU dumps. Metrics use positive-only vendor meter overrides and
+  mono-aware toner conversion.
 
 ```
 scanner/
-├── detector.go          # Device type detection (IsPrinter? confidence scoring)
-├── pipeline.go          # Multi-stage scan orchestration (liveness → detection → deep scan)
-├── query.go             # SNMP query execution and vendor-specific data collection
-├── snmp.go              # Low-level SNMP communication wrapper
-├── enumerator.go        # IP range enumeration and subnet handling
-└── vendor/              # Vendor-specific OID profiles and parsers
-    ├── hp.go
-    ├── canon.go
-    ├── brother.go
-    ├── epson.go
-    ├── kyocera.go
-    ├── lexmark.go
-    ├── ricoh.go
-    ├── samsung.go
-    ├── xerox.go
-    ├── generic.go       # Fallback standard Printer-MIB
-    └── registry.go      # Vendor detection and module selection
+├── work.go, coordinator.go  # Typed work planning and bounded execution
+├── query.go, snmp.go        # Shared SNMP query profiles and transport
+├── capabilities/           # Capability detection
+└── vendor/                 # Vendor OID modules and registry
 ```
 
 ## Related Documentation
@@ -162,4 +161,3 @@ scanner/
 - [Agent Module](/components/agent/historical-overview/) - Discovery protocols and detection logic
 - [Logger Module](/components/logger/) - Logging system
 - [API Reference](/api/) - HTTP endpoints using scanner
-
