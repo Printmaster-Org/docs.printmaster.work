@@ -83,6 +83,17 @@ Start-Process 'http://localhost:8080'
 
 ### Making Releases
 
+The release scripts, Beta lifecycle, CI/CD publishing, and build-channel behavior
+in this section were reviewed against [source commit 869a0c1](https://github.com/Printmaster-Org/printmaster/commit/869a0c1174257409f8eb18fbe61612f34998b471).
+Other sections retain their earlier source review. Validation covers local
+scripts and fixtures; it is not a claim that a Beta has been published.
+
+Both `release.ps1` (Windows) and `release.sh` (Linux/macOS with Bash 4+) support
+**Stable**, **Beta**, and the existing separate **Dev** workflow. Release scripts
+require a clean worktree and manage the component VERSION files for you; do not
+edit those files manually. Commit and push the release tooling before using it,
+so GitHub runs the matching CI/CD workflows.
+
 ```powershell
 # Patch release (0.1.0 → 0.1.1) - Bug fixes
 .\release.ps1 agent patch
@@ -100,14 +111,83 @@ Start-Process 'http://localhost:8080'
 .\release.ps1 both patch
 ```
 
-**What `release.ps1` does:**
-1. ✅ Checks git status (warns if uncommitted changes)
+**What both release scripts do:**
+1. ✅ Check git status (stop if uncommitted changes exist)
 2. ✅ Bumps version in VERSION file
 3. ✅ Runs all tests
 4. ✅ Builds release binary (optimized, stripped)
 5. ✅ Commits VERSION change
-6. ✅ Tags release (e.g., v0.2.0)
+6. ✅ Tag each component (e.g., `agent-v0.2.0`, `server-v0.2.0`)
 7. ✅ Pushes to GitHub
+
+### Beta cycle and Stable promotion
+
+From `0.31.1`, start the next minor version as `0.32.0-beta.1`, advance to
+`0.32.0-beta.2`, then promote exactly `0.32.0` to Stable:
+
+```powershell
+# Preview only: no tests, builds, VERSION writes, commits, tags, or pushes
+.\release.ps1 both minor -Beta -DryRun
+
+# First Beta: bump the target base version and append -beta.1
+.\release.ps1 both minor -Beta
+
+# Next Beta: increment only the beta sequence
+.\release.ps1 both beta
+
+# Stable: remove the beta suffix, without another patch/minor/major bump
+.\release.ps1 both stable
+```
+
+Equivalent Bash commands:
+
+```bash
+./release.sh both minor --beta --dry-run
+./release.sh both minor --beta
+./release.sh both beta
+./release.sh both stable
+```
+
+Use `agent` or `server` instead of `both` for independent cycles. The initial
+target can use `patch`, `minor`, or `major`. While a component is in a Beta cycle,
+only `beta` (advance) or `stable` (promote) is accepted; `beta` and `stable` require
+an existing `x.y.z-beta.N` version. Existing release tags are never overwritten.
+With `both`, each component retains its own base version and beta sequence.
+
+The scripts create annotated tags such as `agent-v0.32.0-beta.1` and
+`server-v0.32.0-beta.1`. GitHub CI and CD accept these tags, verify that the tag
+matches the committed VERSION, embed the full version with build type `beta`,
+and create a GitHub **prerelease**, not the latest Stable release.
+
+Beta releases publish versioned binaries and Docker images plus the moving
+Docker `beta` alias. Agent Beta releases also attach DEB and RPM packages;
+package metadata uses `0.32.0~beta.1` so Stable `0.32.0` sorts newer, while asset
+filenames retain `0.32.0-beta.1` for release intake. **MSI installers are
+Stable-only**; use the Windows executable to test Beta. Beta releases never move
+Git `latest-agent`/`latest-server`, major/minor floating tags, Docker `latest` or
+minor aliases, or publish to the Stable APT/DNF repositories. Install Beta
+packages directly from release assets, not the Stable repository installer.
+
+Stable promotion follows the normal Stable publishing path, including those
+Stable aliases, package repositories, and the Agent MSI. Main-branch pushes
+continue producing separate `x.y.z-dev.<sha>` prereleases and Docker `main` /
+`dev-<sha>` images, even while VERSION contains a Beta.
+
+For fleet testing, enable `releases.include_prerelease = "true"` on a Stable
+server so intake caches Beta artifacts, then choose **Beta** in fleet settings.
+Beta and Dev servers include prereleases by default unless explicitly disabled.
+Empty local update channels follow the build type; explicit local or
+fleet channel selections still take precedence. Selecting Beta does not
+generate a release or fall back to Stable when no Beta artifact is available.
+Agents installed through APT/DNF still update through their configured package
+repositories; selecting Beta does not add a Beta repository. For fleet-managed
+Beta auto-updates use standalone binaries; package installations require manual
+installation of the Beta release assets.
+
+The optional `-CreateGitHubRelease` / `--create-github-release` also marks Beta
+as a prerelease and not latest, but normally let CD create the release with all
+assets. These options require the GitHub CLI. `-SkipPush` / `--skip-push` still
+create local commits and tags; unlike dry-run, they are not read-only.
 
 ### Release Flags
 
@@ -378,4 +458,3 @@ The storage package uses platform-specific paths:
 ---
 
 *Last Updated: November 6, 2025*
-
