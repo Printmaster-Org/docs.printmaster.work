@@ -22,6 +22,35 @@ Startup configuration uses built-in defaults, TOML, then supported environment o
 
 Managed/UI settings are a separate layer. On the server, environment-set keys are locked against managed overrides. Agent runtime web settings also use persisted unified settings; do not assume every TOML key wins over UI settings.
 
+### Fleet settings and Agent ownership
+
+Fleet consistency details below were reviewed against [backend settings/runtime commit 9c5c0b4](https://github.com/Printmaster-Org/printmaster/commit/9c5c0b41ef1e53242cce04f4304116cb97b0d765) and [channel/settings UI commit e8bdb99](https://github.com/Printmaster-Org/printmaster/commit/e8bdb99ab27c9bf9a23d3f00a534977676672003). Other sections retain their earlier source review.
+
+In **Settings → Fleet**, choose the global, customer, or individual Agent scope. Fleet values resolve from global defaults through customer overrides to permitted Agent overrides; customer-enforced sections cannot be overridden for an individual Agent.
+
+**Section Management** controls Discovery, SNMP, Features, and Local Printers. Only checked sections override Agent-local settings. Unchecked sections retain the Agent's persisted configuration, including after restart. Logging, web listeners, detected subnet, and the two discovery display preferences (**Show Manual Discover Button** and **Show Discovered Devices**) remain local. Disabling management restores local values; it does not copy the former fleet values into the Agent's standalone settings.
+
+Fleet controls for unmanaged sections are read-only at every scope, including customer scope, rather than accepting overrides the Agent would ignore. The Agent disables managed controls and excludes them from Apply/auto-save, so changing local logging or web settings does not attempt to overwrite fleet settings. Its local settings endpoint rejects managed changes with HTTP 409, except the two local display preferences. Reset clears local settings while retaining the managed snapshot and effective fleet values.
+
+The Fleet SNMP section exposes protocol version (1, 2c, or 3), community, timeout, retries, and all SNMPv3 security fields. Password controls are masked, not redacted from authenticated settings responses. Effective SNMP settings apply to new queries without restarting the Agent. Local-printer settings reload from persistent storage and fleet changes restart the spooler worker.
+
+Both UIs use discovery concurrency 1–200, SNMP timeout 500–60000 ms, retries 0–5, metrics intervals 1–1440 minutes (or a 15–300 second override; 0 uses minutes), and spooler intervals 5–300 seconds. A seconds override takes precedence until explicitly cleared; zero retries is preserved.
+
+### Selecting Stable, Beta, or Dev Agent builds
+
+At the top of **Settings → Fleet**, **Agent Builds / Release Channel → Agent Update Channel** offers:
+
+- **Stable**: stable releases.
+- **Beta**: beta releases.
+- **Dev**: development releases.
+- **Use Agent configuration**: retain the Agent's configured/build-derived channel.
+
+Choose a scope and save the settings. This is the existing `features.agent_update_channel` field, so **Features must be centrally managed**. Channel selection is separate from the **Auto-Update Policy** scheduling, version pins, and maintenance windows below. Selecting a channel does not itself trigger an installation or enable a disabled Agent updater.
+
+The three release channels are **Stable**, **Beta**, and **Dev**. Beta is available as a selection ahead of its first release cycle; selecting it does not create a beta artifact or fall back to another channel when none is cached.
+
+Before selecting Beta or Dev, enable Server prerelease intake, restart the Server if its intake configuration changed, and sync releases so matching platform artifacts are cached. For older Agents, use **Update Agent → Force install Fleet channel** to bootstrap from the saved channel; this bypasses version pins for that forced operation. Explicit one-shot Stable/Beta/Dev commands require an Agent that supports them. See [Agent update behavior](/api/protocol/#explicit-channel-update-command).
+
 ### Configuration File Location
 
 | Platform | Agent Path | Server Path |
@@ -474,4 +503,3 @@ UI persistence and activation depend on the setting. Some changes require restar
 Use supported TOML keys or environment variables for startup ports, database paths, and logging. Neither binary accepts `-port`, `-data-dir`, or `-log-level`.
 
 **Example**: Set `SERVER_HTTPS_PORT=9444` to override `[server].https_port` from TOML. See [Configuration Methods](#configuration-methods) for managed-setting caveats. Use `-help` on the installed binary to confirm its version-specific flags.
-
