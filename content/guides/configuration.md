@@ -28,7 +28,7 @@ Fleet consistency details below were reviewed against [backend settings/runtime 
 
 Beta build defaults and automatic prerelease intake were reviewed against
 [source commit 869a0c1](https://github.com/Printmaster-Org/printmaster/commit/869a0c1174257409f8eb18fbe61612f34998b471);
-see the [Beta release lifecycle](../development/build-workflow.md#beta-cycle-and-stable-promotion)
+see the [Beta release lifecycle](/development/build-workflow/#beta-cycle-and-stable-promotion)
 for release commands and publishing limitations.
 
 In **Settings → Fleet**, choose the global, customer, or individual Agent scope. Fleet values resolve from global defaults through customer overrides to permitted Agent overrides; customer-enforced sections cannot be overridden for an individual Agent.
