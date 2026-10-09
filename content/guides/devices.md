@@ -18,6 +18,36 @@ Rows load before beyond-page-count metrics. Supplies and optional snapshot count
 
 Focus a row/card and press **Space** to select or **Enter** to open details. Details explicitly fetch that device's row and snapshot. Right-click context menus and table customization remain available.
 
+### Consumable names and replacement identifiers
+
+Supply cards, compact bars, and charts retain device-reported descriptions and
+replacement identifiers when available. Saved per-color descriptions take
+precedence over generic `toner_*` labels. Generic entries on devices identified
+as inkjet (or reporting ink descriptions) use **Black/Cyan/Magenta/Yellow Ink**
+and **Waste Ink**, rather than toner wording. Laser/unknown devices retain
+toner terminology when there is no ink evidence.
+
+Ink cartridges and maintenance boxes are collected by their reported
+description, so Photo/Matte Black, Cyan/Light Cyan, Magenta/Light Magenta, and
+separate maintenance boxes do not collapse into four color slots or a single
+waste slot. Existing legacy metric field names remain compatible. Matching
+description aliases are deduplicated only when their readings agree.
+
+Historical data can only recover descriptions still linked to its readings.
+A list of cartridge names alone cannot establish which level belongs to which
+cartridge. Previously collapsed levels cannot be reconstructed without new
+device data; a generic waste reading is not assigned to one of multiple
+maintenance boxes. Part numbers are reported identifiers, not a verified
+replacement recommendation. Official product/replacement links are not yet
+provided, and the UI does not invent part numbers or links.
+
+Reviewed at [source commit 21609b2](https://github.com/Printmaster-Org/printmaster/commit/21609b272f4b41c4417ad7278108d8dbe5a271e5),
+limited to shared supply rendering, SNMP supply parsing, and description
+preservation. Validation used an identity/network-redacted SC-P9500 diagnostic
+fixture, synthetic supply-table PDUs, Go tests/vet, and desktop/mobile browser
+tests; the printer was unavailable for a fresh scan. This is not a live-device
+verification or an audit of saved/discovered state transfer.
+
 ## Global search, filters and sorting
 
 Search and metadata filters operate across the full authorized index, not just the first rendered page. A distant serial, make/model, hostname, asset number or location can therefore match before its full row has loaded. Agent IDs work before names arrive; agent names and tenant labels become searchable after directories resolve. Tenant membership comes from the agent directory, not from the lightweight device index.
