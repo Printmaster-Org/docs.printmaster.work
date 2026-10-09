@@ -41,6 +41,14 @@ maintenance boxes. Part numbers are reported identifiers, not a verified
 replacement recommendation. Official product/replacement links are not yet
 provided, and the UI does not invent part numbers or links.
 
+When a reported description ends in vendor part numbers (for example Epson
+`Cyan Ink Cartridge T44H2, T44P2, T44W2` or HP `... CF410A`), the device
+details view shows the clean supply label with the part numbers on a separate
+line. Compact cards and toner bars show the label and keep the part numbers
+in the tooltip. Only trailing upper-case letter/digit tokens are treated as
+part numbers; nothing is looked up or inferred. See
+[source commit 26ddb7f](https://github.com/Printmaster-Org/printmaster/commit/26ddb7f97677bf805c62b02f9a439d260e279a87).
+
 Reviewed at [source commit 21609b2](https://github.com/Printmaster-Org/printmaster/commit/21609b272f4b41c4417ad7278108d8dbe5a271e5),
 limited to shared supply rendering, SNMP supply parsing, and description
 preservation. Validation used an identity/network-redacted SC-P9500 diagnostic
