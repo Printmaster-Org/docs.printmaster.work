@@ -95,6 +95,18 @@ Windows releases publish a raw `.exe` and an `.msi` for the same `windows/amd64`
 - `GET /api/v1/releases/manifests` accepts an optional `format` query for single-manifest lookups (`400` for unknown values) and reports `format` on each manifest.
 - Updated Agents installed by MSI request `msi`. All other installs request `binary`. Agents reject a manifest whose `format` differs from the request and report `MANIFEST_ERROR` telemetry. A missing `format` from an older Server is accepted only for binary installs.
 
+### Manifest signature material
+
+Since [source commit 9bd42d2](https://github.com/Printmaster-Org/printmaster/commit/9bd42d2dbd5cfa06853efaae2bc5ceb2def69451), manifest responses also include:
+
+- `signed_payload`: the base64 encoding of the exact JSON bytes the Server signed.
+- `signing_key_id`: the ID of the key that signed them.
+- `signing_public_key`: that key's base64 ed25519 public key.
+
+The unsigned fields are rebuilt from storage and cannot be re-serialized byte-for-byte, so Agents verify `signature` against `signed_payload`. They then compare `component`, `version`, `platform`, `arch`, `format`, `channel`, `sha256` and `size_bytes` with the signed copy. If the key record is missing, the Server still serves the manifest without `signing_public_key`.
+
+Agents pin the first key that produces a valid, consistent signature, in `signing_key_pin.json` in the update state directory. If a later valid signature uses a different key, the Agent logs one warning and pins the new key. Tampered or invalid manifests are never pinned. Verification is log-only: the SHA-256 download check is still the only enforced control. Older Servers omit these fields, and Agents log them as unverifiable. Older Agents ignore the fields. No protocol version bump is required.
+
 **Compatibility:** Agents that predate this field omit `format` and keep receiving the binary, as before. Older MSI-installed Agents therefore still cannot update through the fleet updater; reinstall them once with the current MSI. The Server migrates SQLite and Postgres release tables in place on startup. Existing rows become `binary` unless their cached filename identifies another format; reclassified MSI manifests are re-signed. No machine-protocol version bump is required.
 
 ### Device observation timestamps
