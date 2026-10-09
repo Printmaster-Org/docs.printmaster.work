@@ -83,6 +83,20 @@ The existing token-authenticated WebSocket command envelope supports `command: i
 
 Missing cached manifests keep the existing HTTP `200`/`success:false` response, not a fallback channel. Enable prerelease intake, restart Server and sync before beta/dev; legacy cached metadata/signatures are repaired during sync. This compatible payload addition intentionally changes ordinary selection only when an administrator explicitly saves a managed channel. Existing default-empty installations remain unchanged. No credential/message-envelope migration or protocol-version bump is required. See [channel rollout implementation](/development/auto-update-plan/#manual-release-channel-installation-and-policy-consolidation).
 
+### Update artifact formats
+
+Reviewed at [source commit bb99bbe](https://github.com/Printmaster-Org/printmaster/commit/bb99bbe850ce2921f4e730b1751d92ec1d1bb361), specifically `common/updatepolicy/artifact_format.go`, `server/releases/intake_worker.go`, `server/releases/manager.go`, `server/main.go::handleAgentUpdateManifest`/`handleAgentUpdateDownload`, `server/storage/release_format_migration.go` and `agent/autoupdate/manager.go::fetchManifest`. This is an additive field review, not a whole-protocol audit.
+
+Windows releases publish a raw `.exe` and an `.msi` for the same `windows/amd64` target. Cached artifacts and signed manifests are now identified by component, version, platform, arch **and format**, so the two no longer overwrite each other.
+
+- `POST /api/v1/agents/update/manifest` accepts an optional `format`: `binary` (default when omitted) or `msi`. `deb`, `rpm` and unknown values return plain-text `400`; package repositories deliver OS packages, so release intake no longer downloads them.
+- Returned manifests include `format`, and the signed manifest payload includes it too. MSI download URLs add `?format=msi`; binary URLs are unchanged.
+- `GET /api/v1/agents/update/download/{component}/{version}/{platform}-{arch}` accepts the same optional `format` query with the same validation. Both endpoints keep Agent bearer-token authentication (`401` otherwise).
+- `GET /api/v1/releases/manifests` accepts an optional `format` query for single-manifest lookups (`400` for unknown values) and reports `format` on each manifest.
+- Updated Agents installed by MSI request `msi`. All other installs request `binary`. Agents reject a manifest whose `format` differs from the request and report `MANIFEST_ERROR` telemetry. A missing `format` from an older Server is accepted only for binary installs.
+
+**Compatibility:** Agents that predate this field omit `format` and keep receiving the binary, as before. Older MSI-installed Agents therefore still cannot update through the fleet updater; reinstall them once with the current MSI. The Server migrates SQLite and Postgres release tables in place on startup. Existing rows become `binary` unless their cached filename identifies another format; reclassified MSI manifests are re-signed. No machine-protocol version bump is required.
+
 ### Device observation timestamps
 
 Reviewed at [source commit 090483d](https://github.com/Printmaster-Org/printmaster/commit/090483d79ed57c20019126ac4a6d0df1c245cb3f) for the Agent liveness worker, guarded storage writes, existing device upload and Server batch ingestion. This review is limited to observation freshness, not a new complete machine payload contract.
