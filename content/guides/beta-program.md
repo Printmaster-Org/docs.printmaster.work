@@ -48,7 +48,7 @@ For the Server, switch the image back to a Stable tag. If the Beta applied schem
 
 These are known gaps in the current Beta. They are tracked for future releases and are not regressions.
 
-- **Scheduled report delivery:** scheduled reports run and their results are stored, but email and webhook delivery is not implemented yet. Recipient and webhook fields are saved but nothing is sent.
+- **Scheduled report delivery:** since [b609e35](https://github.com/Printmaster-Org/printmaster/commit/b609e352da1ff45849022c2f0d67a7ff2b8660a6), scheduled reports send email and webhooks (see [Scheduled Reports](/guides/features/#scheduled-reports)). Deliveries are not queued: a delivery that still fails after its retries is recorded on the run and not sent again. Webhook payloads are not signed yet.
 - **Update integrity:** Agents verify each download against the SHA-256 hash in the Server's update manifest. The manifest is fetched over the authenticated Agent connection. Agents do not yet verify a manifest signature independently.
 - **Installer channels:** MSI and APT/DNF installs always follow Stable, as described above. MSI Agents older than [bb99bbe](https://github.com/Printmaster-Org/printmaster/commit/bb99bbe850ce2921f4e730b1751d92ec1d1bb361) cannot request the MSI update format and need one manual reinstall with the current MSI.
 - **Docker Agents** update by pulling a new image, not through the in-app updater.
