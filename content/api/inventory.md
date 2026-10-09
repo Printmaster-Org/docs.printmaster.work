@@ -40,6 +40,20 @@ Returns a non-null array of full persisted `DeviceWithMetrics` inventory records
 
 Device fields retain existing `omitempty` serialization: zero `page_count` and empty optional inventory fields are absent. Missing owner-matched page measurements use zero internally. Index page count, unlike rows, is always serialized.
 
+Full row/list responses used by device details additionally expose optional `is_saved` from
+Agent-uploaded inventory metadata: `true` for saved, `false` for discovered,
+omitted for older Agents that have not reported state. False is never omitted.
+This additive field does not change scope, authorization, ordering or the
+lightweight index. Server inventory presence is not proof of Agent-saved state.
+No database migration is required; state persists in the existing inventory
+JSON blob.
+
+This saved-state addition was reviewed at [source commit 5e3d9bf](https://github.com/Printmaster-Org/printmaster/commit/5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3):
+Agent upload construction, Server batch ingestion and metadata-backed row/list
+serialization, plus tenant-scoped response regressions. The original handler
+review and observation-freshness provenance remain separate. No whole-API
+audit or contract/product/protocol version change is claimed.
+
 ## Fetch lazy metrics
 
 `POST /api/v1/devices/metrics/query` accepts the same request and returns a non-null `MetricsSnapshot` array. Only the latest current-owner-matched record is returned per visible device. Missing/unauthorized serials and devices without matching metrics are omitted without disclosing which case occurred.

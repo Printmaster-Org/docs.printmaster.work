@@ -56,7 +56,7 @@ test('progressive inventory separates lightweight index, row data and lazy metri
   const spec = await SwaggerParser.validate(path.join(root, 'static/openapi/server.yaml'));
   const revision = 'bdf1f8fea22e91d490238d9ab266f2690070c82d';
   const legacy = spec.paths['/api/v1/devices/list'].get;
-  assert.deepEqual(legacy['x-source'], {path: 'server/main.go', handler: 'handleDevicesList', commit: revision, 'observation-commit': spec['x-observation-reviewed-commit']});
+  assert.deepEqual(legacy['x-source'], {path: 'server/main.go', handler: 'handleDevicesList', commit: revision, 'observation-commit': spec['x-observation-reviewed-commit'], 'saved-state-commit': spec['x-saved-state-reviewed-commit']});
   assert.match(spec['x-review-notes'], /Other operations retain the 864fc3ee040bbb28f25d779c69512c5b6999d421 review/);
   for (const [route, method] of [['/api/v1/devices/index', 'get'], ['/api/v1/devices/rows', 'post'], ['/api/v1/devices/metrics/query', 'post']]) {
     const op = spec.paths[route][method];
@@ -92,7 +92,16 @@ test('progressive inventory separates lightweight index, row data and lazy metri
   assert.equal(index.properties.toner_levels, undefined);
   const row = spec.components.schemas.DeviceRow;
   assert.deepEqual(row.required, ['serial', 'agent_id', 'ip', 'last_seen', 'first_seen', 'created_at']);
-  assert.deepEqual(Object.keys(row.properties).sort(), ['serial', 'agent_id', 'ip', 'manufacturer', 'model', 'hostname', 'firmware', 'mac_address', 'subnet_mask', 'gateway', 'consumables', 'status_messages', 'last_seen', 'first_seen', 'created_at', 'discovery_method', 'asset_number', 'location', 'description', 'web_ui_url', 'raw_data', 'device_type', 'source_type', 'is_usb', 'port_name', 'driver_name', 'is_default', 'is_shared', 'spooler_status', 'usb_webui_available', 'page_count'].sort());
+  assert.deepEqual(Object.keys(row.properties).sort(), ['serial', 'agent_id', 'ip', 'manufacturer', 'model', 'hostname', 'firmware', 'mac_address', 'subnet_mask', 'gateway', 'consumables', 'status_messages', 'last_seen', 'first_seen', 'created_at', 'discovery_method', 'asset_number', 'location', 'description', 'web_ui_url', 'raw_data', 'is_saved', 'device_type', 'source_type', 'is_usb', 'port_name', 'driver_name', 'is_default', 'is_shared', 'spooler_status', 'usb_webui_available', 'page_count'].sort());
+  assert.equal(row.properties.is_saved.type, 'boolean');
+  assert.equal(index.properties.is_saved, undefined);
+  assert.match(row.properties.is_saved.description, /Omitted when no boolean/);
+  const savedStateCommit = spec['x-saved-state-reviewed-commit'];
+  assert.match(savedStateCommit, /^[a-f0-9]{40}$/);
+  for (const [route, method] of [['/api/v1/devices/rows', 'post'], ['/api/v1/devices/list', 'get']]) {
+    assert.equal(spec.paths[route][method]['x-source']['saved-state-commit'], savedStateCommit);
+  }
+  assert.equal(spec.paths['/api/v1/devices/index'].get['x-source']['saved-state-commit'], undefined);
   assert.ok(row.properties.raw_data);
   for (const field of ['toner_levels', 'color_pages', 'mono_pages', 'scan_count', 'last_metrics_at']) assert.equal(row.properties[field], undefined);
   assert.match(spec.paths['/api/v1/devices/list'].get.description, /SQL tenant predicate/);

@@ -1,7 +1,13 @@
 openapi: 3.0.3
 x-reviewed-commit: bdf1f8fea22e91d490238d9ab266f2690070c82d
 x-observation-reviewed-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
+x-saved-state-reviewed-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3
 x-review-notes: |
+  Saved-state follow-up at x-saved-state-reviewed-commit reviews the optional
+  DeviceRow.is_saved field and its upload/metadata/read path only.
+  Row/list x-source.saved-state-commit records this additive review.
+  Index shape, authentication, pagination and original operation provenance
+  remain unchanged; this is not a new whole-operation or whole-API audit.
   Observation-freshness follow-up reviewed at x-observation-reviewed-commit:
   Agent serial-confirmed probes refresh stored last_seen without changing
   inventory schemas/auth; dashboard offline/unknown classification remains
@@ -176,7 +182,7 @@ paths:
   /api/v1/devices/list:
     get:
       operationId: listDevices
-      x-source: {path: server/main.go, handler: handleDevicesList, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f}
+      x-source: {path: server/main.go, handler: handleDevicesList, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3}
       tags: [Fleet]
       summary: List fleet devices with available latest metrics
       description: |
@@ -248,7 +254,7 @@ paths:
   /api/v1/devices/rows:
     post:
       operationId: queryDeviceRows
-      x-source: {path: server/inventory_api.go, handler: handleDevicesRows, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f}
+      x-source: {path: server/inventory_api.go, handler: handleDevicesRows, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3}
       tags: [Fleet]
       summary: Hydrate selected inventory rows before lazy metrics
       description: |
@@ -267,6 +273,8 @@ paths:
         metric content. Zero page_count is omitted by the legacy Go omitempty
         tag; zero is also the fallback when no matching snapshot exists.
         No metrics beyond page count are queried for row hydration.
+        Optional is_saved reflects Agent-uploaded saved/discovered state;
+        false is serialized, absent means not reported by a legacy Agent.
         initial_page_count is not selected and is therefore omitted.
         JSON decoding is independent of the request Content-Type header.
       requestBody: {$ref: '#/components/requestBodies/InventoryKeys'}
@@ -733,6 +741,9 @@ components:
         description: {type: string}
         web_ui_url: {type: string}
         raw_data: {type: object, additionalProperties: true}
+        is_saved:
+          type: boolean
+          description: Agent-reported saved state; false means discovered. Omitted when no boolean has been reported. Persisted in inventory metadata, not inferred from inventory presence.
         device_type: {type: string}
         source_type: {type: string}
         is_usb: {type: boolean}

@@ -94,3 +94,18 @@ User-session `POST`/`DELETE /api/v1/devices/delete` is **not** a machine-token o
 Review machine request/response structs and handler tests before adding a separate protocol OpenAPI spec. Document WebSocket message types, acknowledgments, errors, reconnect behavior, and compatibility using **AsyncAPI**; an HTTP upgrade alone does not specify the message protocol.
 
 The [public API roadmap](/development/public-api-roadmap/) separates user automation credentials from machine tokens and recommends contract ownership/testing in the program repository. Destructive commands and credential retrieval are deliberately excluded from the read-only integration slice.
+
+### Agent saved-state upload
+
+Updated Agents include `is_saved: true|false`
+per device in `/api/v1/devices/batch`. This reflects persisted Agent state, not
+discovery source or printer reachability. The Server retains it in inventory
+metadata and exposes an optional boolean on full inventory row/list
+responses used by device details. Omitted legacy state remains unknown; explicit `false` is retained.
+The lightweight inventory index is unchanged. Existing machine authentication,
+owner checks and tenant-scoped user reads remain in effect; no route or
+protocol-version change is required. See [saved/discovered behavior](/guides/devices/#saved-versus-discovered-state).
+
+Source scope: [5e3d9bf](https://github.com/Printmaster-Org/printmaster/commit/5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3),
+limited to the saved-state field, persistence, wake and details behavior.
+This does not claim a new audit of every machine operation.
