@@ -188,10 +188,24 @@ Beta and Dev servers include prereleases by default unless explicitly disabled.
 Empty local update channels follow the build type; explicit local or
 fleet channel selections still take precedence. Selecting Beta does not
 generate a release or fall back to Stable when no Beta artifact is available.
-Agents installed through APT/DNF still update through their configured package
-repositories; selecting Beta does not add a Beta repository. For fleet-managed
-Beta auto-updates use standalone binaries; package installations require manual
-installation of the Beta release assets.
+MSI-installed and APT/DNF-managed Agents always follow Stable, because no Beta
+MSI or repository package exists. Since [73197f9](https://github.com/Printmaster-Org/printmaster/commit/73197f94515e75003f8103372d3de6aa78b1bc9c),
+they ignore a Fleet Beta/Dev selection and refuse explicit Beta/Dev installs (see
+[install-method channel limits](/guides/configuration/#agent-update-channels)).
+For fleet-managed Beta auto-updates use standalone binaries or Docker; package
+installations require manual installation of the Beta release assets.
+
+CD release bodies are generated with the release type in mind (reviewed at
+[d75aa7c](https://github.com/Printmaster-Org/printmaster/commit/d75aa7c4a69ff31ee70ee5ae73c4ac000d39391a)).
+Docker instructions pin the exact version and name the channel alias (`beta` or
+`latest`); images are built for `linux/amd64` and `linux/arm64` only.
+`scripts/release-companion.sh` resolves the companion Agent/Server section for both
+workflows. A same-version companion wins, so `release both --beta` links the Beta
+pair. Otherwise the newest Stable release in the same minor line is used; other
+Beta and Dev tags are never a fallback. When none exists the body says so instead
+of rendering empty links. Beta companion sections omit the Stable-only APT/DNF
+commands and MSI. `scripts/release-companion.test.js` covers resolution and
+guards both bodies against `:latest` and unbuilt architectures.
 
 The optional `-CreateGitHubRelease` / `--create-github-release` also marks Beta
 as a prerelease and not latest, but normally let CD create the release with all
