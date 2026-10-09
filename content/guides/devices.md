@@ -48,6 +48,28 @@ fixture, synthetic supply-table PDUs, Go tests/vet, and desktop/mobile browser
 tests; the printer was unavailable for a fresh scan. This is not a live-device
 verification or an audit of saved/discovered state transfer.
 
+### Saved versus discovered state
+
+Saved/discovered is an **Agent-local device state**, not the same as being
+present in Server inventory and not the `source_type` discovery method.
+Updated Agents include an explicit `is_saved` boolean in device uploads,
+including `false` for discovered devices. Save/Save All wakes the existing
+upload worker after persistence; coalescing and the worker's request/retry
+timing still apply. No save operation advances printer `last_seen`.
+
+The Server retains that flag in the uploaded inventory metadata and exposes it
+at the top level of full row/list responses used by device details. The lightweight index stays
+unchanged. Shared details honor an explicit flag over a stale saved/discovered
+caller hint. Older Agent records without the flag have **unknown** saved state;
+Server details do not label them discovered or assume they are saved.
+
+Server details use Server deletion with its existing confirmation/options.
+They do not offer the Agent-only **Save Device** action or call Agent-local
+save/delete endpoints. For a truly discovered device, save it in its owning
+Agent UI; an inventory row on the Server does not save it on the Agent.
+After updating an Agent, a successful device upload refreshes retained saved
+state without a new SNMP scan.
+
 ## Global search, filters and sorting
 
 Search and metadata filters operate across the full authorized index, not just the first rendered page. A distant serial, make/model, hostname, asset number or location can therefore match before its full row has loaded. Agent IDs work before names arrive; agent names and tenant labels become searchable after directories resolve. Tenant membership comes from the agent directory, not from the lightweight device index.
