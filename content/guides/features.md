@@ -13,6 +13,7 @@ Complete guide to PrintMaster's features and capabilities.
 - [Multi-Site Management](#multi-site-management)
 - [WebSocket Proxy](#websocket-proxy)
 - [Alerts & Notifications](#alerts--notifications)
+- [Scheduled Reports](#scheduled-reports)
 - [Scheduled Scans](#scheduled-scans)
 - [Auto-Updates](#auto-updates)
 - [Security Features](#security-features)
@@ -301,6 +302,65 @@ Get notified about important events and issues.
 | Critical toner/ink (`supply_critical`) | At or below 5% |
 
 These rules evaluate reported `TonerLevels`. The snapshot does **not** implement dedicated drum-life, fuser-life, waste-toner-full, or paper-out threshold alerts. Supply information shown by a printer is not evidence that an automatic alert rule exists. Seeded defaults do not overwrite customized existing rules.
+
+---
+
+## Scheduled Reports
+
+Run reports on a schedule and send the results by email, webhook, or both. Delivery was added in [b609e35](https://github.com/Printmaster-Org/printmaster/commit/b609e352da1ff45849022c2f0d67a7ff2b8660a6).
+
+### Creating a Scheduled Report
+
+1. Go to **Alerts** → **Report Scheduling**
+2. Click **New Schedule**
+3. Configure:
+   - **Name** and **Report Type** (device inventory, usage, supplies, alerts, ...)
+   - **Frequency**: daily, weekly (pick a weekday), or monthly (day 1–28)
+   - **Time**: interpreted in your browser's timezone when the schedule is created
+   - **Format**: CSV, JSON, or HTML for the stored result
+   - **Email Recipients**: up to 20 addresses, comma or newline separated
+   - **Webhook URL**: optional `http`/`https` endpoint
+4. Click **Save Schedule**
+
+Each schedule gets its own report definition. Operators' schedules are limited to their tenants; admins' schedules cover the fleet unless a tenant is chosen through the API. The report window matches the cadence: the last 24 hours, 7 days, or 30 days.
+
+**Run Now** generates and delivers immediately without changing the next scheduled time. **Edit** changes timing and delivery. Running a report from the reports list (an ad-hoc run) never sends email or webhooks.
+
+### Email Delivery
+
+Each recipient receives a separate message titled `PrintMaster report: <name>`. The HTML body shows the summary and the first 100 rows, and the text body shows the summary. Download the full result from PrintMaster. Email requires SMTP to be configured on the Server (see [Configuration](/guides/configuration/)).
+
+### Webhook Delivery
+
+The Server sends a JSON `POST`:
+
+```json
+{
+  "event": "report.completed",
+  "report_id": 12,
+  "report_name": "Weekly supplies",
+  "report_type": "supplies_status",
+  "run_id": 345,
+  "schedule_id": 7,
+  "status": "completed",
+  "format": "csv",
+  "started_at": "2026-03-06T09:30:00Z",
+  "completed_at": "2026-03-06T09:30:02Z",
+  "row_count": 250,
+  "summary": { "total_devices": 250 },
+  "columns": ["serial", "model", "..."],
+  "rows": [{ "serial": "SN001", "model": "..." }],
+  "rows_truncated": true
+}
+```
+
+`rows` holds at most 100 rows. `rows_truncated` tells you when more exist. Any `2xx` response is success. Other responses and network errors are retried up to 3 attempts, 5 seconds apart.
+
+Webhook URLs cannot target `localhost`, private, or link-local addresses, and redirects to such addresses are refused. Payloads are not signed yet: put a secret token in the URL and use HTTPS.
+
+### Delivery Failures
+
+A delivery failure does not fail the report. The run stays **completed**, its error message starts with `delivery failed:`, and the Server log records each failing destination. Webhook URLs are never logged. A failed report generation still advances the schedule to its next time, so a broken report cannot retry every minute.
 
 ---
 

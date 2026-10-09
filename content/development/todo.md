@@ -124,7 +124,7 @@ Enable fleet-customized installers.
 
 ### Reporting
 - [ ] PDF/Excel export
-- [ ] Scheduled reports (email digest)
+- [x] Scheduled reports (email and webhook delivery, [b609e35](https://github.com/Printmaster-Org/printmaster/commit/b609e352da1ff45849022c2f0d67a7ff2b8660a6))
 - [ ] Custom report builder
 - [ ] Multi-site reports
 
