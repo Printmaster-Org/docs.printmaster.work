@@ -52,7 +52,7 @@ These are known gaps in the current Beta. They are tracked for future releases a
 - **Update integrity:** Agents verify each download against the SHA-256 hash in the Server's update manifest. The manifest is fetched over the authenticated Agent connection. Agents do not yet verify a manifest signature independently.
 - **Installer channels:** MSI and APT/DNF installs always follow Stable, as described above. MSI Agents older than [bb99bbe](https://github.com/Printmaster-Org/printmaster/commit/bb99bbe850ce2921f4e730b1751d92ec1d1bb361) cannot request the MSI update format and need one manual reinstall with the current MSI.
 - **Docker Agents** update by pulling a new image, not through the in-app updater.
-- **Supply names:** models without a vendor-specific mapping show generic, ink- or toner-aware color names. Supply part numbers and links to official vendor product pages are not shown yet.
+- **Supply names:** models without a vendor-specific mapping show generic, ink- or toner-aware color names. Part numbers that the printer reports are shown separately from the supply name ([26ddb7f](https://github.com/Printmaster-Org/printmaster/commit/26ddb7f97677bf805c62b02f9a439d260e279a87)). Links to official vendor product pages are not provided yet.
 
 ## Reporting issues
 
