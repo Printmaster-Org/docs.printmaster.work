@@ -56,6 +56,30 @@ fixture, synthetic supply-table PDUs, Go tests/vet, and desktop/mobile browser
 tests; the printer was unavailable for a fresh scan. This is not a live-device
 verification or an audit of saved/discovered state transfer.
 
+### Current inventory and printer status
+
+Successful uploads now retain Agent-reported asset/location, description, Web UI,
+network fields, consumables, capabilities and vendor metadata on the Server,
+including changes to existing records. Progressive supply hydration preserves
+inkjet/type badges and supply descriptions while ignoring stale embedded levels.
+
+Regular metrics polls also refresh Printer-MIB alerts and Epson status before
+the Agent sends current inventory and latest metrics. Observed resolved Epson
+alerts are cleared; missing or failed status polling does not mark a printer
+healthy. Sparse polling preserves previously learned capabilities and vendor
+facts. Observation/sample timestamps are retained rather than replaced by upload
+time. Updates follow the configured metrics polling and upload/wake cadence;
+disconnected Agents cannot refresh Server inventory immediately.
+
+Current vendor/status details are inventory metadata. Historical metrics retain
+counters and distinct cartridge/maintenance-box levels, not a complete
+historical vendor-status series. Older collapsed supply history cannot be repaired
+without fresh device readings.
+
+Synchronization and hydration reviewed at [source commit f22f20d](https://github.com/Printmaster-Org/printmaster/commit/f22f20da2c8226376bae6929a8fafa09ee325e6f),
+using synthetic Epson status frames, local SQLite/HTTP tests and desktop/mobile
+browser tests. A live Epson printer was not queried during this verification.
+
 ### Saved versus discovered state
 
 Saved/discovered is an **Agent-local device state**, not the same as being

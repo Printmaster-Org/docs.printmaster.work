@@ -40,6 +40,40 @@ The [machine ownership safeguards](/api/machine-ownership/) describe atomic stor
 
 ## Next contract work
 
+### Inventory and status with metrics
+
+Device batches retain the uploaded common inventory fields (including asset
+number, location, description, Web UI URL, network fields, consumables and status
+messages) and store `raw_data` directly rather than nesting the entire upload
+envelope. Uploaded inventory edits also refresh existing rows. Current
+capabilities, tray data and complete parsed vendor metadata are retained there.
+Record ownership always comes from the authenticated Agent; uploaded per-record
+Agent IDs are not trusted, and atomic owner guards remain in force.
+
+The Server retains per-device observation times and per-sample metric timestamps;
+the batch timestamp is only a fallback for missing times. Batch record fields
+are decoded into the corresponding typed device/metrics structures; malformed
+field types reject the request rather than silently dropping those fields.
+Existing `received`/`stored` partial-success semantics remain unchanged.
+
+Regular Agent metrics polls also collect alert descriptions and vendor status.
+A successful local staged commit refreshes current device metadata before
+waking delivery; each upload cycle sends devices before latest metrics. Decoded
+Epson status or a zero-error standard error-state bitfield can clear resolved
+status messages. Missing/failed status leaves prior state intact. Fresh Epson
+status clears obsolete error/warning keys without discarding other vendor facts.
+Historical metrics continue storing counters and supply levels, including
+distinct ink cartridges and maintenance boxes; richer current status/vendor
+facts live in inventory metadata, not a new historical series.
+
+This is a compatible correction to existing authenticated HTTP batch routes,
+not a protocol-version change or expansion of either read-only OpenAPI subset.
+It does not guarantee immediate delivery while an Agent is disconnected.
+
+Reviewed at [source commit f22f20d](https://github.com/Printmaster-Org/printmaster/commit/f22f20da2c8226376bae6929a8fafa09ee325e6f),
+limited to inventory/metrics ingestion, local staged persistence, upload payloads
+and related regression tests. This is not a live-printer or whole-protocol audit.
+
 ### Upload worker wake and shutdown
 
 The Agent uploader adds an optional nonblocking wake capability after successful

@@ -95,6 +95,22 @@ notes/location/asset, visibility, saved state, classification and page-count
 baselines are not scanner-patchable. Identity-only work records no scan history,
 metrics or last-seen time; liveness-only work advances only last-seen.
 
+Regular metrics polling now queries Printer-MIB alert descriptions alongside
+vendor status, including Epson ST2. The local staged transaction retains current
+status, vendor details, tray information and distinct ink/maintenance supply
+names without overwriting inventory capabilities, learned OIDs or user state.
+Decoded Epson status or an obtained zero-error standard error-state bitfield
+can clear resolved status messages; absent or failed status is not healthy.
+Fresh Epson status removes obsolete error/warning keys while merging other
+vendor facts, preserving details obtained only by fuller scans.
+Successful local commits wake the existing uploader, which sends devices before
+metrics. Vendor/status details remain current inventory metadata, not a new
+historical status series; historical metrics retain counters and supply levels.
+
+This synchronization behavior is reviewed at [source commit f22f20d](https://github.com/Printmaster-Org/printmaster/commit/f22f20da2c8226376bae6929a8fafa09ee325e6f),
+limited to scanner conversion, staged persistence and upload flow, with offline
+status/identity and transport regressions rather than a live-printer audit.
+
 Creating a device or changing its address requires a scanner-validated serial.
 The expected address guards the **previously stored** address (compare-and-set),
 not the newly observed destination; liveness updates and moves require it. Other
