@@ -14,6 +14,10 @@ PrintMaster publishes three release channels:
 
 Each Stable minor release first goes through one or more Beta builds, for example `0.32.0-beta.1`, then `0.32.0-beta.2`, then `0.32.0`. Beta builds are feature-complete candidates. They can still contain bugs, so run them only on fleets where an interruption is acceptable.
 
+Dev versions end in a commit hash, such as `0.32.0-dev.00a4d92`. Hashes are not sequence numbers. For Agent updates within the same major/minor/patch Dev line, the Server selects the latest cached release by its publication time, not by hash ordering or manifest signing time. Agents accept a different server-selected Dev build on that line, subject to their version pins. Stable and Beta continue to use semantic-version ordering; older version lines are not automatic upgrades.
+
+If **Latest Published** is stale, enable prerelease intake and use **Sync from GitHub** in the Server's Agent Release Cache, then **Check for Update** on the Agent. Agent checks read the Server cache; they do not sync GitHub themselves. Servers with the old hash-ordering behavior must be updated before an Agent can discover a newer Dev build with a lower-sorting hash. Older Agents may then need **Update Now** once to bootstrap the fixed updater.
+
 ## Joining the Beta
 
 1. **Back up the Server database.** Beta Servers may apply schema migrations. Rolling a Server back to Stable after a migration is not tested; restore the backup instead. See [Database upgrade](/deployment/database-upgrade/).
