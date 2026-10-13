@@ -9,10 +9,19 @@ This directory contains vendor-specific SNMP OID mappings and analysis for print
 ## Files
 
 ### EPSON_OID_MAPPING.md
-Epson-specific OID mappings for enhanced metrics collection.
-- Enterprise OID base: `1.3.6.1.4.1.231.*`
-- Custom counters and supply tracking
+Epson-specific OID mappings derived from Epson Device Admin.
+- Enterprise OID base: `1.3.6.1.4.1.1248.*`
+- Counters, supplies, ST2 status frame decoding
 - Vendor quirks and workarounds
+
+### SNMP_WALK_CAPTURE.md
+Admin-only tool for capturing full SNMP walks from remote agents via the
+server UI, used to gather raw data for new vendor mappings.
+
+### DEVICE_CONFIGURATION_NOTES.md
+Known mechanisms for remotely changing device settings, such as Epson SNMP SET
+operations, ENPC and templates. Reference material for future cross-vendor
+configuration editing.
 
 ### KYOCERA_OID_MAPPING.md
 Kyocera-specific OID mappings and meter analysis.
@@ -55,4 +64,3 @@ Vendor-specific code is implemented in:
 ---
 
 *See*: `docs/SNMP_REFERENCE.md` for general SNMP documentation
-

@@ -313,6 +313,10 @@ The **Learned OID System** caches exact OIDs that worked during discovery:
 **Status**: Implemented and tested  
 **Coverage**: 6/10 devices (60% of environment)
 
+> **Superseded mapping:** the Epson module was later rebuilt from Epson Device Admin's own MIB usage.
+> The OID guesses in this file (e.g. the `6.*` "job counters", which are actually the paper-size table) are historical.
+> See [EPSON_OID_MAPPING.md](/development/vendor/epson-oid-mapping/) for the current mapping.
+
 **What Was Implemented**:
 1. ✅ Created `agent/scanner/vendor/epson.go` with VendorModule interface
 2. ✅ Added enterprise OIDs from `1.3.6.1.4.1.1248.1.2.2.27.*` tree
@@ -421,4 +425,3 @@ Once expected meters are provided:
 - Learned OID system solves the immediate reliability issue
 - Vendor-specific modules offer enhanced metrics beyond standard Printer-MIB
 - Enterprise OID trees are vendor-documented but require research
-

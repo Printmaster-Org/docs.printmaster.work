@@ -48,7 +48,7 @@ Protected Server operations accept a **user session token** via `Authorization: 
 
 ## Agent API
 
-Local Agent routes have a [separate specification](/api/agent/) and `pm_agent_session` cookie authentication. In local auth mode, loopback admin bypass requires `allow_local_admin = true`. The wrapper also examines forwarding headers; restrict direct agent access and sanitize those headers at a trusted proxy. Disabled auth is unsafe on untrusted networks. See [agent auth configuration](/guides/configuration/#authentication-settings).
+Local Agent routes have a [separate specification](/api/agent/) and `pm_agent_session` cookie authentication. In local auth mode, loopback admin bypass requires `allow_local_admin = true`. Loopback is judged from the TCP peer address only. Forwarding headers cannot grant it, and client-supplied `X-PrintMaster-*` proxy headers are stripped. Disabled auth is unsafe on untrusted networks. See [agent auth configuration](/guides/configuration/#authentication-settings).
 
 ## Error Responses
 
