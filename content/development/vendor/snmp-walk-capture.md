@@ -1,7 +1,7 @@
 ---
 title: "SNMP Walk Capture (Admin Tool)"
 source: "docs/dev/vendor/SNMP_WALK_CAPTURE.md"
-sourceCommit: "44e15b5bbe48f4fae2f920af9880ca7ca49a4b17"
+sourceCommit: "6c854185be73e025ba010a2deec11779081f016d"
 ---
 
 Full SNMP walks of real devices are the raw material for vendor OID mapping
