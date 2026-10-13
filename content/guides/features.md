@@ -464,7 +464,7 @@ days_of_week = ["Saturday", "Sunday"]
 | `server` | Defers auth to central server |
 | `disabled` | No authentication (unsafe on untrusted networks) |
 
-The current loopback detector also checks forwarding headers. Restrict direct access to the agent and sanitize those headers at a trusted proxy; do not rely on this mode as protection against spoofed headers.
+Loopback admin is decided by the TCP peer address only. Forwarding headers (`X-Forwarded-For`, `X-Real-IP`, `Forwarded`) never grant it. If a reverse proxy on the same host forwards a request for a non-loopback client, that request is not treated as local. Server-proxied requests are trusted only through the agent's authenticated WebSocket tunnel. `X-PrintMaster-*` headers sent by network clients are removed and ignored.
 
 ### TLS/HTTPS
 

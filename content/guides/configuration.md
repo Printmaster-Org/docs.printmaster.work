@@ -201,7 +201,7 @@ epson_remote_mode_enabled = false
 
 The runtime defaults enable HTTP on `8080` and HTTPS on `8443`, with an auto-generated certificate when available. Configure `enable_http`, `enable_https`, `custom_cert_path`, and `custom_key_path` through the agent's unified web settings/UI, not unsupported `cert_file`/`key_file` TOML keys.
 
-With `mode = "local"` and `allow_local_admin = true`, protected routes permit loopback admin bypass, not unrestricted remote access. `disabled` removes authentication and is unsafe on untrusted networks. The current loopback detector also examines forwarding headers; restrict direct agent access and sanitize those headers at a trusted proxy. This is not a guarantee of resistance to spoofed headers.
+With `mode = "local"` and `allow_local_admin = true`, protected routes permit loopback admin bypass, not unrestricted remote access. `disabled` removes authentication and is unsafe on untrusted networks. Loopback is determined from the TCP peer address only. Spoofed `X-Forwarded-For`/`X-Real-IP` headers cannot grant local admin. A same-host reverse proxy forwarding for a remote client is not treated as local. Note that a local proxy that strips forwarding headers makes every proxied request look local, so disable `allow_local_admin` behind such a proxy.
 
 ### Server Connection Settings
 
