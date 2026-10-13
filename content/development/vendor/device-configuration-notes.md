@@ -1,7 +1,7 @@
 ---
 title: "Device Configuration Notes (Cross-Vendor)"
 source: "docs/dev/vendor/DEVICE_CONFIGURATION_NOTES.md"
-sourceCommit: "cf32aa6cade9fa1f905f17ff18ab872ea3870c54"
+sourceCommit: "44e15b5bbe48f4fae2f920af9880ca7ca49a4b17"
 ---
 
 These notes record what we know about **changing** printer settings remotely.
