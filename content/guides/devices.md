@@ -12,6 +12,18 @@ The index is authorized and scoped in backend SQL. The browser does not download
 
 ## Scrolling and switching views
 
+### Filtering by status tags
+
+Click a status tag beside **Total** and **Showing** (Healthy, Warning, Error,
+Jam, Offline, or Unknown) to show only devices with that status. Click more
+tags to include any of those statuses; click a selected tag again to remove it.
+Selected tags are highlighted. With no tags selected, all statuses are shown.
+**Clear tag filters** clears the status selection without changing search,
+Agent, tenant, manufacturer, or consumable filters. The sidebar status buttons
+share the same selection. These filters apply in both Cards and Table views.
+Tag counts show totals in the authorized inventory, while **Showing** reflects
+all active filters. Tags with zero devices remain available to select.
+
 Cards and Table use the existing renderers and controls. Preview DOM pages contain 30 devices. Only rows inside the viewport plus a 200-pixel overscan are requested; scrolling exposes additional preview pages and hydrates their visible rows. **Load more devices** also works as a keyboard-accessible button.
 
 Rows load before beyond-page-count metrics. Supplies and optional snapshot counters display a loading label until their own request completes; stale toner values embedded in inventory `raw_data` are not shown as current supplies. Switching Cards/Table keeps the hydration caches, rather than fetching the whole fleet again.
