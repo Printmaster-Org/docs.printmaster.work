@@ -54,6 +54,25 @@ serialization, plus tenant-scoped response regressions. The original handler
 review and observation-freshness provenance remain separate. No whole-API
 audit or contract/product/protocol version change is claimed.
 
+### Effective metadata and Server pins
+
+Metadata ownership reviewed at
+[source commit 049f9ce](https://github.com/Printmaster-Org/printmaster/commit/049f9cec1e9e89f5938286bbde8298492ca5f795)
+adds optional `metadata_overrides`, `dns_servers` and `dhcp_server` to full rows.
+A present override key is pinned even when its text is blank or its DNS array
+is empty. Index, list, rows and details use the same materialized effective
+values; incoming uploads retain reported values separately rather than replacing
+Server pins. Unpin restores the latest retained report.
+
+Inventory `raw_data` retains the Agent's metadata but reserves
+`metadata_overrides` for the authoritative Server map and normalizes DNS/DHCP
+values for persistence. Uploaded override maps are not trusted. These are
+additive read-schema and upstream storage semantics, not new index fields,
+permission changes or a whole-operation review. Original contract revisions
+remain separately pinned; `x-source.metadata-commit` records this limited
+follow-up. Edit/unpin remain outside the read-only contract; see
+[the metadata protocol](/api/protocol/#server-owned-device-metadata).
+
 ## Fetch lazy metrics
 
 `POST /api/v1/devices/metrics/query` accepts the same request and returns a non-null `MetricsSnapshot` array. Only the latest current-owner-matched record is returned per visible device. Missing/unauthorized serials and devices without matching metrics are omitted without disclosing which case occurred.

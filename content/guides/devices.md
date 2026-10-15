@@ -80,6 +80,39 @@ Synchronization and hydration reviewed at [source commit f22f20d](https://github
 using synthetic Epson status frames, local SQLite/HTTP tests and desktop/mobile
 browser tests. A live Epson printer was not queried during this verification.
 
+### Editing and pinning device metadata
+
+Server device-detail edits are **Server-owned pins**. They persist even when
+the Agent is offline and cannot be replaced by later inventory uploads or scans.
+Blank text values are valid pins. The Server modal labels pinned fields and
+offers **Unpin**, which immediately restores the latest retained reported value.
+Search, index, rows and details all use the effective pinned values.
+
+On an updated managed Agent, Server-pinned fields have disabled Edit controls.
+Editing an unpinned field submits the change to the Server and creates the same
+Server-owned pin, not an Agent-local lock. If the Server is unreachable the edit
+fails without changing local data or queuing it for later. A concurrent Server
+pin causes a conflict; mixed edits are rejected together rather than partly saved.
+Scanned updates and Apply All exclude known pins; DNS changes use address arrays.
+
+Pins synchronize on heartbeat cadence and are cached across Agent restart and
+offline periods. Refresh an already-open Agent modal to see newly synchronized
+controls; stale controls cannot bypass the Server's conflict checks. Explicitly
+disconnecting the Agent releases its cached Server pins. Normal connection
+failure does not. Standalone editing and existing local locks remain local;
+historical locks are not automatically converted into Server pins.
+
+Manual metadata edits and lock changes do not make a printer appear freshly
+observed and do not change metrics/status, saved state or visibility. Editing
+display/network metadata does not reconfigure the printer itself or bypass its
+serial-identity checks. For the complete managed workflow, update both Agent
+and Server; an older Server cannot accept the new machine edit requests.
+See [metadata synchronization and API boundaries](/api/protocol/#server-owned-device-metadata).
+
+Implemented and regression-tested at
+[source commit 049f9ce](https://github.com/Printmaster-Org/printmaster/commit/049f9cec1e9e89f5938286bbde8298492ca5f795);
+this is a source revision, not a deployed release.
+
 ### Saved versus discovered state
 
 Saved/discovered is an **Agent-local device state**, not the same as being

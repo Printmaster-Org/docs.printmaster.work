@@ -86,6 +86,28 @@ cover admission/coalescing, stages, identity conflicts, commit and shutdown;
 serials, raw protocol payloads, credentials and backend error text are excluded.
 Offline fake-backend tests and race tests cover these ownership contracts.
 
+#### Server-owned metadata
+
+Server overrides are cached separately from locally reported values. Heartbeat
+reconciliation restores pins after restart/reconnect; failed synchronization does
+not release them. Staged scanner commits retain obtained values beneath pins
+without overwriting effective columns. Generic writers, including spooler
+upserts, also preserve pins and existing local locks. Uploads send reported values
+rather than echoed overrides, so Server unpin can restore the latest report.
+
+Managed Agent manual edits are submitted to the Server and become Server pins
+without creating local locks. Existing pins reject those edits; offline edits
+fail without a queue or local fallback. Standalone locks are not automatically
+promoted. Manual edits/locks preserve `last_seen`, and IP overrides do not bypass
+serial/target guards. Explicit disconnect releases cached pins and refreshes the
+scanner index; loss of connectivity does not. See
+[device editing](/guides/devices/#editing-and-pinning-device-metadata) and the
+[machine metadata protocol](/api/protocol/#server-owned-device-metadata).
+
+This follow-up matches
+[source commit 049f9ce](https://github.com/Printmaster-Org/printmaster/commit/049f9cec1e9e89f5938286bbde8298492ca5f795).
+The page's `sourceCommit` front matter retains its original import provenance.
+
 #### Partial persistence
 
 The Agent SQLite store adds a staged scanner commit that writes only facts the
