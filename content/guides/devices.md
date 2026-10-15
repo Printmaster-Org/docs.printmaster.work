@@ -20,7 +20,11 @@ Once a device's supplies load, scrolling away and back reuses them without
 another request, even after visiting more than 300 devices. Loaded rows and
 snapshots stay cached for the current authorized inventory. An explicit reload
 clears them; background device updates refresh affected entries while retaining
-unchanged devices.
+unchanged devices. Previously loaded supplies remain visible until replacement
+data arrives, including when scrolling away and back during an Agent upload.
+If a background request fails, the last loaded values stay visible alongside
+the retry/error notice; they are not a newly confirmed reading. A successful
+response with no snapshot clears the old reading.
 
 Focus a row/card and press **Space** to select or **Enter** to open details. Details explicitly fetch that device's row and snapshot. Right-click context menus and table customization remain available.
 
