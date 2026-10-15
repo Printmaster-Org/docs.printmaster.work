@@ -55,7 +55,8 @@ The Server retains per-device observation times and per-sample metric timestamps
 the batch timestamp is only a fallback for missing times. Batch record fields
 are decoded into the corresponding typed device/metrics structures; malformed
 field types reject the request rather than silently dropping those fields.
-Existing `received`/`stored` partial-success semantics remain unchanged.
+The `received`/`stored` counts retain their meaning; metrics receipts now
+explicitly identify rejected records as described below.
 
 Regular Agent metrics polls also collect alert descriptions and vendor status.
 A successful local staged commit refreshes current device metadata before
@@ -74,6 +75,71 @@ It does not guarantee immediate delivery while an Agent is disconnected.
 Reviewed at [source commit f22f20d](https://github.com/Printmaster-Org/printmaster/commit/f22f20da2c8226376bae6929a8fafa09ee325e6f),
 limited to inventory/metrics ingestion, local staged persistence, upload payloads
 and related regression tests. This is not a live-printer or whole-protocol audit.
+
+### Metrics batch receipts
+
+`POST /api/v1/metrics/batch` retains Agent bearer-token authentication. The
+payload `agent_id` must match the authenticated Agent (`403` otherwise);
+missing/invalid machine authentication returns `401`. Malformed JSON or
+incorrect field types return `400`. A decoded, authenticated batch returns
+HTTP `200`, including partial and fully rejected batches.
+
+```json
+{
+  "success": false,
+  "received": 2,
+  "stored": 1,
+  "failures": [
+    {"index": 1, "serial": "EXAMPLE-2", "code": "ownership_conflict"}
+  ]
+}
+```
+
+- `success` is true only when all received snapshots were stored.
+- `received` counts all submitted entries, including null/invalid entries.
+- `stored` counts successful persistence operations.
+- `failures` is omitted on complete success. Otherwise it lists each rejected
+  entry in input order, with a zero-based `index`, optional submitted `serial`,
+  and one of these codes:
+
+| Code | Meaning |
+| --- | --- |
+| `invalid_record` | Null snapshot or missing/empty serial |
+| `ownership_conflict` | Storage ownership guard rejected the snapshot; missing and foreign-owned devices are deliberately indistinguishable |
+| `storage_error` | Other persistence failure; internal database details remain in Server logs, not the response |
+
+An empty batch succeeds with both counts zero. The Server continues processing
+after individual failures; accepted snapshots are not rolled back.
+
+The updated Agent validates receipt counts against its submitted batch, checks
+`success`, and retains failure details in its upload error. Partial or rejected
+receipts do not advance either the client or worker's last successful metrics
+upload time. Acknowledged rejections skip immediate whole-batch backoff retries:
+accepted snapshots may already exist. Normal upload cycles still run and send
+the latest local snapshots. This is not a per-record historical retry queue,
+snapshot deduplication, or an exactly-once guarantee. Network/HTTP failures keep
+the existing retry policy.
+
+**Mixed versions:** New Agents detect partial receipts from older Servers using
+`stored < received`, even when those Servers return `success: true` and no
+failure details. Old Agents ignore these details and may still log HTTP `200`
+as upload success; update both binaries for end-to-end diagnostics. Third-party
+consumers must treat metrics `success` as complete persistence rather than mere
+request processing. Device-batch receipt semantics are unchanged. These machine
+operations remain outside the reviewed user-session and Agent-local OpenAPI
+subsets; no HTTP-route, product or machine protocol version is changed.
+
+**Scope of this prerequisite slice:** Exclusive device/metrics owner checks
+remain in force. Shared telemetry will permit same-nonempty-tenant reporters;
+site-level enforcement is deferred until devices have their own site assignment.
+Those changes, canonical multi-source counter aggregation, idempotent storage
+and safe agent retirement are not implemented by the receipt change.
+
+Receipt behavior is implemented at
+[source commit 6c189d0](https://github.com/Printmaster-Org/printmaster/commit/6c189d08dd296420642ed31c882e772934ea963e).
+Focused Agent client/worker tests and authenticated Server batch/ownership
+regressions passed. This slice does not change database schemas or claim a new
+PostgreSQL integration run, whole-fleet deployment or released binary.
 
 ### Server-owned device metadata
 
