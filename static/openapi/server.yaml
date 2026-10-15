@@ -3,7 +3,13 @@ x-reviewed-commit: bdf1f8fea22e91d490238d9ab266f2690070c82d
 x-observation-reviewed-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
 x-saved-state-reviewed-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3
 x-metadata-reviewed-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795
+x-telemetry-reviewed-commit: 73ab7263263e53a04715b48dcb635ff2cafe1a37
 x-review-notes: |
+  Shared-telemetry follow-up at x-telemetry-reviewed-commit covers eligible same-nonempty-tenant reporters
+  for inventory/latest/history/bounds and preserves management-owner user scope.
+  Metric agent_id is source attribution, not management ownership.
+  Site authorization, historical tenant ledgers and safe Agent retirement
+  are not established by this follow-up. Payload shapes remain unchanged.
   Metadata follow-up at x-metadata-reviewed-commit covers effective Server pins,
   optional metadata_overrides/DNS/DHCP row fields and their persistence/read path.
   Affected x-source.metadata-commit records this limited additive review.
@@ -187,7 +193,7 @@ paths:
   /api/v1/devices/list:
     get:
       operationId: listDevices
-      x-source: {path: server/main.go, handler: handleDevicesList, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3, metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795}
+      x-source: {path: server/main.go, handler: handleDevicesList, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3, metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795, telemetry-commit: 73ab7263263e53a04715b48dcb635ff2cafe1a37}
       tags: [Fleet]
       summary: List fleet devices with available latest metrics
       description: |
@@ -201,8 +207,10 @@ paths:
         unassigned/foreign agents' devices. Counts and rows share the same
         SQL tenant predicate joined through agents. Reads no longer load all
         devices then filter. Ordered last_seen descending, serial ascending.
-        Latest enrichment uses indexed points matching both serial and the
-        current device agent_id; foreign-owner legacy metrics are excluded.
+        Latest enrichment uses indexed points matching serial and an eligible
+        reporter: the owner or an Agent in the owner's same nonempty tenant.
+        Foreign-tenant legacy metrics are excluded. Inventory agent_id remains
+        the management owner; metric sources do not transfer device ownership.
         Historical ownership ledgers remain outside this operation. Legacy
         no-limit lists remain unbounded; metric keys are internally chunked.
         Scoped storage unavailable returns 500, never an unrestricted fallback.
@@ -231,7 +239,7 @@ paths:
   /api/v1/devices/index:
     get:
       operationId: devicesIndex
-      x-source: {path: server/inventory_api.go, handler: handleDevicesIndex, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795}
+      x-source: {path: server/inventory_api.go, handler: handleDevicesIndex, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795, telemetry-commit: 73ab7263263e53a04715b48dcb635ff2cafe1a37}
       tags: [Fleet]
       summary: Lightweight caller-visible inventory index
       description: |
@@ -241,8 +249,9 @@ paths:
         data. Returns all visible lightweight metadata for client search/sort/
         filter, not a paginated snapshot. No query filters are implemented.
         Ordered last_seen descending, serial ascending. page_count is the latest
-        current-owner-matched indexed metric (timestamp descending, page_count
-        descending for ties), zero when absent. No raw_data, consumables or toner
+        eligible-reporter indexed metric (owner or same nonempty tenant;
+        timestamp descending, page_count descending, agent_id ascending for
+        ties), zero when absent. No raw_data, consumables or toner
         metrics are selected. Status messages are always an array. Empty optional
         strings are present as empty strings; is_usb and page_count are present.
         Agent-machine bearer credentials cannot authorize this operation.
@@ -259,7 +268,7 @@ paths:
   /api/v1/devices/rows:
     post:
       operationId: queryDeviceRows
-      x-source: {path: server/inventory_api.go, handler: handleDevicesRows, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3, metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795}
+      x-source: {path: server/inventory_api.go, handler: handleDevicesRows, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3, metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795, telemetry-commit: 73ab7263263e53a04715b48dcb635ff2cafe1a37}
       tags: [Fleet]
       summary: Hydrate selected inventory rows before lazy metrics
       description: |
@@ -272,12 +281,14 @@ paths:
         [] is valid. Unauthorized/missing serials are silently omitted, not
         reported individually. Ordered last_seen descending, serial ascending,
         not request order. Full stored DeviceWithMetrics inventory fields,
-        including consumables and raw_data, plus latest owner-matched page_count
+        including consumables and raw_data, plus latest eligible-reporter page_count
         only. No top-level toner_levels, color_pages, mono_pages, scan_count or
         last_metrics_at. raw_data is the original inventory blob, not sanitized
         metric content. Zero page_count is omitted by the legacy Go omitempty
         tag; zero is also the fallback when no matching snapshot exists.
         No metrics beyond page count are queried for row hydration.
+        Eligible reporters are the device owner or Agents in its same nonempty
+        tenant. Row agent_id remains the management owner, not the reporter.
         Optional is_saved reflects Agent-uploaded saved/discovered state;
         false is serialized, absent means not reported by a legacy Agent.
         initial_page_count is not selected and is therefore omitted.
@@ -297,19 +308,21 @@ paths:
   /api/v1/devices/metrics/query:
     post:
       operationId: queryDeviceMetrics
-      x-source: {path: server/inventory_api.go, handler: handleDevicesMetricsQuery, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d}
+      x-source: {path: server/inventory_api.go, handler: handleDevicesMetricsQuery, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, telemetry-commit: 73ab7263263e53a04715b48dcb635ff2cafe1a37}
       tags: [Metrics]
       summary: Lazy latest metrics for selected visible devices
       description: |
         Same viewer-or-higher user session, per-request authorization, exact
         serial validation, 100-distinct-key and 65536-byte body limits as rows.
         Scope is enforced in the same SELECT by joining current device owners
-        through agents. Latest point matches serial AND current agent_id using
-        an owner/time index, not MAX over the full history. Ties use page_count,
+        through agents. Latest point matches serial AND an eligible reporter:
+        the management owner or an Agent in its same nonempty tenant. Uses
+        a serial/time/page/reporter index, not MAX over the full history.
+        Ties use page_count descending, reporter agent_id ascending, then
         color_pages, mono_pages, scan_count, toner_levels descending; identical
         serialized values are equivalent. Ordered device last_seen descending,
         serial ascending. Missing/unauthorized devices and devices without an
-        owner-matched snapshot are omitted. Empty result is []. Storage errors
+        eligible-reporter snapshot are omitted. Empty result is []. Storage errors
         return 500, not partial results or an unrestricted fallback. ID is 0
         because this projection does not select storage IDs (Timescale may drop
         them); zero counters and absent toner are omitted, not measured-null
@@ -319,7 +332,7 @@ paths:
       requestBody: {$ref: '#/components/requestBodies/InventoryKeys'}
       responses:
         '200':
-          description: Non-null latest owner-matched MetricsSnapshot array
+          description: Non-null latest eligible-reporter MetricsSnapshot array; agent_id is the reporting source
           content:
             application/json:
               schema: {type: array, items: {$ref: '#/components/schemas/InventoryMetrics'}}
@@ -331,13 +344,15 @@ paths:
   /api/devices/metrics/history:
     get:
       operationId: deviceMetricsHistory
-      x-source: {path: server/main.go, handler: handleMetricsHistory}
+      x-source: {path: server/main.go, handler: handleMetricsHistory, telemetry-commit: 73ab7263263e53a04715b48dcb635ff2cafe1a37}
       tags: [Metrics]
       summary: Read uploaded device metrics history
       description: |
         Requires metrics.history.read and a tenant scope for non-admin users;
         scoped requests check the device's owning agent tenant. Uses the server
-        DB, not a live agent query. since overrides period. Unknown period falls
+        DB with observations from the owner or same-nonempty-tenant reporters;
+        reporter eligibility follows current Agent tenant assignments.
+        Not a live agent query. since overrides period. Unknown period falls
         back to week. until is not read by the handler, despite its source
         comment; there is no upper time bound. Rows are timestamp-ascending.
         raw=true disables downsampling. Otherwise maxPoints defaults to 200,
@@ -380,10 +395,10 @@ paths:
   /api/devices/metrics/bounds:
     get:
       operationId: deviceMetricsBounds
-      x-source: {path: server/main.go, handler: handleMetricsBounds}
+      x-source: {path: server/main.go, handler: handleMetricsBounds, telemetry-commit: 73ab7263263e53a04715b48dcb635ff2cafe1a37}
       tags: [Metrics]
       summary: Read stored device metrics timestamp bounds and count
-      description: Requires metrics.history.read and a tenant scope for non-admin users; scoped requests check the device's owning agent tenant. Store errors, including absent metrics, become 404. Admin requests do not check device existence first.
+      description: Requires metrics.history.read and a tenant scope for non-admin users; scoped requests check the device's owning agent tenant. Bounds/count include only the owner or same-nonempty-tenant reporters under current assignments. Store errors, including absent metrics, become 404. Admin requests do not check device existence first.
       parameters:
         - {$ref: '#/components/parameters/Serial'}
       responses:
@@ -718,7 +733,7 @@ components:
         source_type: {type: string}
         is_usb: {type: boolean}
         spooler_status: {type: string}
-        page_count: {type: integer, description: Latest current-owner count; zero when absent}
+        page_count: {type: integer, description: Latest eligible-reporter count; zero when absent}
     DeviceRow:
       type: object
       description: Full persisted inventory projection; optional zero/empty fields omitted. Page count only; other top-level metrics deferred. last_seen is a stored device observation, not upload receipt or metric time; no computed online/offline field is added.
