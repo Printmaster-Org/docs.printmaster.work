@@ -18,6 +18,11 @@ Rows load before beyond-page-count metrics. Supplies and optional snapshot count
 
 Focus a row/card and press **Space** to select or **Enter** to open details. Details explicitly fetch that device's row and snapshot. Right-click context menus and table customization remain available.
 
+In Server tables, long copyable values truncate with an ellipsis while the copy
+button remains beside the text without overlapping it. Hover over the text to
+see the full value; the copy button always copies the complete value, not the
+truncated display. Card and detail text retain their existing wrapping.
+
 ### Consumable names and replacement identifiers
 
 Supply cards, compact bars, and charts retain device-reported descriptions and
