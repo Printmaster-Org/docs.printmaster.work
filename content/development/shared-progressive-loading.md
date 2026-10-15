@@ -27,16 +27,16 @@ Both stages share a request scheduler: rows take priority over queued metrics. D
 
 `requestMetrics(keys)` is an explicit exception to viewport metrics demand, used only when a global supply filter/sort requires snapshots. It scans in bounded batches without fetching full rows. `clearMetricQueue()` ends that scan and retains only queued visible metrics. It cannot abort an individual already-running batch; reset aborts the whole generation.
 
-Retain a lightweight per-index-key supply classification separately from the bounded snapshot cache. An evicted snapshot must not erase a completed global classification and silently exclude a distant match. Distinguish pending/error from genuinely unknown/no snapshot. If results are incomplete, say so rather than displaying a definitive empty inventory.
+Retain a lightweight per-index-key supply classification separately from the snapshot cache for global filtering. Distinguish pending/error from genuinely unknown/no snapshot. If results are incomplete, say so rather than displaying a definitive empty inventory.
 
 Server metrics adapters consume the exact reviewed snapshot projection: serial, agent ID, timestamp, optional page count/color pages/mono pages/scan count/toner levels (`id` is zero). Snapshot omission is not a zero counter. Zero is a real value. Inventory `raw_data` can include stale toners; the progressive list strips supply and snapshot-counter fallbacks until the queried snapshot is available. Copy/print/fax/duplex counters are not supplied by this projection and remain absent.
 
 ## Memory and scope
 
-- Defaults: 300 full rows plus 300 snapshots, separate LRU-like insertion/touch caches; `cacheLimit` cannot be smaller than batch size.
+- Successfully loaded rows and snapshots stay cached for the current authorized inventory. Scrolling never evicts them, including after visiting more than 300 devices. Memory grows with the number of hydrated authorized devices; there is no fixed row/snapshot cache limit.
 - Full lightweight index, authorized-key set, stage state/attempts, rendered-key set and optional supply bands are O(authorized devices), retained until reset.
-- Server preview DOM accumulates 30-row pages while scrolling; not full virtualization. Hydrated values are not copied into the global index array, so cache eviction actually releases the full objects.
-- Revisited evicted ready entries can refetch. No TTL/background metrics polling is introduced; refresh starts a new snapshot generation.
+- Server preview DOM accumulates 30-row pages while scrolling; not full virtualization. Hydrated values are not copied into the global index array.
+- Scrolling and switching views reuse loaded rows/snapshots without fetching them again. Explicit reload/reset clears caches; background index refresh invalidates changed keys and removes revoked keys while preserving unchanged hydration. No TTL/background metrics polling is introduced.
 - Index metadata supports global search/sort; agent names and tenant memberships enrich from independent directories. Do not pretend MAC/firmware or unqueried counters exist globally in the index.
 - Browser caches are not authorization boundaries. Every index, row and metrics request is authenticated/authorized by the Server. Never reuse this Server adapter for Agent-local routes or machine credentials without reviewing those different contracts.
 
@@ -44,4 +44,4 @@ See [reviewed backend contract](/api/inventory/) and [user behavior](/guides/dev
 
 ## Validation
 
-Jest covers delayed/partial/error stages, explicit retry caps, deduplication, reset/stale completion, cache eviction, batch/concurrency limits and shared observation. Playwright serves actual Server HTML/scripts with contract-shaped fixtures, delayed index/rows/metrics/directories, no legacy list requests, bounded first-screen demand, scroll expansion, distant metadata/supply matches, cache-preserving view changes, zero counts, loading/error/empty states and keyboard controls. Run all six configured projects (Chromium desktop/small/mobile, Firefox desktop, WebKit desktop/mobile), including tenancy, table-customizer and context-menu suites. Go static-asset tests verify embed/route/MIME/cache wiring.
+Jest covers delayed/partial/error stages, explicit retry caps, deduplication, reset/stale completion, cache retention beyond 300 devices, batch/concurrency limits and shared observation. Playwright serves actual Server HTML/scripts with contract-shaped fixtures, delayed index/rows/metrics/directories, no legacy list requests, bounded first-screen demand, scroll expansion, distant metadata/supply matches, cache-preserving view changes, zero counts, loading/error/empty states and keyboard controls. Run all six configured projects (Chromium desktop/small/mobile, Firefox desktop, WebKit desktop/mobile), including tenancy, table-customizer and context-menu suites. Go static-asset tests verify embed/route/MIME/cache wiring.

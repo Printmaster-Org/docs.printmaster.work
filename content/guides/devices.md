@@ -16,6 +16,12 @@ Cards and Table use the existing renderers and controls. Preview DOM pages conta
 
 Rows load before beyond-page-count metrics. Supplies and optional snapshot counters display a loading label until their own request completes; stale toner values embedded in inventory `raw_data` are not shown as current supplies. Switching Cards/Table keeps the hydration caches, rather than fetching the whole fleet again.
 
+Once a device's supplies load, scrolling away and back reuses them without
+another request, even after visiting more than 300 devices. Loaded rows and
+snapshots stay cached for the current authorized inventory. An explicit reload
+clears them; background device updates refresh affected entries while retaining
+unchanged devices.
+
 Focus a row/card and press **Space** to select or **Enter** to open details. Details explicitly fetch that device's row and snapshot. Right-click context menus and table customization remain available.
 
 In Server tables, long copyable values truncate with an ellipsis while the copy
