@@ -2,7 +2,12 @@ openapi: 3.0.3
 x-reviewed-commit: bdf1f8fea22e91d490238d9ab266f2690070c82d
 x-observation-reviewed-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
 x-saved-state-reviewed-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3
+x-metadata-reviewed-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795
 x-review-notes: |
+  Metadata follow-up at x-metadata-reviewed-commit covers effective Server pins,
+  optional metadata_overrides/DNS/DHCP row fields and their persistence/read path.
+  Affected x-source.metadata-commit records this limited additive review.
+  Edit/unpin operations remain outside this read-only contract.
   Saved-state follow-up at x-saved-state-reviewed-commit reviews the optional
   DeviceRow.is_saved field and its upload/metadata/read path only.
   Row/list x-source.saved-state-commit records this additive review.
@@ -22,7 +27,7 @@ x-review-notes: |
   at x-reviewed-commit (bdf1f8fea22e91d490238d9ab266f2690070c82d).
   Their x-source.commit pins the newly reviewed implementation.
   Other operations retain the 864fc3ee040bbb28f25d779c69512c5b6999d421 review;
-  this is not a new whole-API audit. Agent's seven-operation contract is unchanged.
+  this is not a new whole-API audit. Agent's seven-operation coverage is unchanged.
   Product versions and the machine protocol are unchanged.
   Stricter ownership/auth can deny previously accepted unsafe requests; this
   additive contract revision is not a promise of permissive legacy access.
@@ -182,7 +187,7 @@ paths:
   /api/v1/devices/list:
     get:
       operationId: listDevices
-      x-source: {path: server/main.go, handler: handleDevicesList, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3}
+      x-source: {path: server/main.go, handler: handleDevicesList, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3, metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795}
       tags: [Fleet]
       summary: List fleet devices with available latest metrics
       description: |
@@ -226,7 +231,7 @@ paths:
   /api/v1/devices/index:
     get:
       operationId: devicesIndex
-      x-source: {path: server/inventory_api.go, handler: handleDevicesIndex, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f}
+      x-source: {path: server/inventory_api.go, handler: handleDevicesIndex, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795}
       tags: [Fleet]
       summary: Lightweight caller-visible inventory index
       description: |
@@ -254,7 +259,7 @@ paths:
   /api/v1/devices/rows:
     post:
       operationId: queryDeviceRows
-      x-source: {path: server/inventory_api.go, handler: handleDevicesRows, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3}
+      x-source: {path: server/inventory_api.go, handler: handleDevicesRows, commit: bdf1f8fea22e91d490238d9ab266f2690070c82d, observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f, saved-state-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3, metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795}
       tags: [Fleet]
       summary: Hydrate selected inventory rows before lazy metrics
       description: |
@@ -730,6 +735,9 @@ components:
         mac_address: {type: string}
         subnet_mask: {type: string}
         gateway: {type: string}
+        dns_servers: {type: array, items: {type: string}}
+        dhcp_server: {type: string}
+        metadata_overrides: {$ref: '#/components/schemas/MetadataOverrides'}
         consumables: {type: array, items: {type: string}}
         status_messages: {type: array, items: {type: string}}
         last_seen: {type: string, format: date-time}
@@ -754,6 +762,13 @@ components:
         spooler_status: {type: string}
         usb_webui_available: {type: boolean}
         page_count: {type: integer}
+    MetadataOverrides:
+      type: object
+      description: Authoritative Server-owned pins. A present key is pinned even when its string is blank or its DNS array is empty. See the machine-protocol guide for edit/unpin boundaries.
+      additionalProperties:
+        oneOf:
+          - {type: string}
+          - {type: array, items: {type: string}}
     InventoryMetrics:
       type: object
       additionalProperties: false
@@ -794,6 +809,9 @@ components:
         agent_id: {type: string}
         manufacturer: {type: string}
         model: {type: string}
+        metadata_overrides: {$ref: '#/components/schemas/MetadataOverrides'}
+        dns_servers: {type: array, items: {type: string}}
+        dhcp_server: {type: string}
     MetricsSnapshot:
       type: object
       description: Partial verified snapshot schema. Zero counters and empty agent_id/toner_levels are omitted; id may be zero because the history query does not select it.

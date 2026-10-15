@@ -18,6 +18,7 @@ Route overview originally reviewed at `eeb6259f6060c0534798e3d14ac0cd9d289df9a7`
 | `/api/v1/devices/batch` | Device uploads | Agent bearer token |
 | `/api/v1/metrics/batch` | Metrics uploads | Agent bearer token |
 | `/api/v1/agents/device-credentials` | Agent credential retrieval | Agent bearer token; sensitive operation |
+| `/api/v1/agents/device-metadata` | GET authoritative pin snapshot; POST explicit managed-Agent metadata edits | Agent bearer token; current device ownership checked |
 | `/api/v1/agents/update/manifest` | Update manifest | Agent bearer token |
 | `/api/v1/agents/update/download/…` | Update artifact | Agent bearer token |
 | `/api/v1/agents/update/telemetry` | Update telemetry | Agent bearer token |
@@ -73,6 +74,67 @@ It does not guarantee immediate delivery while an Agent is disconnected.
 Reviewed at [source commit f22f20d](https://github.com/Printmaster-Org/printmaster/commit/f22f20da2c8226376bae6929a8fafa09ee325e6f),
 limited to inventory/metrics ingestion, local staged persistence, upload payloads
 and related regression tests. This is not a live-printer or whole-protocol audit.
+
+### Server-owned device metadata
+
+`GET /api/v1/agents/device-metadata` returns a JSON array (including `[]` when
+empty) for devices currently owned by the authenticated Agent. Each record has
+`serial`, a positive monotonically increasing `version`, and an `overrides`
+object. DNS values are arrays of IP-address strings; all other supported values
+are strings. Blank strings and empty DNS arrays are intentional pins. Empty
+override objects convey unpin versions. Internal owner/reported values are not
+included. Client-supplied Agent identity cannot select another owner's records.
+
+`POST` accepts an explicit edit object, for example
+`{"serial":"EXAMPLE","location":"Reception","dns_servers":["192.0.2.53"]}`.
+Supported fields are manufacturer, model, hostname, firmware, IP, MAC address
+(`mac_address`), subnet mask, gateway, DNS servers, DHCP server, asset number,
+location, description and Web UI URL, using their snake_case JSON names.
+The serial identifies the device and cannot be edited. The body limit is 64 KiB.
+Unknown fields, wrong types, null edit values, invalid IP/DNS addresses and
+requests without edits return `400`; a nonexistent device returns `404`.
+Missing/invalid machine authentication returns `401`; another owner's device
+returns `403`. An existing Server pin or atomic ownership conflict returns `409`,
+with no partial multi-field edit. Success returns the authoritative record.
+Storage/service failures return explicit `5xx` responses.
+
+Server UI `POST /devices/update` now saves overrides locally, without requiring
+an online Agent. `POST /devices/unpin` accepts `{"serial":"EXAMPLE","field":"location"}`.
+Both use the existing Server user-session, tenant and operator/admin permission
+boundary; viewers cannot edit/unpin. Successful responses contain `status`,
+`metadata` (the authoritative record) and `device` (the refreshed effective row).
+These write operations remain outside the reviewed read-only OpenAPI subsets.
+
+Managed Agent `/devices/update` submits unpinned-field edits through the machine
+endpoint, then caches the returned pins without creating local locks. An
+unreachable Server returns `503`: no local-only edit, offline queue or replay.
+Cached pins survive offline periods and restart. Each heartbeat attempts an
+authenticated full snapshot reconciliation; missing records release old cached
+pins, stale record versions cannot replace newer ones, and malformed responses
+fail without clearing the cache. Explicit Server disconnect releases cached pins.
+Synchronization is not instantaneous, and existing open Agent modals may need
+refreshing; backend conflict checks remain authoritative.
+
+SQLite and PostgreSQL retain effective values separately from reported values.
+Uploads refresh reports beneath pins without replacing effective values; Agent
+uploads reconstruct reports rather than echoing cached overrides. Unpin restores
+the latest retained report. Manual edits/locks do not advance printer observation
+times or change saved/visible state, counters or status. Historical Agent-local
+locks are not automatically promoted to Server pins.
+
+Upgrade both binaries for the new managed-edit flow. An older Server without
+the endpoint causes an explicit failure, not a local fallback. Older Agents
+cannot display synchronized pins and may retain historical local locks, but the
+updated Server still protects its overrides from their inventory uploads. No
+product or protocol-version bump is implied. Read responses add optional
+`metadata_overrides`; Server full rows also expose DNS/DHCP fields.
+
+Metadata ownership was reviewed at
+[source commit 049f9ce](https://github.com/Printmaster-Org/printmaster/commit/049f9cec1e9e89f5938286bbde8298492ca5f795):
+storage, authenticated edit/snapshot handlers, heartbeat/upload reconciliation and
+modal controls. Go/SQLite/HTTP and browser regressions cover this bounded slice;
+PostgreSQL integration was compiled but skipped because Docker was unavailable.
+No live-printer verification or whole-protocol audit is claimed.
 
 ### Upload worker wake and shutdown
 

@@ -1,7 +1,12 @@
 openapi: 3.0.3
 x-reviewed-commit: eeb6259f6060c0534798e3d14ac0cd9d289df9a7
 x-observation-reviewed-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
+x-metadata-reviewed-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795
 x-review-notes: |
+  Server-pin cache serialization reviewed at x-metadata-reviewed-commit:
+  optional metadata_overrides in Device/PrinterInfo; affected read handlers
+  record x-source.metadata-commit. Machine and local write operations remain
+  outside these seven reads; this is not a new whole-operation audit.
   Stored observation freshness reviewed at x-observation-reviewed-commit for
   liveness_worker.go, storage/sqlite.go, device serialization and affected
   list/discovered/profile handlers. x-source.observation-commit records this
@@ -74,6 +79,7 @@ paths:
       x-source:
         path: agent/main.go
         handler: 'http.HandleFunc("/devices/list", anonymous handler)'
+        metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795
         observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
       description: |
         No query parameters are read: no pagination, IP filter, or visibility
@@ -106,6 +112,7 @@ paths:
       x-source:
         path: agent/main.go
         handler: 'http.HandleFunc("/devices/discovered", anonymous handler)'
+        metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795
         observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
       description: |
         Always filters visible=true. Unless include_known is exactly true,
@@ -146,6 +153,7 @@ paths:
       x-source:
         path: agent/main.go
         handler: 'http.HandleFunc("/api/devices/profile", anonymous handler)'
+        metadata-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795
         observation-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
       description: Returns the storage Device and MetricsSnapshot directly, without legacy aliases. latest_metrics is null when no raw metrics exist, even if aggregate tiers contain older metrics. No saved/visible filter is applied to the serial lookup.
       parameters:
@@ -383,6 +391,7 @@ components:
         mac_address: {type: string}
         subnet_mask: {type: string}
         gateway: {type: string}
+        metadata_overrides: {$ref: '#/components/schemas/MetadataOverrides'}
         consumables: {type: array, items: {type: string}}
         status_messages: {type: array, items: {type: string}}
         last_seen: {type: string, format: date-time}
@@ -420,6 +429,13 @@ components:
               reason: {type: string}
               locked_at: {type: string, format: date-time}
               locked_by: {type: string}
+    MetadataOverrides:
+      type: object
+      description: Cached Server-owned pins, separate from standalone locked_fields. A present key is pinned even when blank or an empty DNS array. Managed edits require an updated reachable Server.
+      additionalProperties:
+        oneOf:
+          - {type: string}
+          - {type: array, items: {type: string}}
     MetricsSnapshot:
       type: object
       description: |
@@ -507,6 +523,7 @@ components:
         dns_servers: {type: array, items: {type: string}}
         dhcp_server: {type: string}
         hostname: {type: string}
+        metadata_overrides: {$ref: '#/components/schemas/MetadataOverrides'}
         meters: {type: object, additionalProperties: {type: integer}}
         web_ui_url: {type: string}
         learned_oids:
