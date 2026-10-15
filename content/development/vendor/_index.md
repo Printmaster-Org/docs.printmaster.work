@@ -6,6 +6,13 @@ sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 
 This directory contains vendor-specific SNMP OID mappings and analysis for printer manufacturers.
 
+## Device configuration research
+
+[Configuration research](/development/vendor/configuration/) tracks read/write
+interfaces, credentials, model capabilities, and import/export formats separately
+from meter collection. Start with the
+[Epson investigation](/development/vendor/configuration/epson/).
+
 ## Files
 
 ### EPSON_OID_MAPPING.md
