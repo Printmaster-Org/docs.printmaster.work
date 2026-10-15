@@ -56,7 +56,7 @@ test('progressive inventory separates lightweight index, row data and lazy metri
   const spec = await SwaggerParser.validate(path.join(root, 'static/openapi/server.yaml'));
   const revision = 'bdf1f8fea22e91d490238d9ab266f2690070c82d';
   const legacy = spec.paths['/api/v1/devices/list'].get;
-  assert.deepEqual(legacy['x-source'], {path: 'server/main.go', handler: 'handleDevicesList', commit: revision, 'observation-commit': spec['x-observation-reviewed-commit'], 'saved-state-commit': spec['x-saved-state-reviewed-commit'], 'metadata-commit': spec['x-metadata-reviewed-commit']});
+  assert.deepEqual(legacy['x-source'], {path: 'server/main.go', handler: 'handleDevicesList', commit: revision, 'observation-commit': spec['x-observation-reviewed-commit'], 'saved-state-commit': spec['x-saved-state-reviewed-commit'], 'metadata-commit': spec['x-metadata-reviewed-commit'], 'telemetry-commit': spec['x-telemetry-reviewed-commit']});
   assert.match(spec['x-review-notes'], /Other operations retain the 864fc3ee040bbb28f25d779c69512c5b6999d421 review/);
   for (const [route, method] of [['/api/v1/devices/index', 'get'], ['/api/v1/devices/rows', 'post'], ['/api/v1/devices/metrics/query', 'post']]) {
     const op = spec.paths[route][method];
@@ -105,7 +105,10 @@ test('progressive inventory separates lightweight index, row data and lazy metri
   assert.ok(row.properties.raw_data);
   for (const field of ['toner_levels', 'color_pages', 'mono_pages', 'scan_count', 'last_metrics_at']) assert.equal(row.properties[field], undefined);
   assert.match(spec.paths['/api/v1/devices/list'].get.description, /SQL tenant predicate/);
-  assert.match(spec.paths['/api/v1/devices/metrics/query'].post.description, /serial AND current agent_id/);
+  assert.match(spec.paths['/api/v1/devices/metrics/query'].post.description, /serial AND an eligible reporter/);
+  assert.match(spec.paths['/api/v1/devices/metrics/query'].post.description, /same nonempty tenant/);
+  assert.match(spec.paths['/api/v1/devices/rows'].post.description, /management owner, not the reporter/);
+  assert.match(spec.paths['/api/devices/metrics/history'].get.description, /current Agent tenant assignments/);
   const metrics = spec.components.schemas.InventoryMetrics;
   assert.equal(metrics.additionalProperties, false);
   assert.deepEqual(metrics.required, ['id', 'serial', 'timestamp']);
@@ -126,6 +129,25 @@ test('Server editorial coverage and revision match the inventory contract', asyn
     assert.ok(text.includes(spec['x-reviewed-commit']), `${file}: missing newly reviewed revision`);
     assert.ok(text.includes(spec.info.version), `${file}: stale contract version`);
   }
+});
+test('shared telemetry follow-up pins source and keeps management scope separate', async () => {
+  const spec = await SwaggerParser.validate(path.join(root, 'static/openapi/server.yaml'));
+  const revision = '73ab7263263e53a04715b48dcb635ff2cafe1a37';
+  assert.equal(spec['x-telemetry-reviewed-commit'], revision);
+  for (const [route, method] of [
+    ['/api/v1/devices/list', 'get'], ['/api/v1/devices/index', 'get'],
+    ['/api/v1/devices/rows', 'post'], ['/api/v1/devices/metrics/query', 'post'],
+    ['/api/devices/metrics/history', 'get'], ['/api/devices/metrics/bounds', 'get'],
+  ]) {
+    assert.equal(spec.paths[route][method]['x-source']['telemetry-commit'], revision);
+  }
+  assert.match(spec['x-review-notes'], /Metric agent_id is source attribution/);
+  assert.match(spec.paths['/api/v1/devices/metrics/query'].post.description, /reporter agent_id ascending/);
+  const protocol = fs.readFileSync(path.join(root, 'content/api/protocol.md'), 'utf8');
+  assert.ok(protocol.includes(revision));
+  assert.match(protocol, /Site membership does not authorize or prohibit/);
+  assert.match(protocol, /Retain the original Agent record/);
+  assert.match(protocol, /per-counter high-water mark/);
 });
 test('both contracts retain per-operation source provenance and unique IDs', async () => {
   for (const name of ['server', 'agent']) {

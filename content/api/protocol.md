@@ -48,8 +48,10 @@ number, location, description, Web UI URL, network fields, consumables and statu
 messages) and store `raw_data` directly rather than nesting the entire upload
 envelope. Uploaded inventory edits also refresh existing rows. Current
 capabilities, tray data and complete parsed vendor metadata are retained there.
-Record ownership always comes from the authenticated Agent; uploaded per-record
-Agent IDs are not trusted, and atomic owner guards remain in force.
+New device ownership and metric source attribution come from the authenticated
+Agent; uploaded per-record Agent IDs are not trusted. Existing-device inventory
+remains management-owner controlled. Same-tenant secondary discoveries are
+acknowledged without replacing inventory; see shared telemetry below.
 
 The Server retains per-device observation times and per-sample metric timestamps;
 the batch timestamp is only a fallback for missing times. Batch record fields
@@ -129,17 +131,84 @@ request processing. Device-batch receipt semantics are unchanged. These machine
 operations remain outside the reviewed user-session and Agent-local OpenAPI
 subsets; no HTTP-route, product or machine protocol version is changed.
 
-**Scope of this prerequisite slice:** Exclusive device/metrics owner checks
-remain in force. Shared telemetry will permit same-nonempty-tenant reporters;
-site-level enforcement is deferred until devices have their own site assignment.
-Those changes, canonical multi-source counter aggregation, idempotent storage
-and safe agent retirement are not implemented by the receipt change.
+The receipt prerequisite did not relax ownership checks. The subsequent shared
+telemetry slice below permits same-nonempty-tenant reporters. Idempotent storage
+and safe Agent retirement remain separate lifecycle work.
 
 Receipt behavior is implemented at
 [source commit 6c189d0](https://github.com/Printmaster-Org/printmaster/commit/6c189d08dd296420642ed31c882e772934ea963e).
 Focused Agent client/worker tests and authenticated Server batch/ownership
 regressions passed. This slice does not change database schemas or claim a new
 PostgreSQL integration run, whole-fleet deployment or released binary.
+
+### Shared telemetry within a tenant
+
+Any authenticated Agent in the device management owner's **same nonempty
+tenant** can upload metrics for an existing serial. The storage predicate and
+insert execute together. The actual reporting Agent remains `agent_id` on each
+metric; payload IDs cannot impersonate another source. Cross-tenant, unknown
+Agent, missing-device and secondary unassigned-Agent writes are rejected.
+Exact-owner reporting remains compatible for legacy unassigned Agents.
+
+Site membership does not authorize or prohibit telemetry in this slice. Devices
+do not yet have an independent site assignment, so sharing a site is not
+required and empty/different Agent site selections do not block same-tenant
+reporting. Do not use this feature as a device-level site permission boundary.
+
+A secondary same-tenant device upload is acknowledged without replacing the
+management owner's inventory, address, status, saved state or metadata pins.
+It may advance `last_seen` with a newer observation, never regress it, so a
+replacement observer can keep a device fresh without taking over management.
+It counts in the device batch's `stored` acknowledgment count, but does not
+create another device or change management ownership. New serials are created
+under the reporting Agent as before. SSE inventory notifications use persisted
+inventory, never the secondary upload's uncommitted claims.
+
+Metric/latest/history/bounds, progressive inventory, legacy list enrichment and
+tenant reports accept eligible same-tenant observations. Device/report Agent
+and site filters still select devices by their **management owner**, not by
+which Agent reported the metrics. Metric `agent_id` identifies the source and
+may differ from inventory `agent_id`. Management, credentials, explicit metadata
+editing and deletion remain owner-bound. Current tenant assignments determine
+metric eligibility; there is no historical tenant-ownership ledger.
+
+For fleet counter-delta aggregation, printers with multiple eligible historical
+reporters use a **per-counter high-water mark**. Baselines include eligible
+observations before the requested window. Stale lower counters and repeated
+observations cannot lower that baseline or inflate usage when another reporter
+catches up. First observations establish a baseline rather than counting lifetime
+totals as new usage. Shared-printer real resets conservatively contribute no
+usage until counters exceed their previous high-water marks. This can undercount
+after resets; explicit reset/epoch tracking is deferred. Single-reporter reset
+behavior is unchanged. Latest supplies/counters remain the freshest eligible
+snapshot, not the high-water mark; device fleet totals count each serial once.
+Historical report endpoint differences retain their existing calculation; the
+high-water policy applies to fleet hourly delta series.
+
+The original Agent can be offline or permanently disconnected: a newly
+enrolled same-tenant Agent can continue metrics without its participation.
+**Retain the original Agent record.** Deleting Agents still has database cascade
+relationships to owned devices/history. This slice is not an ownership-transfer,
+retirement or history-preservation migration. Serial identity remains globally
+unique, not tenant-composite. Duplicate uploads may still occupy history rows;
+this is not exactly-once persistence or coordinated scanner scheduling.
+
+No payload, route, product or machine protocol version changes are required.
+Upgrade the Server for shared ingestion/reads, and the Agent for the preceding
+receipt diagnostics. No UI setting or site configuration enables this policy.
+
+Implemented at
+[source commit 73ab726](https://github.com/Printmaster-Org/printmaster/commit/73ab7263263e53a04715b48dcb635ff2cafe1a37).
+All 16 Server packages passed, including five-reporter/extra-device overlap,
+disconnected-owner replacement, authenticated upload/tenant isolation,
+inventory/history/bounds, report source scope, liveness monotonicity and
+single/shared counter-reset regressions. PostgreSQL integration fixtures compile;
+runtime execution is pending because the Docker daemon is unavailable.
+Race testing is also pending (local Go has CGO disabled and no C compiler).
+These limits are not a production deployment or PostgreSQL validation claim.
+The Server contract records the limited read-semantic follow-up separately in
+`x-telemetry-reviewed-commit` and each affected `x-source.telemetry-commit`;
+baseline operation/schema provenance and contract 0.3.0 remain unchanged.
 
 ### Server-owned device metadata
 
