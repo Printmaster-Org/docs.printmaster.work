@@ -160,6 +160,92 @@ hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
 
+### Resume handoff: paused 2026-10-16
+
+The maintainer requested a pause and durable handoff, not another implementation
+slice. The proposed ten-minute legacy-test/dev-release-readiness slice was
+**not started**. No dev release, push or implementation PR was created.
+
+#### Start here next session
+
+1. Read the application `AGENTS.md` and `.github/copilot-instructions.md`.
+   Follow the persisted SOLID/DRY, structured logging, explanatory-comment,
+   tested-slice and paired-documentation requirements.
+2. Read [issue #51](https://github.com/Printmaster-Org/printmaster/issues/51)
+   and its [progress comment](https://github.com/Printmaster-Org/printmaster/issues/51#issuecomment-6223946053),
+   then the remaining release gates above. Use the security goals, not the
+   contributor fork implementation. Do not introduce a second signing protocol.
+3. Check both worktrees and recent history before editing; do not assume these
+   local revisions are still the latest. At pause, both were clean on `main`:
+   application `0d64d3d3f67653e825349908fdbfb05e9d3ebec1`, documentation
+   `d84f8932b36f6547e7051706b1c1d5a2e8f29004` before this handoff addition.
+   All implementation/documentation commits from this work remain local.
+4. Continue the agreed full pre-0.32 work. Recommended next coherent slice:
+   design and implement the runtime authorization boundary around the existing
+   TUF verifier, with tests using disposable test keys. Include durable trust
+   state ownership/loss detection and the Server metadata-delivery contract.
+   Do not activate production signing or ship a test root as production trust.
+   Keep package installs explicitly in scope: authenticating a discovery binary
+   is not enough. If this spans commits, leave runtime behavior coherent and
+   document precisely which paths are still unenforced.
+5. Follow with protected privileged handoff/package delivery, installer outcome
+   handling, signing operations, migration qualification and the full adversarial
+   matrix. Update #51 and canonical docs per slice. Do not close P0-06/P0-07
+   from library tests alone.
+
+#### Code map and implementation traps
+
+| Surface | Current state / next integration point |
+| --- | --- |
+| `common/updatetrust/client.go` | Standard verifier with persistent rotated-root cache and context-bounded refresh. Requires independently supplied root; not used by the Agent runtime. Its `Verify` returns an error, not an immutable authenticated install descriptor. Design protected expected-value ownership when wiring the install boundary. |
+| `common/updatetrust/client_test.go`, `root_test.go`, `concurrency_test.go` | Disposable signed repositories, target/expiry/replay/rotation/cache and cancellation tests. Extend these; do not provision real keys for tests. |
+| `common/updatetrust/publish.go`, `publish_test.go` | Routine signing; timestamp is the publication commit point; restores signed versioned dependencies, preserves targets and skips orphaned versions. Caller owns serialization. It is not production release automation. |
+| `common/updatetrust/root.go` | Offline initialization and root rotation primitives, initially single-root-signature policy. Rotation retains routine role keys; routine-role replacement/recovery tooling remains unfinished. |
+| `common/cmd/update-metadata` | Strict inventory CLI, separate routine PKCS#8 keys, freshness-only operation requires previous workspace. No key generation or production activation. |
+| `agent/autoupdate_worker.go`, `agent/autoupdate/manager.go` | Construct the manager and inject trust here; `fetchManifest` still calls log-only signature audit. Audit all update entry points rather than assuming this one call closes every bypass. |
+| `agent/autoupdate/manager.go` installation methods | Download hash check precedes copying to staging. Raw Windows/MSI helpers use paths/batch scripts; real ACLs and protected expected values are not established. Unix cross-filesystem fallback copies over the installed file. Backup failure currently warns and continues. |
+| `agent/autoupdate/command*.go` | Existing deadline/output-cap helper; Linux group termination cannot guarantee control of elevated descendants. Avoid treating forced termination as safe package recovery. |
+| `agent/agent/server_client.go` | Strict same-origin bounded artifact downloads and resumed range/length validation, not independent publisher authenticity. Preserve credentials/transport behavior when adding metadata delivery. |
+| `server/releases/manager.go`, `intake_worker.go`, `artifact.go` | Cache hashing/repair and bounded serialized intake are implemented. Metadata mirroring must retain publisher bytes unchanged, not re-sign with Server database keys. |
+| `server/main.go` update and release-sync handlers | Existing manifest/download/telemetry and sync SSE surfaces. Explicit upstream-check progress/reconnect outcome still needs completion. |
+| `.github/workflows/cd-agent.yml` | Existing release automation; no TUF publishing/refresh activation. Package-repository signing must be assessed, not assumed to authenticate TUF-selected installed bytes. |
+
+The verifier currently permits absent root cache as initial bootstrap; the
+integration must distinguish initial provisioning from lost previously trusted
+state. Its local cache assumes protected filesystem access and a single owning
+client. Library persistence is not a promise of directory power-loss durability.
+Do not delete trust state to resolve expiry, key rotation or version errors.
+Do not use application-Server time or a Server-delivered signing key as a trust
+bypass. A Server compromise can still deny updates; independent signing does
+not guarantee availability or health of an authorized release.
+
+#### Last validation and operational state
+
+- Passed: all `common` Go tests; Agent `autoupdate` and `agent` package suites;
+  Server root and `releases` suites; relevant `go vet`.
+- Passed: docs 34 tests, Hugo build and generated-site link checks at the tested
+  implementation slices (105 HTML pages, 103 search entries). The subsequent
+  security-plan reconciliation passed 34 tests and whitespace checks.
+- Linux updater tests were cross-compiled only, not run on Linux. Real Windows
+  ACL/MSI/service, Linux package/service and staged-replacement qualification
+  remain outstanding. Script-content tests do not establish those guarantees.
+- The downloaded checksum-verified Hugo helper and Linux test binary in the
+  previous session were removed after use. Hugo may need restoration for a fresh
+  site build. Node dependencies were already installed; Docker daemon was
+  unavailable. Do not reinstall dependencies unnecessarily.
+- No production keys, secrets, hosting/permission changes or signing activation.
+  Owner setup is explicit. Initial policy: one maintainer, distinct role keys,
+  offline encrypted root recovery copies; backup copies are not threshold
+  signers. Work-hosted password storage is optional, never required recovery.
+- Six months offline is a compatibility test target, not an expiry bypass or
+  intentional support cutoff. Preserve root history and routinely refresh online
+  metadata even without new binaries.
+- A reliability-only dev release can precede completed TUF enforcement, clearly
+  labeled and limited to recoverable test machines. Do not claim publisher trust.
+  Test old Agent to first dev build, then first dev build to a subsequent build:
+  only the second hop exercises the newly installed updater. Neither push nor
+  release was requested or performed at pause.
+
 ### Shared TUF foundation (unreleased)
 
 Implemented at [source commit 66b6704](https://github.com/Printmaster-Org/printmaster/commit/66b6704ea7b5f08e2f996b21eeaac8fd9805ae85).
