@@ -85,6 +85,39 @@ Server read-only contract documents the optional list-response snapshot only.
 
 ## Next contract work
 
+### Artifact delivery reliability (unreleased)
+
+Implemented at [source commit 1765ea9](https://github.com/Printmaster-Org/printmaster/commit/1765ea9f60fcc0011b7d0e018a0c2c4c4bd1c731).
+
+Agent artifact downloads use a separate 15-minute transfer budget, preserving
+the shorter metadata-request timeout. Downloads remain bound by their caller's
+deadline. The URL and redirects must stay on the authenticated Server origin;
+Agent credentials are not forwarded to a publisher/mirror supplied in a
+manifest. The Server remains responsible for fetching upstream artifacts.
+
+Updated Agents require a positive artifact size, check full-response lengths
+and resumed `Content-Range` start/end/total, and count resumed bytes in progress.
+An ignored Range request restarts the file instead of appending. Truncated or
+oversized responses fail. Completed partials are hash-checked before reuse;
+invalid partials are discarded. SHA-256 verification precedes promotion from
+the partial download to the staged artifact.
+
+Manifest selection now checks the cached file's size and SHA-256 and rejects
+missing, corrupt or manifest-inconsistent entries. An older valid cached release
+may remain selectable under the existing channel/version policy. Sync repairs
+invalid cache entries and regenerates manifests when their signed size/hash,
+source URL or publication time changes. No new request fields are required:
+legacy channel and omitted-format requests retain their existing shapes.
+
+Release intake rejects incorrect upstream sizes before publishing its temporary
+download. Scheduled and manual intake cannot mutate the cache concurrently;
+each sync has a one-hour deadline. Individual artifact/manifest failures produce
+an error outcome, not a successful 100% completion, and successful artifacts
+remain cached for the next retry.
+
+This is integrity/reliability work, not publisher authentication. TUF production
+trust provisioning, publishing, refresh and Agent enforcement remain release gates.
+
 ### Inventory and status with metrics
 
 Device batches retain the uploaded common inventory fields (including asset
