@@ -1,6 +1,13 @@
 # Agent Instructions
 
-This is the canonical documentation site for PrintMaster. Program changes live in **Printmaster-Org/printmaster**, normally checked out next to this repo at `../printmaster`. Its [AGENTS.md](../printmaster/AGENTS.md) describes how program and docs changes are paired.
+This is the canonical documentation site for PrintMaster, including the application, product website, and standalone Scans utility. Their repositories are normally checked out alongside this one at `../printmaster`, `../printmaster.work`, and `../scans`. The main application's [AGENTS.md](../printmaster/AGENTS.md) describes how program and docs changes are paired.
+
+## Keep documentation current (required)
+
+- Review documentation impact for every feature, fix, removal, and deprecation across these repositories. Update affected guides under `content/`, API contracts under `static/openapi/` when applicable, and source-local READMEs/examples in the same task as implementation changes.
+- Verify documented behavior against the implementation, preserve imported `source`/`sourceCommit` provenance, and distinguish unreleased changes from published behavior. Do not recreate removed legacy documentation trees or duplicate canonical guides in source repositories.
+- Follow the [README](README.md) for editing and validation and [API_MAINTENANCE.md](API_MAINTENANCE.md) for contract changes. Link implementation and documentation commits or PRs, and report the pages changed and validation run.
+- If no documentation change is needed, explicitly explain why. If a required checkout is unavailable, report the blocker and exact pages needing updates rather than silently leaving docs stale or reporting completion.
 
 ## Commit messages (required)
 
@@ -11,7 +18,7 @@ type(scope): imperative summary, lowercase, no trailing period
 
 What the documentation now covers and why.
 
-Implementation: Printmaster-Org/printmaster@<full sha>   (when paired with a program change)
+Implementation: Printmaster-Org/<repo>@<full sha>        (when paired with an implementation change)
 Co-authored-by: ...                                     (trailers last)
 ```
 
