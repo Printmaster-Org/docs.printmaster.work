@@ -9,6 +9,23 @@ This guide describes committed OIDC, device-authorization, and Agent authenticat
 
 Reviewed implementation: `server/oidc_handlers.go`, `server/web/login.js`, `server/agent_callback_target.go`, `server/device_auth.go`, `server/storage/pending_approval.go`, `agent/main.go::agentAuthManager`, and callback issuer/validator in `server/main.go`. See [tenant isolation](/guides/tenant-isolation/) for combined boundaries. Focused tests cover real login JS, Server issuance/validation and Agent validation separately; a live external-IdP/browser round trip is not certified by these tests.
 
+## Server browser sessions
+
+Browser session redirect behavior is covered by
+[implementation revision f29e478](https://github.com/Printmaster-Org/printmaster/commit/f29e478f7f7c41ee3cc2adb3105d259e5d4cb360).
+
+The Server checks the session before serving its main UI and redirects missing
+or invalid sessions to `/login`. The browser also waits for the current-session
+check before revealing the UI. If a Server session API returns `401` while the
+page is open (for example, after session expiry or revocation), the UI is hidden
+immediately and the browser returns to login, rather than displaying inventory
+or other data-loading errors. The login redirect preserves the current path,
+query string, and tab hash for the return after sign-in.
+
+A `403` remains a permission error, not a reason to sign in again. A proxied
+Agent's `401` is also kept separate from the Server's browser session. Network
+and Server failures do not force a login redirect.
+
 ## OIDC account ownership
 
 - An existing `(provider slug, subject)` link is the account authority. Explicitly prelinked identities continue to work when email changes or becomes unverified, including privileged users and trusted global providers. Existing links must therefore be audited as privileged account bindings, not inferred from email.
