@@ -4,6 +4,28 @@ description: "Where new guides belong, how planned coverage works, and what make
 weight: 20
 ---
 
+## Documentation repository boundary
+
+The canonical guides, API contracts, component references, research notes, and
+downloadable documentation resources live in
+[Printmaster-Org/docs.printmaster.work](https://github.com/Printmaster-Org/docs.printmaster.work).
+The application repository no longer carries the legacy `docs/` and
+`agent/docs/` trees or standalone service, E2E, and Git integration guides.
+The source cleanup is recorded in
+[application revision 3b6eeb8](https://github.com/Printmaster-Org/printmaster/commit/3b6eeb8586dbca8f1117ef44ad740ca194a1e7a0).
+
+The source repository retains its overview and concise component READMEs,
+contribution and security entry points, agent instructions, licenses, and
+source-local test-fixture notes. Its links point here rather than maintaining
+duplicate guides. Runtime assets, embedded resources, configuration examples,
+and test fixtures remain with the code that uses them.
+
+Documentation downloads belong under `static/` and must be linked from a
+relevant guide, such as the [SNMP reference downloads](/development/snmp-reference/#reference-downloads).
+Preserve attribution and distinguish reference material from runtime inputs.
+For imported pages, keep the historical `source` and `sourceCommit` metadata;
+removing the old files does not change their import provenance or published URLs.
+
 ## Where should a page live?
 
 | Reader's task | Content directory | Entry point |

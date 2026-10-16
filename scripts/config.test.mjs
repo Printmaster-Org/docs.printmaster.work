@@ -42,6 +42,22 @@ test('every imported page has its own route and retains source metadata', () => 
   for (const asset of manifest.assets) assert.ok(fs.existsSync(path.join(root, asset.destination)), asset.source);
 });
 
+test('SNMP reference exposes preserved MIB and JSON downloads', () => {
+  const guide = read('content/development/snmp-reference.md');
+  const mibPath = 'media/docs/dev/Printer-MIB.mib';
+  const jsonPath = 'media/agent/docs/printer-mib-complete.json';
+  assert.ok(guide.includes(`](/${mibPath})`));
+  assert.ok(guide.includes(`](/${jsonPath})`));
+  const mib = read(`static/${mibPath}`);
+  assert.ok(mib.includes('Printer-MIB DEFINITIONS ::= BEGIN'));
+  assert.ok(mib.includes('Copyright (C) The Internet Society (2004)'));
+  assert.match(mib, /\bEND\s*$/);
+  const reference = JSON.parse(read(`static/${jsonPath}`));
+  assert.equal(reference.module, 'Printer-MIB');
+  assert.equal(reference.base_oid, '1.3.6.1.2.1.43');
+  assert.ok(reference.oids['1.3.6.1.2.1.43']);
+});
+
 test('Pages publication is explicitly opt-in and production-only', () => {
   const workflow = read('.github/workflows/site.yml');
   const job = workflow.split('  deploy-pages:')[1]?.split('\n  publish:')[0];

@@ -16,8 +16,7 @@ printmaster/
 │   ├── storage/                  # Embedded SQLite schema + migrations
 │   ├── proxy/ / supplies/        # Proxy tunnel + consumables helpers
 │   ├── featureflags/             # Toggle definitions used by agent UI
-│   ├── web/                      # Embedded UI assets (built into the binary)
-│   └── docs/                     # Agent-specific reference material
+│   └── web/                      # Embedded UI assets (built into the binary)
 ├── server/                       # Multi-agent server/API hub (Go)
 │   ├── main.go                   # Server entrypoint
 │   ├── config.go / config.toml   # Server configuration + defaults
@@ -26,7 +25,6 @@ printmaster/
 │   ├── authz/, logger/, tls.go   # Auxiliary subsystems
 │   └── web/                      # Server UI + static assets
 ├── common/                       # Shared Go modules (config, logger, snmp, util, web)
-├── docs/                         # Architecture + operations documentation
 ├── dev/                          # Local developer scripts (e.g., launch.ps1)
 ├── scripts/                      # Operational PowerShell helpers (kill, update, etc.)
 ├── tools/                        # Standalone utilities and generators
@@ -54,8 +52,18 @@ Central service coordinating multiple agents, providing RBAC, WebSocket tunnelin
 ### Common (`common/`)
 Shared Go modules consumed by both binaries (config loader, logger, SNMP abstractions, settings helpers, shared web components, WebSocket utilities). This keeps cross-cutting concerns in one place.
 
-### Documentation (`docs/` and `agent/docs/`)
-`docs/` holds architecture, roadmap, deployment, and operator guides. `agent/docs/` contains deep dives (MIB profiles, SNMP research) that are specific to the agent runtime.
+### Documentation (separate repository)
+
+Guides, component references, research, and downloadable documentation resources
+live in [Printmaster-Org/docs.printmaster.work](https://github.com/Printmaster-Org/docs.printmaster.work),
+normally checked out beside the application repository. The old `docs/` and
+`agent/docs/` trees have been removed. Source-local READMEs are short entry points
+to this site; contribution/security policies, agent instructions, licenses,
+runtime resources, and test fixtures remain with the application.
+
+See [Contribute documentation](/project/documentation/) for editorial ownership
+and [SNMP reference downloads](/development/snmp-reference/#reference-downloads)
+for the Printer-MIB resources.
 
 ### Tooling & Automation
 - `build.ps1`, `release.ps1`, `status.ps1`, `version.ps1`: primary automation entrypoints.
@@ -99,5 +107,4 @@ Discovery (agent/agent) → Candidate hosts → SNMP pipeline (agent/scanner)
 - [Deployment Guides](/components/agent/service/)
 - Storage Schema Notes (legacy document unavailable)
 
-> Need a document not listed here? Check `docs/README.md` (coming soon) for a living index of authoritative references.
-
+> Need a document not listed here? Start with [Developer docs](/development/) or [PrintMaster guides](/guides/).

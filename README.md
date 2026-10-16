@@ -72,7 +72,7 @@ Point DNS for `docs.printmaster.work` at your host, terminate HTTPS at your reve
 
 ## Edit documentation
 
-Edit Markdown under `content/`; the docs repository is the new editorial home. Use Hugo front matter with a title and root-relative links to the published page URLs. Update navigation weights in section front matter. Keep assets under `static/` and theme code under `assets/` / `layouts/`.
+Edit Markdown under `content/`; this repository is the canonical editorial home. The application repository no longer carries the legacy documentation trees or standalone guides; its retained READMEs link here. Keep runtime resources, examples, test fixtures, licenses, and contributor/security/agent entry points with the code that uses them. Use Hugo front matter with a title and root-relative links to the published page URLs. Update navigation weights in section front matter. Keep documentation assets and downloads under `static/` and theme code under `assets/` / `layouts/`; link downloads from their relevant guide (for example, the Printer-MIB resources in the SNMP reference).
 
 ### Content structure
 

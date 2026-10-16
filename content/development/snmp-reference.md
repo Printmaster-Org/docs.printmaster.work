@@ -6,6 +6,20 @@ sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 
 This document covers SNMP discovery, Printer-MIB OIDs, vendor detection, metrics collection, and meter history tracking in PrintMaster.
 
+## Reference downloads
+
+- [Download the full Printer-MIB (RFC 3805)](/media/docs/dev/Printer-MIB.mib)
+  for use with an SNMP MIB browser. The module imports SNMPv2, Host Resources,
+  IF-MIB, IANA-PRINTER-MIB, and IANA-CHARSET-MIB definitions; load those
+  dependencies in your browser as needed.
+- [Download the Printer-MIB JSON OID reference](/media/agent/docs/printer-mib-complete.json)
+  for offline lookup. This curated JSON reference is not a replacement for the
+  ASN.1 MIB or the separate JSON resource embedded by the Agent's SNMP walk tool.
+
+These reference downloads are maintained in the documentation repository, not
+in the application's legacy documentation directories. The original MIB
+copyright and attribution remain in the downloadable file.
+
 ---
 
 ## Overview
@@ -559,4 +573,3 @@ func (m *MockSNMPClient) Get(oids []string) (*gosnmp.SnmpPacket, error) {
 
 *Last Updated: November 6, 2025*  
 *Current Version: 0.3.3*
-

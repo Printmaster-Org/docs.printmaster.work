@@ -86,14 +86,18 @@ printmaster/
 │   ├── handlers/   # HTTP API handlers
 │   ├── storage/    # Database layer
 │   └── web/        # Embedded web UI
-├── common/         # Shared packages (logger, config, etc.)
-└── docs/           # Design documentation
+└── common/         # Shared packages (logger, config, etc.)
 ```
 
 Key documentation:
-- [docs/BUILD_WORKFLOW.md](/development/build-workflow/) - Build, test, and release procedures
-- [docs/PROJECT_STRUCTURE.md](/development/project-structure/) - Detailed architecture overview
-- docs/ROADMAP.md (legacy document unavailable) - Planned features and priorities
+- [Build workflow](/development/build-workflow/) - Build, test, and release procedures
+- [Project structure](/development/project-structure/) - Detailed architecture overview
+- [Developer docs](/development/) - Plans, research, and implementation references
+
+Maintain guides and API contracts in the separate
+[documentation repository](https://github.com/Printmaster-Org/docs.printmaster.work).
+See [Contribute documentation](/project/documentation/) for the boundary between
+documentation and source-local entry points.
 
 ## Making Changes
 
