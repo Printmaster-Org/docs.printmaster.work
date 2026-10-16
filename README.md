@@ -92,6 +92,8 @@ Use section front-matter `groups` (`title` plus `pages` content references) to c
 
 Use `status: planned` for published coverage placeholders, not guessed instructions. Planned status is visible on pages, cards, navigation, and search; `legacy: true` distinguishes historical notes. The `image-placeholder` shortcode renders a visible capture brief without a broken image request. Brand hubs use `data/brand-topics.toml` for their shared backlog; set `coveredTopics` to completed topic titles as tested guides are added.
 
+Scanning walkthroughs with an inspected device interface but no verified save-and-delivery run use `status: needs-validation` (**Delivery test pending**) across the same surfaces. They must distinguish observed UI, manual-sourced instructions, and untested actions, and identify whether screenshot values are synthetic/unsaved.
+
 See [Contribute documentation](content/project/documentation.md) for the full editorial conventions, examples, and verification checklist.
 
 Imported pages retain `source` and `sourceCommit` metadata. Source-code references point to the exact original PrintMaster commit; update them when revising implementation documentation.

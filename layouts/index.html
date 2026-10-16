@@ -9,5 +9,5 @@
   <h2 id="browse-docs">Browse by task</h2>
   <div class="card-grid">{{ range .Sections.ByWeight }}{{ if not .Params.navigationHidden }}{{ partial "doc-card.html" . }}{{ end }}{{ end }}</div>
 </section>
-<aside class="notice"><strong>A growing knowledge base.</strong> Pages marked "Documentation planned" describe upcoming coverage, not finished instructions. Brand guides will identify the exact models and firmware they have been tested with.</aside>
+<aside class="notice"><strong>A growing knowledge base.</strong> "Documentation planned" marks upcoming coverage; "Delivery test pending" marks inspected walkthroughs that still need an end-to-end scan test. Brand guides identify the exact model, firmware, and verification scope.</aside>
 {{ end }}

@@ -37,7 +37,7 @@ test('relocated guides preserve published routes and imported provenance', () =>
   }
 });
 
-test('every brand has an independent hub and an honestly marked SMB coverage placeholder', () => {
+test('every brand has an independent hub and an explicitly scoped SMB guide', () => {
   const brands = fs.readdirSync(path.join(root, 'content/printers'), { withFileTypes: true }).filter(entry => entry.isDirectory());
   for (const name of ['brother', 'canon', 'epson', 'hp', 'konica-minolta', 'kyocera', 'lexmark', 'ricoh', 'sharp', 'toshiba', 'xerox']) {
     assert.ok(brands.some(brand => brand.name === name), `Missing initial brand hub: ${name}`);
@@ -46,11 +46,33 @@ test('every brand has an independent hub and an honestly marked SMB coverage pla
     const hub = read(`content/printers/${name}/_index.md`);
     assert.match(hub, /^brand: ".+"$/m, name);
     const smb = read(`content/printers/${name}/scan-to-smb.md`);
-    assert.match(smb, /^status: planned$/m, name);
+    if (/^status: needs-validation$/m.test(smb)) {
+      assert.match(smb, /## Model and verification scope/, name);
+      assert.match(smb, /Not performed/, name);
+      assert.match(smb, /delivery-test-pending label/, name);
+    } else {
+      assert.match(smb, /^status: planned$/m, name);
+    }
     assert.ok(smb.includes('](/scanning/)'), name);
     assert.ok(smb.includes('](/scanning/copier-setup/)'), name);
     assert.ok(smb.includes('{{< image-placeholder title='), name);
   }
+});
+
+test('Epson walkthrough records inspected firmware, fixed UNC prefix, real screenshots and untested delivery', () => {
+  const content = read('content/printers/epson/scan-to-smb.md');
+  assert.match(content, /^status: needs-validation$/m);
+  for (const fact of ['ST-C8090 Series', '03.97.OJ19PB', 'October 16, 2026', 'fixed prefix outside the Save to box', 'Apply was not selected', 'manual-documented, not hands-on tested']) {
+    assert.ok(content.includes(fact), fact);
+  }
+  for (const name of ['st-c8090-scan-navigation.png', 'st-c8090-smb-contact.png', 'st-c8090-scan-defaults.png']) {
+    assert.ok(content.includes(`](/images/epson/${name})`), name);
+    const image = fs.readFileSync(path.join(root, 'static/images/epson', name));
+    assert.equal(image.subarray(1, 4).toString(), 'PNG', name);
+    assert.ok(image.readUInt32BE(16) >= 250 && image.readUInt32BE(20) >= 300, name);
+  }
+  assert.ok(content.includes('3038483/Epson-St-C8090.html?page=184'));
+  assert.ok(content.includes('3038483/Epson-St-C8090.html?page=187'));
 });
 
 function searchHarness(index, fetchIndex = async () => ({ ok: true, json: async () => index })) {
@@ -115,8 +137,17 @@ test('search failures remain visible and can be retried', async () => {
     if (++calls === 1) throw new Error('Offline');
     return { ok: true, json: async () => [{ title: 'SMB guide', text: 'Setup', url: '/guide/' }] };
   });
+
   await harness.input('smb');
   assert.equal(harness.results.textContent, 'Search unavailable. Browse sections below.');
   await harness.input('smb');
   assert.equal(harness.results.children[0].href, '/guide/');
+});
+
+test('search labels inspected walkthroughs without claiming successful scan delivery', async () => {
+  const harness = searchHarness([
+    { title: 'Epson scan-to-SMB', text: 'ST-C8090', url: '/printers/epson/scan-to-smb/', status: 'needs-validation', context: 'Printers & copiers / Epson' },
+  ]);
+  await harness.input('epson smb');
+  assert.equal(harness.results.children[0].children[0].textContent, 'Printers & copiers / Epson · Delivery test pending');
 });

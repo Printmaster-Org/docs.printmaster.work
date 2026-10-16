@@ -1,4 +1,7 @@
 {{ if eq .Params.status "planned" }}
 <aside class="notice planned-notice"><strong>Documentation planned</strong><p>This is a coverage placeholder, not a verified setup procedure. The scope below records what still needs to be written and tested. Do not infer support for a model or firmware from this page.</p></aside>
 {{ end }}
+{{ if eq .Params.status "needs-validation" }}
+<aside class="notice validation-notice"><strong>Delivery test pending</strong><p>This walkthrough is based on an inspected device interface and the cited manual. Saving settings and delivering a real scan have not been verified. Read the model and verification scope before proceeding.</p></aside>
+{{ end }}
 {{ if .Params.legacy }}<aside class="notice">Historical implementation notes, imported for reference. Check current guides before relying on planned features.</aside>{{ end }}
