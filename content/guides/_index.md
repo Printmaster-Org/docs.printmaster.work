@@ -27,6 +27,7 @@ Cross-platform printer/copier fleet management for MSPs, MPS providers, and IT d
 | [Features Guide](/guides/features/) | All features explained with examples |
 | [Devices](/guides/devices/) | Progressive authorized inventory, filters, supplies and loading states |
 | [Configuration](/guides/configuration/) | Config files, environment variables, UI settings |
+| [PrintMaster Scans](/guides/scans/) | Standalone Windows scan-to-SMB setup and troubleshooting |
 | [Beta Program](/guides/beta-program/) | Join the Beta, tester checklist, known limitations, return to Stable |
 | [Troubleshooting](/guides/troubleshooting/) | Common issues and solutions |
 | [FAQ](/guides/faq/) | Frequently asked questions |
@@ -95,4 +96,3 @@ See [Developer Documentation](/development/) for:
 - Build instructions and project structure
 - Internal architecture and design
 - Contributing guidelines
-
