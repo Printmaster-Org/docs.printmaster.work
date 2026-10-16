@@ -304,9 +304,9 @@ This section was reviewed against PrintMaster commit
 [`f556dd3`](https://github.com/Printmaster-Org/printmaster/commit/f556dd33e1e671ad49ec6c381a834d7a6942c438).
 The imported sections elsewhere on this page retain their original source metadata.
 
-The program's `ci.yml` workflow runs on pushes to `main`, component release
-tags (`agent-vX.Y.Z` and `server-vX.Y.Z`), pull requests targeting `main`, and
-manual dispatch. Its aggregate **CI Passed** job succeeds only when the Agent,
+The program's `ci.yml` workflow runs on pushes to `main`, pull requests targeting
+`main`, and manual dispatch. Release tags reuse CI from the same commit rather
+than starting another CI run. Its aggregate **CI Passed** job succeeds only when the Agent,
 Server, JavaScript, mock E2E, and Docker E2E jobs succeed; Agent and Server also
 depend on the Common job.
 
@@ -314,6 +314,22 @@ The `cd-agent.yml` and `cd-server.yml` workflows run on `main`, their respective
 component release tags, or manual dispatch. Before building binaries or
 publishing container images, each waits for **CI Passed** on the exact triggering
 commit (`github.sha`), not a moving branch ref.
+
+CI (pushes and pull requests), both CD workflows (branch pushes), and CodeQL
+(branch pushes) skip changes consisting entirely of Markdown files (`**/*.md`)
+or files under `docs/`. Any other changed file still triggers the applicable
+workflows, including source, tests, embedded UI assets, dependencies, build
+scripts, configuration, and workflow definitions. Mixed source/documentation
+changes run normally. The package-site workflow keeps its existing installer
+and package-site path filter.
+
+Manual dispatch bypasses these path filters, component release tags still
+trigger CD, and weekly CodeQL scans remain enabled. To publish a tag on a
+documentation-only commit, manually run CI on that exact commit first: there
+will be no automatic **CI Passed** check to reuse. If branch protection later
+requires **CI Passed**, replace workflow-level PR filtering with job-level
+gating and an always-reported aggregate check; GitHub leaves required checks
+pending when their entire workflow is skipped by a path filter.
 
 Both gates use `matiasalbarello/wait-on-check-action-ts` v1.2.0, pinned to commit
 `8087812521cdb59ebc7751984b31b17209b30eeb`. This action runs natively on Node.js 24
