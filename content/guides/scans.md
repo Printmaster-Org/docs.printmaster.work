@@ -6,6 +6,8 @@ weight: 35
 
 [PrintMaster Scans](https://scans.printmaster.work/) is a standalone PowerShell utility provided by PrintMaster. It prepares a Windows PC to receive documents from a printer or copier using scan-to-SMB. It does not require a PrintMaster Agent or Server, and it does not configure the printer itself.
 
+Prefer to configure Windows yourself? Follow the [manual scan-to-SMB setup guide](/guides/manual-smb-setup/) instead. That guide uses a dedicated account and scoped permissions without running the utility.
+
 ## Requirements
 
 - Windows 11 is the primary support target. Windows 10 22H2 has best-effort compatibility; this does not extend Microsoft's support.
@@ -33,6 +35,38 @@ The utility can create or update the dedicated local account, hide it from the l
 **Review these changes before running on a managed PC.** The utility grants folder permissions to the scan user, current administrator, and Everyone, and configures the share for the scan user. Use only on trusted networks with your administrator's approval; it is not a least-privilege hardening tool. Existing scan-account passwords can be changed when rerunning setup, so update any printers using those credentials.
 
 The windows carry the PrintMaster logo and "Provided by PrintMaster" attribution. The desktop shortcut retains the original scan-folder icon.
+
+## Setup walkthrough
+
+These screenshots are rendered from the current app's window definitions with example credentials and simulated progress/completion states. They illustrate the interface, not a real machine setup run.
+
+### Choose the destination
+
+![PrintMaster Scans setup window with the PrintMaster logo, account and folder fields, and Provided by PrintMaster attribution](/images/scans/scans-setup.png)
+
+Review the username, generated password, local folder, and share name before proceeding. The screenshot is an example, not a credential to reuse.
+
+The app follows your Windows light or dark theme:
+
+![PrintMaster Scans setup window in the light theme with the same account, folder, and share fields](/images/scans/scans-setup-theme.png)
+
+### Select setup steps
+
+![Scans settings dialog with account, folder, permissions, share, shortcut, and networking options](/images/scans/scans-settings.png)
+
+The gear opens the step selection dialog. Review which changes are appropriate for this PC before choosing **OK**.
+
+### Review progress
+
+![Scans progress window showing setup details with Copy Password and Done disabled during processing](/images/scans/scans-loading.png)
+
+Wait for processing to finish and inspect the retained step details. A skipped step can be intentional, such as hiding an account on a domain-joined PC.
+
+### Save the credential and test
+
+![Scans completion window showing finished steps and enabled Copy Password and Done buttons](/images/scans/scans-finished.png)
+
+After successful account setup, copy and securely store the applied password, then configure and test the printer destination as described below. If the utility reports **Completed with errors**, follow the remediation rather than treating the destination as ready.
 
 ## Configure the printer destination
 
