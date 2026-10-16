@@ -10,7 +10,7 @@ Choose a brand below. Each brand has a permanent home for **all** of its setup a
 
 ## Need scan-to-folder now?
 
-Start with [Scanning & SMB](/scanning/): prepare the receiving PC, configure the copier, and verify delivery. The [brand-neutral copier checklist](/scanning/copier-setup/) is available now; brand-specific SMB walkthroughs are explicitly marked **Documentation planned** until tested.
+Start with [Scanning & SMB](/scanning/): prepare the receiving PC, configure the copier, and verify delivery. The [brand-neutral copier checklist](/scanning/copier-setup/) is available now. Brand-specific pages distinguish **Documentation planned** from inspected walkthroughs marked **Delivery test pending**; check each page's model and verification scope.
 
 ## What belongs in a brand guide?
 

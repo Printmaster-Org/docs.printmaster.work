@@ -76,6 +76,8 @@ Use the body to record missing evidence, models to test, required screenshots, a
 
 Remove `status: planned` only when the procedure is written and verified. Historical implementation pages use `legacy: true`; they are not current setup guides.
 
+For a scanning walkthrough whose actual device interface has been inspected but whose save-and-delivery workflow has not been exercised, use `status: needs-validation` instead of presenting it as either an empty placeholder or a finished procedure. This displays **Delivery test pending** on the page, cards, navigation, and search. Include the exact model/firmware, inspection date, what was observed versus manual-sourced, screenshot provenance, and the remaining verification steps. Remove this status only after recording a successful authorized delivery test.
+
 ## Image placeholders
 
 Use a real capture brief, not a broken image link or a stock screenshot:

@@ -1,5 +1,5 @@
 <a class="doc-card" href="{{ .RelPermalink }}">
-  {{ if eq .Params.status "planned" }}<span class="status-badge">Documentation planned</span>{{ else if .Params.legacy }}<span class="status-badge">Historical reference</span>{{ else if .IsSection }}<span class="card-icon" aria-hidden="true">▤</span>{{ end }}
+  {{ if eq .Params.status "planned" }}<span class="status-badge">Documentation planned</span>{{ else if eq .Params.status "needs-validation" }}<span class="status-badge">Delivery test pending</span>{{ else if .Params.legacy }}<span class="status-badge">Historical reference</span>{{ else if .IsSection }}<span class="card-icon" aria-hidden="true">▤</span>{{ end }}
   <h3>{{ .LinkTitle }}</h3>
   <p>{{ .Description | default (.Summary | plainify | truncate 130) }}</p>
 </a>

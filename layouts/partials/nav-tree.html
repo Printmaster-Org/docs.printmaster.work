@@ -8,7 +8,7 @@
       {{ partial "nav-tree.html" (dict "section" . "current" $current) }}
     </details>
   {{ else }}
-    <a href="{{ .RelPermalink }}"{{ if eq $current . }} aria-current="page"{{ end }}>{{ .LinkTitle }}{{ if eq .Params.status "planned" }} <span class="nav-status">Planned</span>{{ end }}{{ if .Params.legacy }} <span class="nav-status">Historical</span>{{ end }}</a>
+    <a href="{{ .RelPermalink }}"{{ if eq $current . }} aria-current="page"{{ end }}>{{ .LinkTitle }}{{ if eq .Params.status "planned" }} <span class="nav-status">Planned</span>{{ else if eq .Params.status "needs-validation" }} <span class="nav-status">Delivery test pending</span>{{ end }}{{ if .Params.legacy }} <span class="nav-status">Historical</span>{{ end }}</a>
   {{ end }}</li>
 {{ end }}</ul>
 {{ end }}
