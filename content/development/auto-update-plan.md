@@ -41,13 +41,17 @@ owner setup step.
 ### Shared TUF foundation (unreleased)
 
 Implemented at [source commit 66b6704](https://github.com/Printmaster-Org/printmaster/commit/66b6704ea7b5f08e2f996b21eeaac8fd9805ae85).
+Queued-verification budgets are corrected at
+[source commit 0d64d3d](https://github.com/Printmaster-Org/printmaster/commit/0d64d3d3f67653e825349908fdbfb05e9d3ebec1).
 
 `common/updatetrust` uses `theupdateframework/go-tuf/v2` v2.4.2 for standard
 signature, expiry, rollback and root-chain verification. A caller supplies an
 independently provisioned trusted root, a persistent protected cache and the
 metadata source URL. Verification refreshes metadata before authorizing the
 exact component/channel/version/platform/architecture/format identity, length
-and SHA-256. It has a two-minute context budget and bounded metadata reads.
+and SHA-256. It has a two-minute context budget (including waits for another
+refresh on the same client), caller cancellation and bounded metadata reads.
+Each persistent cache must be owned by one running verifier instance.
 Expired or invalid metadata is an error; no legacy-signature fallback exists
 inside this verifier.
 
