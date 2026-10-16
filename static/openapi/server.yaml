@@ -4,7 +4,12 @@ x-observation-reviewed-commit: 090483d79ed57c20019126ac4a6d0df1c245cb3f
 x-saved-state-reviewed-commit: 5e3d9bfac9c33cd8dcb6a685769ea5143e2e45d3
 x-metadata-reviewed-commit: 049f9cec1e9e89f5938286bbde8298492ca5f795
 x-telemetry-reviewed-commit: 73ab7263263e53a04715b48dcb635ff2cafe1a37
+x-update-progress-reviewed-commit: 946bf990e668d1053b71fa5eb6c1873980b37ef7
 x-review-notes: |
+  Unreleased update-progress follow-up at x-update-progress-reviewed-commit
+  covers the optional Agent.update_progress list-response projection only.
+  Existing read authorization, envelopes and operation coverage are unchanged;
+  machine telemetry writes are documented separately in the protocol guide.
   Shared-telemetry follow-up at x-telemetry-reviewed-commit covers eligible same-nonempty-tenant reporters
   for inventory/latest/history/bounds and preserves management-owner user scope.
   Metric agent_id is source attribution, not management ownership.
@@ -164,7 +169,7 @@ paths:
   /api/v1/agents/list:
     get:
       operationId: listAgents
-      x-source: {path: server/main.go, handler: handleAgentsList}
+      x-source: {path: server/main.go, handler: handleAgentsList, update-progress-commit: 946bf990e668d1053b71fa5eb6c1873980b37ef7}
       tags: [Fleet]
       summary: List agents accessible to the user
       description: Requires agents.read authorization and a tenant scope for non-admin users. A nonempty limit enables pagination; missing or empty limit returns a legacy array. Invalid/nonpositive limit becomes 50, values over 200 clamp to 200; negative offset becomes zero. Agent token fields are blanked. Results are filtered to the caller's tenant scope.
@@ -815,6 +820,23 @@ components:
         connection_type: {type: string}
         site_ids: {type: array, items: {type: string}}
         token: {type: string, description: Always blank in list response}
+        update_progress: {$ref: '#/components/schemas/AgentUpdateProgress'}
+    AgentUpdateProgress:
+      type: object
+      description: Optional durable snapshot from an updated Agent (unreleased). Higher sequence numbers order one run; run_started_at orders distinct runs. Terminal runs are immutable. Success means the restarted Agent validated its running version, not an independent health watchdog.
+      required: [run_id, run_started_at, sequence, status, progress, message, updated_at]
+      properties:
+        run_id: {type: string, minLength: 1}
+        run_started_at: {type: string, format: date-time}
+        sequence: {type: integer, format: int64, minimum: 1}
+        status:
+          type: string
+          enum: [idle, checking, pending, downloading, staging, applying, restarting, verifying, succeeded, failed, skipped, rolled_back, cancelled]
+        progress: {type: integer, minimum: -1, maximum: 100, description: '-1 means unknown; otherwise the Agent-reported overall percentage'}
+        message: {type: string}
+        target_version: {type: string}
+        error: {type: string}
+        updated_at: {type: string, format: date-time}
     Device:
       type: object
       description: Partial verified device-list schema; additional device and latest-metrics fields may be returned.

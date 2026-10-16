@@ -39,6 +39,50 @@ Device-code approval and machine-bound user login are separate boundaries. See [
 
 The [machine ownership safeguards](/api/machine-ownership/) describe atomic storage checks, WebSocket sender binding, async metrics ordering and implemented authenticated-identity binding for HTTP uploads. Existing Agent IDs are not replaced by join-token enrollment; batch success can be partial (`received` versus `stored`). The [tenant-isolation guide](/guides/tenant-isolation/) records combined implementation, compatibility and limitations without expanding this payload-contract scope.
 
+## Ordered update progress (unreleased)
+
+Implemented at [source commit 946bf99](https://github.com/Printmaster-Org/printmaster/commit/946bf990e668d1053b71fa5eb6c1873980b37ef7).
+Review covers the Agent journal/restart lifecycle, authenticated progress
+ingestion/storage/replay and Agent/Fleet UI ordering, not release download or
+signing enforcement.
+
+Updated Agents publish `update_progress` WebSocket messages with a durable
+snapshot. They also replay the latest snapshot as the optional `update_progress`
+object in `POST /api/v1/agents/update/telemetry` during their heartbeat cycle.
+Both paths use the authenticated Agent identity. HTTP `agent_id` must match the
+bearer token's Agent (`403` on mismatch; `401` without machine authentication).
+Malformed JSON/field types or invalid snapshot fields return `400`; persistence
+failure returns `500`. Successful, duplicate and stale submissions return
+`200` with `{"success":true}`; success acknowledges processing, not installation.
+
+The snapshot contains `run_id`, `run_started_at` (UTC timestamp), `sequence`
+(positive integer within that run), `status`, `progress` (-1 for unknown or
+0-100), `message`, `updated_at`, and optional `target_version` and `error`.
+New runs have increasing millisecond-resolution `run_started_at` values, even
+if the Agent clock moves backwards relative to its persisted journal.
+Same-run events require a higher sequence number. Terminal states (`idle`,
+`succeeded`, `failed`, `skipped`, `rolled_back`, `cancelled`) cannot be reopened
+by a later same-run event.
+
+The Server atomically stores accepted snapshots before broadcasting them to
+authorized SSE subscribers. Existing user-session Agent list (legacy and
+paginated) and detail responses expose the optional `update_progress` snapshot
+within their existing role/tenant scope. Browser refresh and SSE reconnection
+read these snapshots; Agent heartbeat replay repairs missed delivery.
+Legacy unsequenced progress is still supported until an Agent has reported an
+ordered snapshot; it cannot overwrite an ordered run afterward.
+
+The Agent records the pending target/run before installation handoff and carries
+that run across restart. `restarting` is not success. `verifying` checks the
+running version, followed by `succeeded` at 100% or `failed` on mismatch. A
+reconnect alone cannot complete an update. This is version validation, not
+independent health supervision or automatic rollback.
+
+These are additive fields on existing routes/messages, not new routes or a
+machine-protocol-version bump. The machine telemetry write and Agent-local
+update-status API remain outside the reviewed read-only OpenAPI subsets. The
+Server read-only contract documents the optional list-response snapshot only.
+
 ## Next contract work
 
 ### Inventory and status with metrics

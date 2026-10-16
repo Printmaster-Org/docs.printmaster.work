@@ -5,6 +5,20 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import SwaggerParser from '@apidevtools/swagger-parser';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+test('optional Agent update progress documents ordered lifecycle snapshots', async () => {
+  const spec = await SwaggerParser.validate(path.join(root, 'static/openapi/server.yaml'));
+  assert.equal(spec['x-update-progress-reviewed-commit'], '946bf990e668d1053b71fa5eb6c1873980b37ef7');
+  assert.equal(spec.paths['/api/v1/agents/list'].get['x-source']['update-progress-commit'], spec['x-update-progress-reviewed-commit']);
+  const snapshot = spec.components.schemas.Agent.properties.update_progress;
+  assert.deepEqual(snapshot.required, ['run_id', 'run_started_at', 'sequence', 'status', 'progress', 'message', 'updated_at']);
+  assert.equal(snapshot.properties.sequence.minimum, 1);
+  assert.equal(snapshot.properties.progress.minimum, -1);
+  assert.equal(snapshot.properties.progress.maximum, 100);
+  assert.ok(snapshot.properties.status.enum.includes('verifying'));
+  assert.ok(snapshot.properties.status.enum.includes('cancelled'));
+  assert.match(snapshot.description, /unreleased/);
+  assert.match(snapshot.description, /Terminal runs are immutable/);
+});
 test('Server OpenAPI validates and covers reviewed integration operations', async () => {
   const spec = await SwaggerParser.validate(path.join(root, 'static/openapi/server.yaml'));
   assert.equal(spec.openapi, '3.0.3');
