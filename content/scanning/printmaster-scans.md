@@ -32,7 +32,7 @@ Windows 7, 8, 8.1, and Windows Server are not validated support targets.
 
 3. Review the username, password, local directory, and SMB share name. The defaults are user `scans`, directory `C:\scans`, and share `scans`. Keep the generated password or use one that meets your organization's policy.
 4. Use the **Settings** gear to select which steps to run, then choose **OK**.
-5. Review the progress list. On successful account setup, use **Copy Password** and store the credential securely before selecting **Done**. Do not share it in screenshots or issue reports.
+5. Review the progress list. If Windows rejects the password, follow the [password correction steps](#windows-rejects-the-password) before proceeding. On successful account setup, use **Copy Password** and store the credential securely before selecting **Done**. Do not share it in screenshots or issue reports.
 
 The utility can create or update the dedicated local account, hide it from the login screen, create the folder, set folder permissions, create the SMB share, and add a desktop shortcut. It can also set non-domain network profiles to Private and enable File and Printer Sharing and Network Discovery firewall rules.
 
@@ -104,9 +104,19 @@ This still requires the online loader, manifest, and release asset. SHA-256 chec
 
 ### Windows rejects the password
 
-`InvalidPassword` or `net user` error `2245` indicates that Windows rejected the password. Use the generated password or a longer password with uppercase and lowercase letters, numbers, and symbols, without the username. Generated passwords cannot guarantee compliance with every policy. Ask your administrator about the effective minimum length, complexity, history, and other restrictions rather than disabling policy.
+`InvalidPassword` or `net user` error `2245` indicates that Windows rejected the scan-account password.
 
-When account setup fails, hiding the account, folder-permission setup, and SMB share setup are skipped. **Copy Password** remains disabled so an unapplied password is not presented as usable. Independent steps can still run.
+With the password-retry dialog, setup pauses before running any remaining steps:
+
+1. Enter a replacement password, or choose **Generate** to create another one. **Retry** is disabled while the field is empty or contains only whitespace.
+2. Choose **Retry** to attempt account setup again. Your username, folder, share name, and selected setup steps are preserved. If Windows rejects another password, edit or generate one and retry again.
+3. After Windows accepts the password, setup resumes with the remaining selected steps, including account hiding, folder permissions, and SMB share configuration. **Copy Password** becomes available on completion when account creation/update is selected and succeeds; it copies the accepted replacement, not the rejected password.
+
+Choose **Cancel setup** or close the password dialog to stop all remaining setup steps. The progress window reports **Canceled**, **Copy Password** stays disabled, and **Done** closes the window. Cancellation does not roll back changes from previous setup runs.
+
+Use a longer password with uppercase and lowercase letters, numbers, and symbols, without the username. Generated passwords cannot guarantee compliance with every policy. Ask your administrator about the effective minimum length, complexity, history, and other restrictions rather than disabling policy.
+
+**Release availability:** the retry dialog requires a release containing the password-retry change. Merging utility code does not update the downloaded stable release. Older versions instead show a password-error popup, skip account-dependent steps, and may continue independent steps with **Copy Password** disabled. In those versions, finish the run and rerun setup with a replacement password, or use a newer published release that includes the dialog.
 
 ### Setup finishes with errors
 
