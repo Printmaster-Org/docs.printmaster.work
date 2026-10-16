@@ -502,6 +502,50 @@ For a manual channel install, right-click a connected Agent and choose **Update 
 
 These command/configuration writes remain outside the reviewed read-only OpenAPI subsets. User-session Agent commands retain role/tenant authorization; machine manifests/downloads use Agent credentials. `install_channel` adds a command name, not an HTTP route or a breaking machine-message envelope change; existing commands remain supported. No product, contract or protocol version is bumped solely for this additive capability.
 
+### Update lifecycle recovery (unreleased)
+
+Implemented at [source commit 946bf99](https://github.com/Printmaster-Org/printmaster/commit/946bf990e668d1053b71fa5eb6c1873980b37ef7).
+Agent/client, Server/storage and shared-policy Go tests, 51 focused UI unit
+tests, and desktop/small-desktop/mobile Chromium lifecycle tests passed.
+PostgreSQL integration tests compile but were not executed against a running
+database. This is source/fixture validation, not certification of a deployed
+update on every supported installer and service platform.
+
+Updated Agents keep a durable operation journal under the Agent data directory
+at `autoupdate/progress.json`. Update checks and installs have a run ID and
+ordered progress events. Failed, cancelled and completed operations do not
+prevent another manual or scheduled operation; overlapping operations are still
+rejected.
+
+The Server retains the last ordered snapshot per Agent in its database. Agents
+replay their snapshot during heartbeats, including over HTTP when WebSocket
+delivery was missed. Reloading the Fleet page or reconnecting its event stream
+restores the recorded status. Old events cannot move a completed run back into
+installation, and completion from an earlier run cannot clear a newer one.
+Percentages from updated Agents are not rescaled or advanced by a browser timer.
+
+An install remains **Restarting** until the restarted Agent validates that its
+running version matches the intended target. A WebSocket reconnect or a changed
+version observed by the browser is not sufficient to declare success. This
+also allows an intentional same-version reinstall to complete correctly.
+If validation has not arrived after the UI waiting period, the run stays
+unresolved instead of being cleared or labelled successful.
+
+Before handing off installation, the Agent must persist its pending target and
+run identity. A journal-write failure prevents the initial handoff. After an
+unexpected Agent restart, an unfinished operation without a pending install is
+reported as interrupted and can be retried. Malformed journals are preserved
+with a `.corrupt-<timestamp>` suffix and reported as failures rather than
+permanently disabling the updater.
+
+These changes require updated Agent and Server binaries. Older Agents retain
+best-effort legacy progress. This phase validates the running version; it does
+**not** add an independent health watchdog, automatic recovery from a binary
+that cannot start, installer deadlines, artifact-cache repair, stronger
+download/resume handling or enforced publisher signatures. Those are separate
+hardening work. "Check for Updates" still uses its existing release-cache and
+policy behavior; tracked upstream checks are not part of this phase.
+
 UI persistence and activation depend on the setting. Some changes require restart; server environment-set keys cannot be overridden by managed settings.
 
 ---
