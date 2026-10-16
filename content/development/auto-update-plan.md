@@ -20,6 +20,9 @@ The current release work is tracked in tested implementation slices:
   and running-version validation across restart.
 - Implemented: validated artifact delivery/cache repair and truthful intake errors
   ([source 1765ea9](https://github.com/Printmaster-Org/printmaster/commit/1765ea9f60fcc0011b7d0e018a0c2c4c4bd1c731)).
+- Implemented: shared TUF verification, routine metadata publishing and offline
+  root initialization/rotation primitives. This is a tested foundation, **not
+  active Agent enforcement or a provisioned production signing service**.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -34,6 +37,83 @@ the initial alert channel. Six months offline is the initial compatibility test
 target, not an intentional cutoff; preserve required versioned root history.
 Production secrets, access changes and signing activation require an explicit
 owner setup step.
+
+### Shared TUF foundation (unreleased)
+
+Implemented at [source commit 66b6704](https://github.com/Printmaster-Org/printmaster/commit/66b6704ea7b5f08e2f996b21eeaac8fd9805ae85).
+
+`common/updatetrust` uses `theupdateframework/go-tuf/v2` v2.4.2 for standard
+signature, expiry, rollback and root-chain verification. A caller supplies an
+independently provisioned trusted root, a persistent protected cache and the
+metadata source URL. Verification refreshes metadata before authorizing the
+exact component/channel/version/platform/architecture/format identity, length
+and SHA-256. It has a two-minute context budget and bounded metadata reads.
+Expired or invalid metadata is an error; no legacy-signature fallback exists
+inside this verifier.
+
+Previously authenticated root rotations survive reconstruction of the client.
+A newer root supplied by an upgraded binary supersedes an older cached root.
+Tests cover unauthorized root replacement, dual-authorized rotation, tampering,
+timestamp rollback, cancellation, candidate substitution and refreshing expired
+local freshness state. The expiry fixture is not a complete six-month-offline
+fleet/installer qualification.
+
+Target paths use this layout, with each identity component separately bound:
+
+```text
+agent/stable/0.32.0/windows/amd64/binary
+```
+
+The local routine-publishing command runs from the application's `common`
+module. For a new publication, provide an inventory JSON array:
+
+```powershell
+go run .\cmd\update-metadata -repository C:\release\metadata -root C:\release\public\1.root.json -keys C:\release\secrets -inventory C:\release\inventory.json
+```
+
+Each inventory entry has `target` and `file`. The `target` fields are
+`component`, `channel`, `version`, `platform`, `arch`, `format`, `sha256` and
+`size_bytes`; `file` is the local artifact path. Only the signed identity,
+length and hash enter published metadata, not the local filename.
+
+Routine signing reads separate PKCS#8 Ed25519 `targets.pem`, `snapshot.pem` and
+`timestamp.pem` files outside the published metadata directory. It neither
+generates nor loads a root private key. Keys must come from the owner's secret
+store into a protected temporary signing workspace; do not upload them.
+
+Omit `-inventory` for a freshness-only refresh of an **existing** publication.
+The command refuses to initialize missing freshness state silently. Targets,
+snapshot and timestamp expiries are respectively 180, 30 and 7 days; the
+production refresh schedule must run comfortably within the shortest expiry
+even without new application releases.
+
+Publishing authenticates and restores the target set from the last timestamp's
+versioned dependencies. It preserves earlier targets, increments versions,
+skips orphaned target/snapshot versions after an interrupted publication, and
+refuses different bytes for an existing release identity or root version.
+Missing/corrupt committed dependencies fail visibly instead of resetting state.
+Retain the authoritative publishing workspace and versioned history; restoring
+an arbitrarily stale backup is not a safe version-recovery procedure.
+
+The caller must serialize publishing jobs. Upload immutable versioned metadata
+first and `timestamp.json` last. Metadata writes use synced temporary files and
+rename; directory power-loss durability and multi-process workspace locking
+are not provided by this foundation. Missing initial commit state requires
+restoring the last publication rather than guessing a new baseline.
+
+The offline `InitializeRoot` and `RotateRoot` library operations use the
+standard TUF types and signature checks. The initial single-maintainer policy
+has distinct keys per role and a one-signature root threshold. Root rotation
+requires both old and replacement root authorization and retains routine role
+keys. Multi-custodian threshold ceremonies and routine-role replacement require
+additional tooling; backups are not additional signers.
+
+Remaining release gates include actual Agent manifest-boundary integration,
+unchanged Server metadata mirroring, public-root embedding, protected release
+and scheduled refresh automation, offline owner provisioning/recovery tooling,
+package authentication and real supported-upgrade qualification. No production
+keys, hosting configuration, workflow permissions or secrets are created by
+these library tests or this command.
 
 ### Follow-up risks and architecture
 
@@ -53,6 +133,10 @@ owner setup step.
   helper-to-Agent failure reconciliation remain unresolved release work.
 - Old Server-signed manifests and their database-held keys remain legacy
   compatibility machinery, not the future publisher trust authority.
+- Routine-role key replacement must verify the previous publication against its
+  previous authorized root before moving authority to new role keys. The current
+  publisher deliberately rejects old state unauthorized by its supplied root;
+  do not work around that error by deleting publisher state.
 
 ## Goals
 
