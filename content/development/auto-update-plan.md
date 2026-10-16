@@ -38,6 +38,128 @@ target, not an intentional cutoff; preserve required versioned root history.
 Production secrets, access changes and signing activation require an explicit
 owner setup step.
 
+### Remaining 0.32 release gates: security handoff reconciliation
+
+This checklist reconciles the security handoff with application revision
+`0d64d3d`, not the contributor fork implementation. These are required outcomes,
+not newly completed controls. **P0-06 (independent update trust) remains open.**
+**P0-07 (privileged updater hardening) remains open for the relevant update
+paths** until platform permissions and the handoff are inspected and tested.
+The security handoff is a code-inspection assessment, not an exploit
+demonstration.
+
+1. **Enforce independent publisher trust end to end (P0-06).**
+   Embed an owner-provisioned public TUF root in release Agents; do not establish
+   initial authority from a Server response or its database signing key.
+   Wire the shared verifier into every supported automatic, manual, forced,
+   channel-switch, retry, cached/resumed and recovery installation path. Server
+   policy chooses among publisher-authorized targets; it cannot authorize
+   arbitrary bytes. Verify component, platform, architecture, format and the
+   intended locally allowed channel, not merely Server-provided labels.
+   A forced update may bypass scheduling, not trust, channel restrictions or
+   the explicit application-version downgrade policy. TUF metadata rollback
+   protection alone does not prohibit selection of an older signed application.
+   Deliver publisher metadata unchanged through a bounded Server mirror.
+   Missing, invalid, expired or untrusted metadata must stop the update with
+   an actionable failure; never fall back to log-only signature checks.
+
+2. **Protect verification through installation (P0-07 update scope).**
+   Inspect actual installer-created permissions for raw Windows, MSI and Unix
+   installs, including existing installations being migrated. Restrict update
+   artifacts, helpers, backups, trust state and their parent directories to
+   the service identity and appropriate administrators. Windows requires real
+   ACL handling; Go's Unix-style modes are not evidence of that protection.
+   Reject unsafe junction/reparse-point/symlink redirection and writable-parent
+   substitutions at privileged write boundaries. Bind the handoff to the
+   TUF-authenticated expected length/hash in protected state, not replaceable
+   manifest or sidecar data. Use a protected handoff and/or verification at
+   the privileged boundary that also prevents a verification-to-use race;
+   rehashing an attacker-writable path and then reopening it is insufficient.
+   Preserve the installed Agent when authorization or final integrity checks
+   fail. Test adversarial replacement of staged artifacts and helper inputs.
+   There is no confirmed local privilege-escalation claim without establishing
+   the applicable ACL/write-access preconditions.
+
+3. **Preserve trust state and enforce clock/rollback behavior.**
+   Keep authenticated metadata/high-water state outside ordinary artifact-cache
+   pruning. Distinguish first initialization from missing/corrupt previously
+   initialized trust state; do not automatically reset trust and accept replay.
+   Provide explicit repair guidance using independently trusted inputs.
+   Test replay after process restart, artifact cleanup and partial state loss.
+   Test incorrect clocks and expiry without bypasses or trusting Server time
+   as a replacement time authority; report time/expiry failures clearly while
+   leaving the existing Agent running. Protect ordinary cleanup, but do not
+   claim resistance to an administrator rolling back the entire machine state.
+
+4. **Authenticate the package actually installed.**
+   APT/DNF/YUM currently use a raw-binary manifest for discovery and then install
+   separately obtained packages. Bind the actual package bytes to TUF-authorized
+   targets and install only those authenticated packages, preserving package
+   ownership and dependency-signature checks. Assess package scriptlets,
+   dependency sources and repository configuration as part of this boundary.
+   Verification of a raw discovery binary is not sufficient. An installation
+   path that cannot meet the security gate must be explicitly unsupported for
+   unattended update until fixed, not silently use a weaker fallback.
+
+5. **Finish bounded, failure-safe installer handoffs and truthful checks.**
+   Complete MSI deadlines and durable helper-result reconciliation. Validate
+   backup/staging prerequisites before destructive work; remove unsafe
+   copy-over-installed-file fallbacks where interrupted writes can damage the
+   installed executable. Verify recovery/startup behavior after failures, and
+   bounded package-manager contention/repair behavior without blindly killing
+   privileged installation transactions. Retain ordered progress across helper
+   outcomes; expose check/download/verification failures rather than reporting
+   success on handoff. Make explicit user-initiated upstream checks visibly
+   report their bounded progress and final outcome, including reconnect/reload.
+   These safeguards must not be described as universal unattended recovery.
+
+6. **Complete signing operations and supported migration.**
+   Finish owner tooling/runbooks for initialization, routine-key replacement,
+   root rotation, expired metadata, unavailable/compromised signing keys and
+   authoritative publisher-state recovery. Preserve versioned root history,
+   serialize publishing, schedule freshness refresh without new releases and
+   verify failure notifications. Routine signing credentials must not exist on
+   the fleet application Server. Document the initial one-maintainer thresholds
+   and distinct role keys honestly.
+   Test the supported 0.31.x bootstrap and mixed-version matrix, including older
+   Servers and six-month-offline Agents. A legacy Agent lacking pinned publisher
+   trust cannot retroactively gain it securely from a compromised Server;
+   distinguish that initial migration risk from protection after upgrade.
+   Any exception must name the affected versions/path, risk, removal condition
+   and recovery procedure. No post-migration trust bypass is permitted.
+   Production roots, secrets, permissions and activation remain explicit owner
+   setup steps.
+
+#### Release evidence required
+
+- [ ] A Server substituting both artifact and matching legacy manifest hash
+      cannot get it installed without authorization from pinned publisher trust.
+- [ ] Missing/invalid/untrusted/expired metadata and replayed older metadata fail
+      explicitly, including after restart; no modern-client legacy fallback.
+- [ ] Legitimate root and routine-key rotations work through supported authority
+      transitions, including retained-root history and offline recovery cases.
+- [ ] Wrong component, OS, architecture, format or disallowed channel is rejected;
+      forced/retry/recovery paths cannot bypass application downgrade policy.
+- [ ] Corrupt cache and tampered resumed downloads are rejected or safely
+      refetched; ordinary cleanup preserves trusted version state.
+- [ ] Replacing staging bytes or helper inputs cannot cause unauthenticated bytes
+      to be installed, under documented platform permission assumptions.
+- [ ] Verification failure leaves the installed Agent unchanged; interruption and
+      installer failures preserve a usable installation within the documented
+      supported failure model and emit a clear durable failure state.
+- [ ] Automatic/manual/channel/force/retry/cache/resume/recovery entry points and
+      raw Windows/MSI/Unix/package installation paths have explicit test coverage
+      or are clearly blocked as unsupported; real OS/service qualification is
+      recorded separately from script-content tests and cross-compilation.
+- [ ] Security architecture, protocol and migration documentation state actual
+      guarantees and limitations; the completion report lists passing adversarial
+      tests and remaining installer, migration and key-operation gaps.
+
+Defer SBOM/provenance, printer/admin origin isolation and Agent credential
+hardening to their own workstreams. The independent watchdog, comprehensive
+power-loss recovery and health-gated rollback remain architectural follow-ups;
+that deferral does not excuse bypassable trust or unsafe pre-install validation.
+
 ### Shared TUF foundation (unreleased)
 
 Implemented at [source commit 66b6704](https://github.com/Printmaster-Org/printmaster/commit/66b6704ea7b5f08e2f996b21eeaac8fd9805ae85).

@@ -13,6 +13,45 @@ legacy: true
 
 This historical proposal outlines a desired security architecture for agent-server communication and reverse proxying. All implementation descriptions below belong to that proposal unless independently verified against current source; do not deploy its example configuration or assume the stated controls are enforced.
 
+## Update trust: current implementation and 0.32 release gates
+
+This scoped update is reviewed against application revision
+[`0d64d3d`](https://github.com/Printmaster-Org/printmaster/tree/0d64d3d3f67653e825349908fdbfb05e9d3ebec1);
+it does not validate the historical proposal below.
+
+The shared TUF verifier/publisher foundation is implemented, but **independent
+update trust (P0-06) is not closed**. The Agent runtime still audits legacy
+manifest signatures without blocking and uses Server-supplied hashes; the TUF
+library is not yet wired into installation authorization. Artifact transport
+checks protect reliability, not authenticity against a compromised application
+Server supplying both malicious bytes and their matching hash.
+
+The required 0.32 guarantee is that serving updates does not grant authority to
+authorize arbitrary releases: release Agents pin publisher root metadata,
+routine signing authority stays separate from the application Server, and every
+supported update path enforces standard TUF verification without legacy fallback.
+Authenticated target identity includes component, OS, architecture, format and
+allowed channel. Persistent trusted metadata, expiry, clock failures, explicit
+application downgrade policy, key rotation and recovery are release gates, not
+assumed guarantees. Legacy bootstrap cannot retroactively protect an old Agent
+that has no pinned independent trust against its already compromised Server.
+
+The closely coupled privileged-updater hardening scope (P0-07) also remains open.
+The current download check precedes staging and path-based installer handoff.
+Actual Windows ACLs/Unix ownership, writable parents, reparse points/symlinks and
+replacement of artifacts/helpers must be inspected and tested. The exact bytes
+installed must remain bound to the TUF-authenticated length/hash through a
+protected privileged boundary; a replaceable sidecar or a path-only rehash is
+not sufficient. This is a hardening requirement, **not a confirmed local
+privilege-escalation finding** without established write-access preconditions.
+
+See the [0.32 update release checklist](/development/auto-update-plan/#remaining-032-release-gates-security-handoff-reconciliation)
+for required implementation slices, adversarial regression evidence, package
+authentication, migration limits and owner signing setup. No production keys or
+signing activation are implied. Independent supervision, comprehensive
+power-loss recovery and health-gated rollback remain deferred; SBOM/provenance,
+printer/admin origin isolation and credential hardening are separate workstreams.
+
 ## Threat Model
 
 - **Agent → Server**: Agent authenticates to server, sends discovery data, receives config
@@ -338,4 +377,3 @@ security:
 ---
 
 Last Updated: November 1, 2025
-
