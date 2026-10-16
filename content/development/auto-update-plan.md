@@ -46,6 +46,11 @@ owner setup step.
   Measure fleet-scale I/O before introducing an invalidation-aware verified index.
 - Bounded process waits are not equivalent to an independent recovery service;
   forcibly interrupting package installation can require package-manager repair.
+- Linux group cancellation cannot guarantee termination of root-owned descendants
+  when the Agent lacks permission. A privileged supervisor should own that
+  transaction; command deadlines alone do not establish safe rollback.
+- The Windows raw-binary stop loop is bounded; MSI deadlines and durable
+  helper-to-Agent failure reconciliation remain unresolved release work.
 - Old Server-signed manifests and their database-held keys remain legacy
   compatibility machinery, not the future publisher trust authority.
 

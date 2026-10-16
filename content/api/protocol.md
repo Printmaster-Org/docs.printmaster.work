@@ -118,6 +118,25 @@ remain cached for the next retry.
 This is integrity/reliability work, not publisher authentication. TUF production
 trust provisioning, publishing, refresh and Agent enforcement remain release gates.
 
+### Bounded existing installer commands (unreleased)
+
+Implemented at [source commit 23d51cb](https://github.com/Printmaster-Org/printmaster/commit/23d51cbaaee1969ae67ab3d390df646ea4515068).
+
+APT/DNF/YUM subprocesses now have a ten-minute budget per command and use
+noninteractive `sudo -n`; captured output is limited to the last 64 KiB.
+Failures log command, elapsed time and deadline. Linux cancellation signals the
+process group rather than only the immediate child. Permission failures while
+signalling elevated descendants remain possible and are not independent recovery.
+The systemd restart request has a 30-second budget and must return successfully;
+failure is reported instead of exiting in the hope that service recovery works.
+
+The Windows raw-binary helper stops waiting after approximately 120 seconds if
+the service never stops, without copying over a still-running executable.
+This does not supervise startup or independently repair the Agent. MSI execution
+and helper-to-Agent failure reconciliation still need further work; no MSI
+deadline or watchdog guarantee is claimed by this slice. Interrupting a package
+manager can leave package state requiring repair.
+
 ### Inventory and status with metrics
 
 Device batches retain the uploaded common inventory fields (including asset
