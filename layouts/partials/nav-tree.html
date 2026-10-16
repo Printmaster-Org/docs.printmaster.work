@@ -1,2 +1,14 @@
 {{ $current := .current }}
-<ul>{{ range .pages.ByWeight }}<li><a href="{{ .RelPermalink }}"{{ if eq $current . }} aria-current="page"{{ end }}>{{ .Title }}</a>{{ if .IsSection }}{{ partial "nav-tree.html" (dict "pages" .Pages "current" $current) }}{{ end }}</li>{{ end }}</ul>
+{{ range partial "section-groups.html" .section }}
+{{ with .title }}<div class="nav-group-label">{{ . }}</div>{{ end }}
+<ul>{{ range .pages }}
+  <li>{{ if and .IsSection (or (eq .Parent $.section) (eq .Params.navigationParent $.section.RelPermalink)) }}
+    <details{{ if or (eq $current .) (.IsAncestor $current) }} open{{ end }}>
+      <summary><a href="{{ .RelPermalink }}"{{ if eq $current . }} aria-current="page"{{ end }}>{{ .LinkTitle }}</a></summary>
+      {{ partial "nav-tree.html" (dict "section" . "current" $current) }}
+    </details>
+  {{ else }}
+    <a href="{{ .RelPermalink }}"{{ if eq $current . }} aria-current="page"{{ end }}>{{ .LinkTitle }}{{ if eq .Params.status "planned" }} <span class="nav-status">Planned</span>{{ end }}{{ if .Params.legacy }} <span class="nav-status">Historical</span>{{ end }}</a>
+  {{ end }}</li>
+{{ end }}</ul>
+{{ end }}

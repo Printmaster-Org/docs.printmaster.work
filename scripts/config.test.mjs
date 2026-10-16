@@ -17,7 +17,7 @@ test('all HTML layouts inherit the shared analytics footer', () => {
   assert.ok(footer.includes('async src="//gc.zgo.at/count.js"'));
   assert.ok(footer.includes('href="https://stats.docs.printmaster.work/">Site stats</a>'));
   for (const file of fs.readdirSync(path.join(root, 'layouts'), { recursive: true })) {
-    if (!file.endsWith('.html') || file.startsWith('partials' + path.sep) || file === path.join('_default', 'baseof.html')) continue;
+    if (!file.endsWith('.html') || file.startsWith('partials' + path.sep) || file.startsWith('shortcodes' + path.sep) || file === path.join('_default', 'baseof.html')) continue;
     const layout = read(path.join('layouts', file));
     assert.ok(layout.includes('{{ define "main" }}'), `${file} must inherit the shared base layout`);
     assert.ok(!layout.includes('data-goatcounter'), `${file} must not duplicate analytics`);

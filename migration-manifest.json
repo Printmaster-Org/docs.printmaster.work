@@ -100,13 +100,13 @@
     },
     {
       "source": "docs/GETTING_STARTED.md",
-      "destination": "content/guides/getting-started.md",
+      "destination": "content/start-here/first-steps.md",
       "url": "/guides/getting-started/",
       "sha256": "d6a3e8e9997f27d64439039c1246775b6de66cb1d7a6a042e0eb56dd3591c8a7"
     },
     {
       "source": "docs/INSTALL.md",
-      "destination": "content/guides/install.md",
+      "destination": "content/start-here/install.md",
       "url": "/guides/install/",
       "sha256": "b75f5023251596d48237e012e2680a5b2b4f55556d4330806527b7267332c2eb"
     },

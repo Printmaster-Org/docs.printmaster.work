@@ -1,10 +1,13 @@
 {{ define "main" }}
 <section class="hero">
-  <div class="eyebrow">PRINT FLEET · ONE CLEAR VIEW</div>
-  <h1>Your fleet.<br><span>Your control.</span></h1>
-  <p>Discover printers. Monitor every site. Keep your fleet running.<br>Everything needed to deploy, configure, and build PrintMaster.</p>
-  <div class="hero-actions"><a class="button" href="{{ "guides/install/" | relURL }}">Install PrintMaster →</a><a class="button secondary" href="{{ "guides/getting-started/" | relURL }}">Getting started</a></div>
-  <div class="fleet-diagram" aria-label="Agents connect printers at each site to a central server"><span>Site A<br><b>Agent</b></span><i>→</i><span class="hub">Fleet hub<br><b>Server</b></span><i>←</i><span>Site B<br><b>Agent</b></span></div>
+  <div class="eyebrow">THE PRINTMASTER KNOWLEDGE BASE</div>
+  <h1>What do you<br><span>need to set up?</span></h1>
+  <p>Get PrintMaster running, make scan-to-folder work, or configure a copier.<br>Printer and scanning guides are for everyone, whether or not you use PrintMaster.</p>
+  <div class="hero-actions"><a class="button" href="{{ "start-here/" | relURL }}">Start with PrintMaster →</a><a class="button secondary" href="{{ "scanning/" | relURL }}">Set up scanning</a><a class="button secondary" href="{{ "printers/" | relURL }}">Find your brand</a></div>
 </section>
-<div class="card-grid">{{ range .Sections.ByWeight }}<a class="doc-card" href="{{ .RelPermalink }}"><span class="card-icon">{{ .Params.icon | default "▤" }}</span><h2>{{ .Title }}</h2><p>{{ .Description }}</p><span class="card-link">Explore →</span></a>{{ end }}</div>
+<section aria-labelledby="browse-docs">
+  <h2 id="browse-docs">Browse by task</h2>
+  <div class="card-grid">{{ range .Sections.ByWeight }}{{ if not .Params.navigationHidden }}{{ partial "doc-card.html" . }}{{ end }}{{ end }}</div>
+</section>
+<aside class="notice"><strong>A growing knowledge base.</strong> Pages marked "Documentation planned" describe upcoming coverage, not finished instructions. Brand guides will identify the exact models and firmware they have been tested with.</aside>
 {{ end }}

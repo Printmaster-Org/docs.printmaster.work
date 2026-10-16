@@ -35,13 +35,22 @@
       const index = await indexPromise;
       if (request !== current) return;
       const words = query.split(/\s+/);
+      const score = page => {
+        const title = page.title.toLowerCase();
+        return (title.includes(query) ? 20 : 0) + words.filter(word => title.includes(word)).length * 5
+          - (page.status === 'planned' ? 1 : 0) - (page.legacy ? 2 : 0);
+      };
       const matches = index.filter(page => words.every(word => `${page.title} ${page.text}`.toLowerCase().includes(word)))
-        .sort((a, b) => Number(b.title.toLowerCase().includes(query)) - Number(a.title.toLowerCase().includes(query))).slice(0, 12);
+        .sort((a, b) => score(b) - score(a)).slice(0, 12);
       if (!matches.length) results.textContent = 'No matching docs.';
       for (const page of matches) {
         const link = document.createElement('a');
         link.href = page.url;
         link.textContent = page.title;
+        const context = document.createElement('small');
+        context.className = 'search-context';
+        context.textContent = [page.context, page.status === 'planned' ? 'Documentation planned' : page.legacy ? 'Historical reference' : ''].filter(Boolean).join(' · ');
+        link.append(context);
         results.append(link);
       }
     } catch {

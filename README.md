@@ -74,6 +74,26 @@ Point DNS for `docs.printmaster.work` at your host, terminate HTTPS at your reve
 
 Edit Markdown under `content/`; the docs repository is the new editorial home. Use Hugo front matter with a title and root-relative links to the published page URLs. Update navigation weights in section front matter. Keep assets under `static/` and theme code under `assets/` / `layouts/`.
 
+### Content structure
+
+The primary entry points follow reader tasks:
+
+- `content/start-here/`: installation and first setup.
+- `content/guides/`: day-to-day PrintMaster use, settings, access, and help.
+- `content/scanning/`: receiving destinations, copier-side SMB setup, and document-delivery troubleshooting. Independent of PrintMaster.
+- `content/printers/<brand>/`: each brand's scanning, networking, email, printing, security, and maintenance knowledge base. Independent of PrintMaster.
+- `content/deployment/`: hosting, services, upgrades, backups, and recovery.
+- `content/api/`: API and machine-protocol reference.
+- `content/development/`: build/test instructions, architecture, research, and historical plans. Links to the existing component and project sections.
+
+Use section front-matter `groups` (`title` plus `pages` content references) to curate task groups shared by landing cards and sidebar navigation. Unlisted children remain visible automatically; invalid references fail the build. The moved installation, first-setup, Scans, and manual Windows guides retain their published routes through explicit `url` values, so existing bookmarks and fragment links still work. Migration manifest destinations track the relocated imported source files; the one-time migration tool still records the original import layout and must not be rerun over editorial content.
+
+`npm run check` validates generated local links/assets/anchors and also requires every searchable page to appear in the documentation navigation, preventing orphaned guides.
+
+Use `status: planned` for published coverage placeholders, not guessed instructions. Planned status is visible on pages, cards, navigation, and search; `legacy: true` distinguishes historical notes. The `image-placeholder` shortcode renders a visible capture brief without a broken image request. Brand hubs use `data/brand-topics.toml` for their shared backlog; set `coveredTopics` to completed topic titles as tested guides are added.
+
+See [Contribute documentation](content/project/documentation.md) for the full editorial conventions, examples, and verification checklist.
+
 Imported pages retain `source` and `sourceCommit` metadata. Source-code references point to the exact original PrintMaster commit; update them when revising implementation documentation.
 
 All HTML layouts inherit `layouts/_default/baseof.html`, which includes `layouts/partials/footer.html`. The shared footer adds the **Site stats** link to <https://stats.docs.printmaster.work/> and loads the async GoatCounter script from `//gc.zgo.at/count.js`, reporting page views to `https://stats.docs.printmaster.work/count`. This includes the homepage, guides, API references, and 404 page, but not search JSON, feeds, downloadable files, or `/healthz`. Analytics requires JavaScript and may be blocked by browser privacy settings; documentation remains usable without it. The custom stats hostname needs its GoatCounter CNAME and HTTPS configuration; dashboard visibility is controlled in GoatCounter. This analytics integration applies to the hosted docs, not self-hosted Agent/Server UIs.

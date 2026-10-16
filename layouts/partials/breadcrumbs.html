@@ -1,0 +1,8 @@
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="{{ site.Home.RelPermalink }}">Docs</a></li>
+    {{ with .FirstSection.Params.navigationParent }}{{ with site.GetPage . }}<li><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></li>{{ end }}{{ end }}
+    {{ range .Ancestors.Reverse }}{{ if not .IsHome }}<li><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></li>{{ end }}{{ end }}
+    <li aria-current="page">{{ .LinkTitle }}</li>
+  </ol>
+</nav>

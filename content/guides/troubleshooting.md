@@ -1,5 +1,6 @@
 ---
 title: "Troubleshooting Guide"
+linkTitle: "Troubleshooting"
 source: "docs/TROUBLESHOOTING.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 ---
@@ -472,4 +473,3 @@ If you can't resolve an issue:
 2. **Ask the community**: [GitHub Discussions](https://github.com/printmaster-org/printmaster/discussions)
 
 3. **Report a bug**: Create a new GitHub issue with diagnostics
-
