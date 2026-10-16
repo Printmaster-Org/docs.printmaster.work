@@ -1,5 +1,6 @@
 ---
 title: Authentication and enrollment boundaries
+linkTitle: "Authentication & enrollment"
 description: OIDC identity ownership, tenant-scoped device approval, and machine-bound Agent login.
 weight: 65
 ---

@@ -1,0 +1,26 @@
+{{- $groups := slice -}}
+{{- $listed := slice -}}
+{{- range .Params.groups -}}
+  {{- $pages := slice -}}
+  {{- range .pages -}}
+    {{- with site.GetPage . -}}
+      {{- $pages = $pages | append . -}}
+      {{- $listed = $listed | append .RelPermalink -}}
+    {{- else -}}
+      {{- errorf "Navigation references a missing page: %s" . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $groups = $groups | append (dict "title" .title "pages" $pages) -}}
+{{- end -}}
+{{- $remaining := slice -}}
+{{- range .Pages.ByWeight -}}
+  {{- if not (in $listed .RelPermalink) -}}
+    {{- $remaining = $remaining | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- if $remaining -}}
+  {{- $title := "" -}}
+  {{- if $groups }}{{ $title = "More in this section" }}{{ end -}}
+  {{- $groups = $groups | append (dict "title" $title "pages" $remaining) -}}
+{{- end -}}
+{{- return $groups -}}

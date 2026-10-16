@@ -1,5 +1,6 @@
 ---
 title: "Frequently Asked Questions"
+linkTitle: "FAQ"
 source: "docs/FAQ.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 ---
@@ -254,4 +255,3 @@ Create an issue on [GitHub Issues](https://github.com/printmaster-org/printmaste
 - Documentation: You're reading it!
 - Discussions: [GitHub Discussions](https://github.com/printmaster-org/printmaster/discussions)
 - Issues: [GitHub Issues](https://github.com/printmaster-org/printmaster/issues)
-

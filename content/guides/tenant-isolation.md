@@ -1,5 +1,6 @@
 ---
 title: Tenant isolation and security hardening
+linkTitle: "Tenant isolation & access"
 description: Caller-derived fleet scope, alert/report ownership, machine writes, and remaining validation gates.
 weight: 64
 ---

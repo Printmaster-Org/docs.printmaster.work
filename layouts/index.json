@@ -1,7 +1,14 @@
 {{- $pages := slice -}}
 {{- range site.Pages -}}
   {{- if and (not .IsHome) .Content -}}
-    {{- $pages = $pages | append (dict "title" .Title "url" .RelPermalink "section" .Section "text" (.Plain | htmlUnescape)) -}}
+    {{- $context := slice -}}
+    {{- with .FirstSection.Params.navigationParent -}}
+      {{- with site.GetPage . }}{{ $context = $context | append .LinkTitle }}{{ end -}}
+    {{- end -}}
+    {{- range .Ancestors.Reverse -}}
+      {{- if not .IsHome }}{{ $context = $context | append .LinkTitle }}{{ end -}}
+    {{- end -}}
+    {{- $pages = $pages | append (dict "title" .Title "url" .RelPermalink "section" .Section "context" (delimit $context " / ") "status" (.Params.status | default "") "legacy" (.Params.legacy | default false) "text" (.Plain | htmlUnescape)) -}}
   {{- end -}}
 {{- end -}}
 {{- $pages | jsonify -}}

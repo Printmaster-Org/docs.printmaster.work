@@ -1,5 +1,9 @@
 ---
 title: "Getting Started"
+linkTitle: "First setup & discovery"
+description: "Open the UI, connect your sites, and discover your first printers."
+weight: 20
+url: "/guides/getting-started/"
 source: "docs/GETTING_STARTED.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 ---

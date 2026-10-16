@@ -6,6 +6,8 @@ sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 
 Thank you for your interest in contributing to PrintMaster! This document provides guidelines and information to help you get started.
 
+For this documentation site, see [Contribute documentation](/project/documentation/) for the content structure, brand-guide conventions, planned pages, and screenshot checklist. The development instructions below apply to the PrintMaster program repository.
+
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
@@ -217,4 +219,3 @@ snmpwalk -v2c -c public <printer-ip> 1.3.6.1
 - Read the [documentation](/guides/)
 
 Thank you for contributing! 🖨️
-

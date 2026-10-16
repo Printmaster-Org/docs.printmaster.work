@@ -19,7 +19,7 @@
   <header class="topbar">
     <a class="brand" href="{{ site.Home.RelPermalink }}"><img src="{{ "images/icon.svg" | relURL }}" alt="" width="32" height="32"><span>PrintMaster <small>DOCS</small></span></a>
     <nav aria-label="Main navigation">{{ range site.Menus.main }}<a href="{{ .URL }}"{{ if or ($.IsMenuCurrent "main" .) ($.HasMenuCurrent "main" .) }} aria-current="page"{{ end }}>{{ .Name }}</a>{{ end }}</nav>
-    <div class="header-actions"><a href="https://github.com/Printmaster-Org/printmaster">GitHub ↗</a><button id="theme-toggle" type="button" aria-label="Toggle light theme" aria-pressed="false">◐ Theme</button><button id="menu-toggle" type="button" aria-expanded="false" aria-controls="sidebar">☰ Guides</button></div>
+    <div class="header-actions"><a href="https://github.com/Printmaster-Org/printmaster">GitHub ↗</a><button id="theme-toggle" type="button" aria-label="Toggle light theme" aria-pressed="false">◐ Theme</button><button id="menu-toggle" type="button" aria-expanded="false" aria-controls="sidebar">☰ Browse</button></div>
   </header>
   <div class="shell">
     <aside id="sidebar" class="sidebar" aria-label="Documentation navigation">
@@ -28,10 +28,12 @@
       <div id="search-results" role="status" aria-live="polite"></div>
       {{ $current := . }}
       {{ range site.Home.Sections.ByWeight }}
-      <details{{ if or (eq $current .) (.IsAncestor $current) }} open{{ end }}>
-        <summary><a href="{{ .RelPermalink }}">{{ .Title }}</a></summary>
-        {{ partial "nav-tree.html" (dict "pages" .Pages "current" $current) }}
+      {{ if not .Params.navigationHidden }}
+      <details{{ if or (eq $current .) (.IsAncestor $current) (eq $current.FirstSection.Params.navigationParent .RelPermalink) }} open{{ end }}>
+        <summary><a href="{{ .RelPermalink }}"{{ if eq $current . }} aria-current="page"{{ end }}>{{ .LinkTitle }}</a></summary>
+        {{ partial "nav-tree.html" (dict "section" . "current" $current) }}
       </details>
+      {{ end }}
       {{ end }}
     </aside>
     <main id="main" tabindex="-1">{{ block "main" . }}{{ end }}</main>

@@ -1,8 +1,15 @@
 {{ define "main" }}
 <article>
-  <div class="eyebrow">Documentation</div>
+  {{ partial "breadcrumbs.html" . }}
   <h1>{{ .Title }}</h1>
+  {{ partial "page-status.html" . }}
   <div class="prose">{{ .Content }}</div>
-  <div class="card-grid">{{ range .Pages.ByWeight }}<a class="doc-card" href="{{ .RelPermalink }}"><span class="card-icon">{{ if .IsSection }}▤{{ else }}↗{{ end }}</span><h2>{{ .Title }}</h2><p>{{ .Description | default (.Summary | plainify | truncate 130) }}</p></a>{{ end }}</div>
+  {{ range partial "section-groups.html" . }}
+    <section class="doc-group">
+      <h2>{{ .title | default ($.Params.childrenTitle | default "In this section") }}</h2>
+      <div class="card-grid">{{ range .pages }}{{ partial "doc-card.html" . }}{{ end }}</div>
+    </section>
+  {{ end }}
+  {{ if .Params.brand }}{{ partial "brand-roadmap.html" . }}{{ end }}
 </article>
 {{ end }}

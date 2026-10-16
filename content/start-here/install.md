@@ -1,5 +1,8 @@
 ---
 title: "Installation Guide"
+description: "Install the Agent, Server, or both on your chosen platform."
+weight: 10
+url: "/guides/install/"
 source: "docs/INSTALL.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 ---
@@ -388,4 +391,3 @@ Run the new MSI installer - it will upgrade the existing installation.
 ### Auto-Updates
 
 Agents support automatic updates. See [Configuration Guide](/guides/configuration/#auto-update-settings) for setup instructions.
-

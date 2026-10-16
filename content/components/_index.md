@@ -2,6 +2,8 @@
 title: Components
 description: Agent, server, discovery pipeline, storage, and shared internals.
 weight: 50
+navigationHidden: true
+navigationParent: "/development/"
 icon: "⬡"
 ---
 

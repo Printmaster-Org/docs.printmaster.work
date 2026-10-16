@@ -1,5 +1,6 @@
 ---
 title: "Devices: progressive inventory loading"
+linkTitle: "Devices & inventory"
 description: "Search the authorized inventory immediately while visible rows and supplies load progressively."
 weight: 35
 ---

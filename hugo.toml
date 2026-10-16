@@ -5,7 +5,7 @@ enableRobotsTXT = true
 disableKinds = ['taxonomy', 'term']
 
 [params]
-  description = 'Deploy, configure, and develop PrintMaster: open-source printer fleet management.'
+  description = 'PrintMaster guides and an independent printer and copier knowledge base: installation, scanning, brand setup, and development.'
   repository = 'https://github.com/Printmaster-Org/docs.printmaster.work'
   programRepository = 'https://github.com/Printmaster-Org/printmaster'
 
@@ -29,26 +29,30 @@ disableKinds = ['taxonomy', 'term']
   changeFreq = 'weekly'
 
 [[menus.main]]
-  name = 'Guides'
-  pageRef = '/guides'
+  name = 'Start here'
+  pageRef = '/start-here'
   weight = 10
+[[menus.main]]
+  name = 'PrintMaster'
+  pageRef = '/guides'
+  weight = 20
+[[menus.main]]
+  name = 'Scanning & SMB'
+  pageRef = '/scanning'
+  weight = 30
+[[menus.main]]
+  name = 'Printers & copiers'
+  pageRef = '/printers'
+  weight = 40
 [[menus.main]]
   name = 'Deployment'
   pageRef = '/deployment'
-  weight = 20
+  weight = 50
 [[menus.main]]
   name = 'API'
   pageRef = '/api'
-  weight = 30
-[[menus.main]]
-  name = 'Development'
-  pageRef = '/development'
-  weight = 40
-[[menus.main]]
-  name = 'Components'
-  pageRef = '/components'
-  weight = 50
-[[menus.main]]
-  name = 'Project'
-  pageRef = '/project'
   weight = 60
+[[menus.main]]
+  name = 'Developers'
+  pageRef = '/development'
+  weight = 70

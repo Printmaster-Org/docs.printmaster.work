@@ -1,12 +1,16 @@
 ---
 title: "Manual scan-to-SMB setup on Windows"
+linkTitle: "Windows: manual setup"
 description: "Create a dedicated scan account, secure a shared folder, and configure a printer destination without running the Scans utility."
-weight: 36
+weight: 30
+url: "/guides/manual-smb-setup/"
 ---
 
 This guide prepares a Windows PC to receive documents from a printer or copier over SMB **without running a script**. It is an alternative to the [PrintMaster Scans utility](/guides/scans/), not an additional step required after using it. No PrintMaster Agent or Server is needed.
 
 The procedure uses a dedicated, non-administrator local account and limits access to that account and approved administrators. It intentionally does not reproduce the utility's broader folder permissions or account-hiding behavior.
+
+This is the **receiving-PC** side of [Scanning & SMB](/scanning/). Continue with the [copier-side checklist](/scanning/copier-setup/), your [brand hub](/printers/), and [delivery troubleshooting](/scanning/troubleshooting/) as needed.
 
 ## Before you begin
 

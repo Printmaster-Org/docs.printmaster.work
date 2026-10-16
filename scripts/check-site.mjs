@@ -34,8 +34,11 @@ export function checkSite(root) {
   }
   const index = JSON.parse(fs.readFileSync(path.join(root, 'index.json'), 'utf8'));
   if (!Array.isArray(index) || !index.length) errors.push('Search index is empty.');
+  const sidebar = html.get(path.join(root, 'index.html'))?.match(/<aside\b[^>]*\bid=(?:"sidebar"|'sidebar'|sidebar(?=[\s>]))[^>]*>([\s\S]*?)<\/aside>/i);
+  const navigation = sidebar && new Set([...sidebar[1].matchAll(attribute('href'))].map(match => new URL(value(match), 'https://docs.invalid').pathname));
   for (const page of index) {
     if (!page.title || !page.text || !fs.existsSync(path.join(root, decodeURIComponent(page.url), 'index.html'))) errors.push(`Invalid search entry: ${page.url}`);
+    if (navigation && !navigation.has(page.url)) errors.push(`Page missing from documentation navigation: ${page.url}`);
   }
   return { pages: html.size, searchEntries: index.length, errors };
 }

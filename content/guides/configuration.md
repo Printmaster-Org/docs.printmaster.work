@@ -1,5 +1,6 @@
 ---
 title: "Configuration Guide"
+linkTitle: "Configuration"
 source: "docs/CONFIGURATION.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 ---

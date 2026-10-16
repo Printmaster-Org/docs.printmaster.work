@@ -1,7 +1,7 @@
 ---
 title: "API Reference"
 description: "Separate Server, Agent-local, and machine-protocol references."
-weight: 30
+weight: 60
 icon: "⇄"
 source: "docs/api/README.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
@@ -76,7 +76,6 @@ There is no verified universal requests-per-minute contract for this subset. Con
 - [Reviewed local agent auth](https://github.com/Printmaster-Org/printmaster/blob/565f4c0762e467f083f54a9e0e7f6bc23ada56c3/agent/main.go)
 
 For maintaining the contract, see the repository's API maintenance guide.
-
 
 
 

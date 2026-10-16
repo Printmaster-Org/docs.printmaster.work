@@ -7,7 +7,7 @@ This is a **scoped, source-based accuracy pass**, not an exhaustive documentatio
 ## Edited scope
 
 - `content/guides/configuration.md`
-- `content/guides/install.md`
+- `content/start-here/install.md` (relocated after this audit; published URL unchanged)
 - `content/guides/features.md`
 - `content/deployment/docker.md`
 - `content/components/server/_index.md`

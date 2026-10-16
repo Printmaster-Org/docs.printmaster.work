@@ -1,12 +1,16 @@
 ---
 title: "PrintMaster Scans: scan-to-SMB setup"
+linkTitle: "Windows: Scans utility"
 description: "Prepare a Windows PC to receive scanned documents, configure your printer destination, and troubleshoot setup."
-weight: 35
+weight: 20
+url: "/guides/scans/"
 ---
 
 [PrintMaster Scans](https://scans.printmaster.work/) is a standalone PowerShell utility provided by PrintMaster. It prepares a Windows PC to receive documents from a printer or copier using scan-to-SMB. It does not require a PrintMaster Agent or Server, and it does not configure the printer itself.
 
 Prefer to configure Windows yourself? Follow the [manual scan-to-SMB setup guide](/guides/manual-smb-setup/) instead. That guide uses a dedicated account and scoped permissions without running the utility.
+
+This is the **receiving-PC** side of [Scanning & SMB](/scanning/). After setup, follow the [copier-side checklist](/scanning/copier-setup/) and check your [brand hub](/printers/) for model-specific coverage.
 
 ## Requirements
 

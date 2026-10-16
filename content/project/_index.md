@@ -2,6 +2,8 @@
 title: Project
 description: Project overview, contribution guidelines, and security reporting.
 weight: 60
+navigationHidden: true
+navigationParent: "/development/"
 icon: "◎"
 ---
 

@@ -1,5 +1,6 @@
 {{ define "main" }}
 <article>
+  {{ partial "breadcrumbs.html" . }}
   <div class="eyebrow">API · OpenAPI 3.0</div>
   <h1>{{ .Title }}</h1>
   <div class="prose">{{ .Content }}</div>
