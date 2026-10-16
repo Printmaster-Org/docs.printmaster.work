@@ -7,6 +7,48 @@ legacy: true
 
 This document captures the agreed strategy for server- and agent-driven updates, including manifest signing, installer repackaging, and rollout choreography. It serves as a checklist we can iterate through incrementally.
 
+## 0.32 release hardening status
+
+This is a historical plan, not proof that its checked items are enforced.
+In particular, older claims below about embedded publisher trust, upstream
+checksum verification and mandatory signatures do not describe the current
+log-only Server-manifest signature audit.
+
+The current release work is tracked in tested implementation slices:
+
+- Implemented: durable ordered Agent/Server progress, retryable terminal outcomes
+  and running-version validation across restart.
+- Implemented: validated artifact delivery/cache repair and truthful intake errors
+  ([source 1765ea9](https://github.com/Printmaster-Org/printmaster/commit/1765ea9f60fcc0011b7d0e018a0c2c4c4bd1c731)).
+- Required before release: bounded installer/service handoffs, supported 0.31.x
+  migration fixtures, TUF publisher metadata and client verification, production
+  root provisioning and restricted routine signing/refresh.
+- Deferred: independent Agent recovery service, power-loss-safe installation
+  transactions, health-gated rollback and a secondary website mirror.
+
+Trust decisions: use an established TUF implementation, not a custom rotation
+protocol; one maintainer initially; root private keys stay offline with encrypted
+local/off-site recovery copies, never committed or sent through chat. Routine
+publishing uses restricted automation. GitHub Actions failure notifications are
+the initial alert channel. Six months offline is the initial compatibility test
+target, not an intentional cutoff; preserve required versioned root history.
+Production secrets, access changes and signing activation require an explicit
+owner setup step.
+
+### Follow-up risks and architecture
+
+- Legacy Agents already stuck in their own terminal-state gate cannot be repaired
+  by changing Server responses; an external restart or intervention may be needed.
+- Legacy MSI bootstrap limitations require installation-specific validation.
+- Package-manager installation authenticates repository packages separately;
+  verifying a raw discovery binary does not authenticate the installed package.
+- Cache verification currently hashes matching candidates during manifest checks.
+  Measure fleet-scale I/O before introducing an invalidation-aware verified index.
+- Bounded process waits are not equivalent to an independent recovery service;
+  forcibly interrupting package installation can require package-manager repair.
+- Old Server-signed manifests and their database-held keys remain legacy
+  compatibility machinery, not the future publisher trust authority.
+
 ## Goals
 
 - Enable the PrintMaster **server** to self-update without user intervention (non-Docker deployments).
