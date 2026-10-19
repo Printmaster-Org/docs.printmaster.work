@@ -121,6 +121,21 @@ automatic root transition, in-place restore resume, independent record custody
 or a cross-location power-loss transaction. No recovery credentials/workflow
 or live uploads have been activated.
 
+The subsequent [publication-record custody integration](/development/update-publication-custody/)
+([source 67567b2](https://github.com/Printmaster-Org/printmaster/commit/67567b26ca121e8a18e6bedf28c9183d9774e49a))
+conditionally records an authenticated pending candidate in a separate protected
+GitHub repository before B2 writes, then advances latest only after exact verified
+delivery. Missing, malformed, conflicting or pending authority fails closed for
+latest selection; root changes need separate owner review. Restore may select
+completed pins from this independently configured authority after matching the
+trusted root. The records repository is public, owner-restricted and initialized
+without a publication; its Actions are disabled. No production write credential
+or signing workflow is provisioned. Public records reveal publication timing and
+fingerprints; no private material belongs there. GitHub administrators and
+authorized writers remain trusted, and this does not survive compromise/loss of
+both GitHub authority and independent owner records. Conditional reservations
+do not replace external single-writer serialization or live qualification.
+
 The [metadata delivery contract](/api/protocol/#publisher-metadata-delivery-unreleased)
 requires machine authentication, limits filenames/bytes, confines mirror access,
 preserves existing TLS/CA policy and rejects cross-origin credential forwarding.

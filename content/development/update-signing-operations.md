@@ -14,6 +14,9 @@ Sealed remote delivery:
 [source 19ca5a9](https://github.com/Printmaster-Org/printmaster/commit/19ca5a95413adbaf9cc223b50ce9925c1d26e3cd).
 Pinned remote restoration:
 [source 0444e42](https://github.com/Printmaster-Org/printmaster/commit/0444e42f038e4ce3c977e856b4569ac5995bdb4c).
+Independent publication-record custody:
+[source 67567b2](https://github.com/Printmaster-Org/printmaster/commit/67567b26ca121e8a18e6bedf28c9183d9774e49a),
+with its [dedicated custody runbook](/development/update-publication-custody/).
 
 **Unreleased; rehearse with disposable keys only.** The embedded Agent root is
 still `null`. These local tools do not activate production signing, distribution
@@ -378,8 +381,12 @@ publication or reconstruct an interrupted workspace in place. It cannot detect
 loss/rollback of both independent records and all storage state, or make an old
 owner-supplied pair of pins current.
 
-Protected GitHub orchestration, automatic authoritative high-water selection, independent
-record custody, live retention/read-back/failure rehearsal, scheduled freshness,
+The subsequent [publication-record custody slice](/development/update-publication-custody/)
+adds a protected separate GitHub record repository, conditional pending/completed
+advancement and fail-closed latest selection. It is optional in these explicit
+owner tools and is not yet provisioned for unattended delivery.
+
+Protected GitHub orchestration, live retention/read-back/failure rehearsal, scheduled freshness,
 verified notifications, artifact publication and B2-to-Server mirroring remain
 open. The runtime Server still serves only its configured local public mirror.
 Passing local tests does not authorize production signing or close P0-06/P0-07.
@@ -493,7 +500,9 @@ This proves exact recovery under independently correct/latest owner pins,
 protected local filesystem and exclusive-writer assumptions. Automatic
 authoritative latest-state selection, independent record storage/advancement,
 protected orchestration and a live disposable-key retained-version rehearsal
-remain open.
+were not part of that restore primitive. The subsequent
+[custody integration](/development/update-publication-custody/) adds conditional
+record advancement and completed-state selection, not a distributed writer lock.
 
 ## Local publication workspace
 

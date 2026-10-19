@@ -64,6 +64,12 @@ The current release work is tracked in tested implementation slices:
   lookup and empty protected local workspace/high-water outputs. Routine expiry
   can be recovered for refresh, never bypassed for delivery. Live rehearsal and
   independently correct/latest record custody remain owner/orchestration gates.
+- Implemented: optional protected GitHub publication-record custody with
+  conditional pending-before-delivery/completed-after-readback advancement and
+  refusal to select pending/missing authority. The owner-approved public records
+  repository is initialized and protected, with Actions disabled. Restricted
+  credentials, protected signing workflow and live advancement remain pending.
+  See [publication custody](/development/update-publication-custody/).
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -206,6 +212,32 @@ hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
 
+### Resumed slice: independent publication-record custody (2026-10-19)
+
+Implemented at [source 67567b2](https://github.com/Printmaster-Org/printmaster/commit/67567b26ca121e8a18e6bedf28c9183d9774e49a).
+
+The owner approved a dedicated repository and public visibility after GitHub's
+Free plan rejected private branch protection. The public records-only repository
+has administrator-enforced restricted pushes, linear history and no force-push/
+branch deletion; its Actions are disabled. The explicit generation-zero state
+contains no publication. No signing or delivery credentials were provisioned.
+
+The optional delivery integration conditionally reserves the exact authenticated
+publication before B2 writes and advances latest only after verified delivery.
+Interrupted/lost responses require explicit retries of the same sealed bytes;
+pending/conflicting authority cannot be selected as latest or silently reset.
+Restore can obtain both pins from the independently configured authority and
+requires its root to match the supplied trusted root. Owner-managed pins remain
+supported for explicit offline procedures.
+
+See [custody operations and limits](/development/update-publication-custody/).
+This is independent of B2/Server, not GitHub or a compromised GitHub signer.
+Owner-held independent records remain necessary. CAS reservations are not bucket
+locks. **Next:** protected single-writer orchestration and restricted credentials,
+recovery of pending sealed state before signing, then isolated disposable-key
+live upload/retention/recovery/failure rehearsal and freshness/alerts/mirroring.
+Reported Actions/Pages degradation did not require a dispatch or deployment.
+
 ### Resumed slice: pinned retained-state restoration (2026-10-19)
 
 Implemented at [source 0444e42](https://github.com/Printmaster-Org/printmaster/commit/0444e42f038e4ce3c977e856b4569ac5995bdb4c).
@@ -237,7 +269,7 @@ failures, corrupt/unsigned/missing dependencies/history, empty-directory/lock/
 Windows junction checks, local write failures, subsequent version advancement
 and routine-expiry recovery without a delivery bypass.
 
-**Next:** independent latest-record custody/advancement, protected single-writer
+**Next at completion of that slice:** independent latest-record custody/advancement, protected single-writer
 orchestration and authoritative high-water selection; isolated disposable-key
 live recovery/publication rehearsal, then freshness/alerts and Server mirroring.
 The tool cannot tell that an owner-supplied old pin pair is latest. No production
