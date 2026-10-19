@@ -23,6 +23,9 @@ The current release work is tracked in tested implementation slices:
 - Implemented: shared TUF verification, routine metadata publishing and offline
   root initialization/rotation primitives. This is a tested foundation, **not
   active Agent enforcement or a provisioned production signing service**.
+- Implemented: fail-closed local TUF metadata integrity checkpoints in the shared
+  verifier. See the resumed trust-state slice below; Agent integration and OS
+  permission qualification remain pending.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -160,7 +163,70 @@ hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
 
-### Resume handoff: paused 2026-10-16
+### Resumed slice: persistent trust-state integrity (2026-10-19)
+
+Implemented at [source commit 2693a7d](https://github.com/Printmaster-Org/printmaster/commit/2693a7d3e7fcaaa6d36f4256f9380afadc474990).
+
+This slice completes local metadata loss/corruption detection in the shared TUF
+client, a prerequisite for release gate 3. It does not complete that gate's
+Agent cleanup integration, operator recovery tooling, clock diagnostics or OS
+permission qualification, and does not activate runtime installation enforcement.
+
+The client now maintains a versioned SHA-256 integrity checkpoint for
+`root.json`, `timestamp.json`, `snapshot.json` and `targets.json`. For a metadata
+directory `C:\agent\publisher-metadata`, its checkpoint is the sibling
+`C:\agent\publisher-metadata.state.json`. The metadata directory path is resolved
+to an absolute path at client construction; a filesystem root is not allowed.
+The checkpoint must be retained alongside protected metadata, never pruned with
+downloaded artifacts. Downloaded target files remain disposable.
+
+Before refreshing, the client validates the previously recorded files and their
+expected presence. Missing/corrupt metadata, a missing checkpoint for an existing
+nonempty metadata directory, unknown checkpoint version or checkpoint mismatch
+returns an explicit `ErrTrustState` error before contacting the publisher.
+Existing unrecorded metadata is not automatically adopted. Initial use is
+allowed only with an absent checkpoint and empty/absent metadata directory;
+the checkpoint is written before the independently supplied bootstrap root.
+The local integrity record detects loss and corruption, not publisher authority:
+standard TUF continues to enforce signatures, versions, rotation and expiry.
+
+An ordinary completed refresh updates the checkpoint even when a later download
+or target lookup fails, preserving authenticated root/timestamp advancement and
+the library's rollback state. A checkpoint persistence failure fails verification
+instead of returning authorization success. A normal network failure can be
+retried after restart without deleting trusted state.
+
+Regression tests cover deletion/corruption of each metadata role, missing,
+corrupt and unknown-version checkpoints, whole metadata-cache deletion, replay
+after restart and disposable target cleanup, timestamp advancement before a
+snapshot-fetch failure, retry after initial network failure and failed checkpoint
+writes. Existing rotation, newer shipped root and expired local freshness tests
+continue to pass. This is not six-month-offline or installer qualification.
+
+**Recovery and limitations:** preserve the metadata and checkpoint as one
+consistent trusted set. Do not delete either to get an update through, accept
+Server-provided replacement trust, or restore an arbitrarily stale backup that
+loses newer version history. On an integrity error, leave the installed Agent
+running and escalate for independently authorized state recovery; an operator
+repair command/runbook remains release work. A crash between library metadata
+persistence and checkpoint replacement can intentionally trigger this error.
+Writes use synced temporary files plus rename, not an atomic multi-file
+transaction or a directory-fsync power-loss guarantee.
+
+Both paths require protected local storage and exclusive ownership by one
+running verifier. Their hashes are not a defense against a principal who can
+rewrite both the metadata and checkpoint. Loss of both locations, whole-machine
+snapshot rollback, hostile filesystem races, Windows ACL enforcement and
+automatic recovery from interrupted checkpoints are not solved by this slice.
+Those limitations must be addressed/documented at the runtime and privileged
+handoff boundaries rather than represented as independent recovery.
+
+**Next section:** integrate the runtime TUF authorization boundary, public-root
+provisioning contract and bounded unchanged metadata delivery; ensure the actual
+installed packages and protected expected values are in scope. No production
+keys or signing activation were introduced.
+
+### Resume handoff: paused 2026-10-16 (historical snapshot)
 
 The maintainer requested a pause and durable handoff, not another implementation
 slice. The proposed ten-minute legacy-test/dev-release-readiness slice was

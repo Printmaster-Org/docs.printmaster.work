@@ -26,6 +26,19 @@ library is not yet wired into installation authorization. Artifact transport
 checks protect reliability, not authenticity against a compromised application
 Server supplying both malicious bytes and their matching hash.
 
+The [2026-10-19 shared-client slice](https://github.com/Printmaster-Org/printmaster/commit/2693a7d3e7fcaaa6d36f4256f9380afadc474990)
+adds a persistent integrity checkpoint outside
+the metadata-cache directory. It detects missing/changed previously recorded
+metadata before network refresh, retains library rollback state across completed
+failed refreshes, and reports checkpoint failures instead of authorizing an
+update. This is local loss/corruption detection under protected-filesystem and
+exclusive-owner assumptions, not a second signature protocol. See the
+[resumed trust-state slice](/development/auto-update-plan/#resumed-slice-persistent-trust-state-integrity-2026-10-19)
+for exact storage, tests and recovery limitations. Agent cleanup integration,
+real ACL validation, clock diagnostics and operator recovery tooling remain
+release work. A metadata/checkpoint mismatch after an interrupted write fails
+closed and may need explicit recovery; the installed Agent must remain usable.
+
 The required 0.32 guarantee is that serving updates does not grant authority to
 authorize arbitrary releases: release Agents pin publisher root metadata,
 routine signing authority stays separate from the application Server, and every
