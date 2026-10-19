@@ -68,9 +68,10 @@ The current release work is tracked in tested implementation slices:
   [custody runbook](/development/update-publication-custody/) for the qualified
   boundary. Both publisher opt-ins are disabled after rehearsal; production
   credentials/root/activation remain unprovisioned.
-- Required before release: bounded installer/service handoffs, supported 0.31.x
-  migration fixtures, TUF publisher metadata and client verification, production
-  root provisioning and restricted routine signing/refresh.
+- Required before release: real MSI/service and cross-platform installer
+  qualification, supported 0.31.x migration fixtures, TUF publisher metadata
+  and client verification, production root provisioning and restricted routine
+  signing/refresh.
 - Deferred: independent Agent recovery service, power-loss-safe installation
   transactions, health-gated rollback and a secondary website mirror.
 
@@ -96,7 +97,9 @@ by the historical checklist numbering:
 
 1. **Implemented, pending platform qualification:** installation permissions,
    safe paths and verification-to-use protection.
-2. Failure-safe installer execution, MSI/helper deadlines and durable outcomes.
+2. **Implemented, pending platform qualification:** failure-safe Windows
+   binary/MSI helper handoffs, bounded deadlines and durable run-bound outcomes.
+   Real MSI/service behavior and failure recovery still require qualification.
 3. Authentication of the actual Linux packages installed.
 4. Client trust-state lifecycle, clock/expiry diagnostics and explicit repair.
 5. Truthful bounded update UX.
@@ -177,6 +180,39 @@ Windows environment has CGO disabled and no C compiler; no race-test pass is
 claimed. Real installer/service and cross-platform qualification remain in the
 listed gates.
 
+### Bounded Windows installer handoffs (unreleased)
+
+Implementation:
+[Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/16ba18e88bac81df1f10eec50616ddbd1f4d8d18).
+
+The Agent launches a detached PowerShell helper for Windows raw-binary and MSI
+updates, then exits so the helper can wait for the old Agent process to end.
+The helper bounds both that wait and service stop/start waits to two minutes.
+It records atomic, run- and target-bound `running`, `succeeded`, `failed` or
+`timed_out` results. Startup reconciles a still-running helper asynchronously;
+an unresolved or timed-out handoff is not silently cleared or replaced by a new
+update.
+
+Raw binaries are rechecked against the authorized length and SHA-256, copied
+beside the destination, rechecked, then installed with an atomic file replace.
+If service startup fails, the helper attempts to restore the exact verified
+previous binary and restart the previously running service. These attempts are
+recorded as helper failures if recovery cannot be completed; this is not a
+power-loss-safe transaction or an independent recovery service.
+
+MSI execution is bounded to 30 minutes. On timeout the helper records
+`MSI_TIMEOUT` and deliberately does not kill `msiexec`, because interrupting a
+Windows Installer transaction may leave package state damaged. The Agent keeps
+the pending handoff for operator review and blocks another automatic update.
+Successful process exit is checked at startup against the expected Agent
+version; MSI-managed package repair or rollback is not claimed.
+
+Generated-script requirements, Windows PowerShell parsing, durable-result
+matching and deferred startup reconciliation have regression coverage. These
+tests do not qualify real MSI transactions, service recovery, power-loss
+behavior, or every supported installer-created ACL. Those platform gates
+remain open.
+
 ### Installer permissions and safe-path implementation (unreleased)
 
 Implementation: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/da0f9e2c3714bea251512f3363328f9b8d21d22a).
@@ -204,8 +240,9 @@ qualification of every supported installer. Windows ACL tests ran on Windows;
 Unix execution on Linux/macOS, MSI-created paths, existing-install migration,
 and service/helper failure outcomes remain to be qualified. The updater does
 not defend against local administrators, a compromised service identity, or
-arbitrary machine rollback. MSI and package-manager handoffs keep their
-separate release gates; cross-filesystem raw-binary replacement is unsupported.
+arbitrary machine rollback. MSI execution and package-manager handoffs keep
+their separate qualification gates; cross-filesystem raw-binary replacement
+is unsupported.
 
 ### Remaining 0.32 release gates: security handoff reconciliation
 
@@ -267,17 +304,14 @@ demonstration.
    path that cannot meet the security gate must be explicitly unsupported for
    unattended update until fixed, not silently use a weaker fallback.
 
-5. **Finish bounded, failure-safe installer handoffs and truthful checks.**
-   Complete MSI deadlines and durable helper-result reconciliation. Validate
-   backup/staging prerequisites before destructive work; remove unsafe
-   copy-over-installed-file fallbacks where interrupted writes can damage the
-   installed executable. Verify recovery/startup behavior after failures, and
-   bounded package-manager contention/repair behavior without blindly killing
-   privileged installation transactions. Retain ordered progress across helper
-   outcomes; expose check/download/verification failures rather than reporting
-   success on handoff. Make explicit user-initiated upstream checks visibly
-   report their bounded progress and final outcome, including reconnect/reload.
-   These safeguards must not be described as universal unattended recovery.
+5. **Finish truthful bounded update UX and package-manager failure behavior.**
+   Verify bounded package-manager contention/repair behavior without blindly
+   killing privileged installation transactions. Retain ordered progress across
+   helper outcomes; expose check/download/verification failures rather than
+   reporting success on handoff. Make explicit user-initiated upstream checks
+   visibly report their bounded progress and final outcome, including
+   reconnect/reload. These safeguards must not be described as universal
+   unattended recovery.
 
 6. **Complete signing operations and supported migration.**
    Finish owner tooling/runbooks for initialization, routine-key replacement,
@@ -991,8 +1025,11 @@ these library tests or this command.
 - Linux group cancellation cannot guarantee termination of root-owned descendants
   when the Agent lacks permission. A privileged supervisor should own that
   transaction; command deadlines alone do not establish safe rollback.
-- The Windows raw-binary stop loop is bounded; MSI deadlines and durable
-  helper-to-Agent failure reconciliation remain unresolved release work.
+- Windows raw-binary and MSI helpers now use bounded waits and run-bound durable
+  outcomes. A 30-minute MSI timeout does not terminate `msiexec`; actual MSI
+  transactions, service recovery and installer-created permissions remain
+  unqualified. Durable helper outcomes are not a power-loss-safe transaction or
+  an independent recovery service.
 - Old Server-signed manifests and their database-held keys remain legacy
   compatibility machinery, not the future publisher trust authority.
 - Routine-role key replacement must verify the previous publication against its
