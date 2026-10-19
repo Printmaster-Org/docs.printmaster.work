@@ -137,6 +137,27 @@ and helper-to-Agent failure reconciliation still need further work; no MSI
 deadline or watchdog guarantee is claimed by this slice. Interrupting a package
 manager can leave package state requiring repair.
 
+### Required publisher authorization (unreleased)
+
+Implemented at [source commit 56e05f4](https://github.com/Printmaster-Org/printmaster/commit/56e05f4f48e82074b870139ec326af48f6c37139).
+
+The Agent updater now requires an independently configured publisher verifier
+before accepting a Server-selected candidate and again before executing it.
+Missing trust or failed TUF authorization returns an explicit manifest error;
+it does not fall back to legacy signature fields. Component, OS, architecture,
+format and the operation's intended channel must match the authorized target.
+This changes the client's acceptance behavior, not the manifest route/schema
+or machine protocol version. Existing Server signatures do not establish
+independent publisher authority.
+
+Production public-root embedding, verifier construction and unchanged metadata
+delivery remain unfinished. **Current default builds therefore reject offered
+update candidates.** Do not deploy them to remote sites relying on another
+unattended upgrade until those gates are complete. Agent runtime operation and
+post-restart version validation remain available. APT/DNF/YUM installations are
+blocked until actual package bytes, not merely discovery binaries, are
+authenticated. See the [runtime authorization slice](/development/auto-update-plan/#resumed-slice-runtime-publisher-authorization-boundary-2026-10-19).
+
 ### Inventory and status with metrics
 
 Device batches retain the uploaded common inventory fields (including asset
