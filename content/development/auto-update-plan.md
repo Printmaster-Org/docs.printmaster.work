@@ -29,9 +29,12 @@ The current release work is tracked in tested implementation slices:
   permission qualification remain pending.
 - Implemented: mandatory injected publisher authorization in Agent candidate
   selection and pre-install execution, with explicit unprovisioned-trust and
-  unauthenticated-package blocking. Production root/client construction and
-  metadata delivery are still pending, so current default builds cannot perform
+  unauthenticated-package blocking. Production root provisioning and
+  signed metadata activation are still pending, so current default builds cannot perform
   unattended updates.
+- Implemented: embedded-root verifier construction and machine-authenticated
+  unchanged public metadata delivery. The embedded root intentionally remains
+  unprovisioned until owner key setup; no signing/hosting activation is implied.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -168,6 +171,55 @@ Defer SBOM/provenance, printer/admin origin isolation and Agent credential
 hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
+
+### Resumed slice: embedded-root wiring and metadata delivery (2026-10-19)
+
+Implemented at [source commit ec0735c](https://github.com/Printmaster-Org/printmaster/commit/ec0735c457a84cdb0b865a494086c7276f9eee83).
+
+The Agent worker now constructs the real shared TUF verifier through its
+authenticated Server client. Bootstrap bytes come only from the build-embedded
+`agent/update_publisher_root.json`; the committed value is deliberately `null`,
+meaning unprovisioned, not a disposable test root. Null/empty or malformed roots
+produce an explicit setup error and leave the manager without authorization
+capability. There is no network bootstrap or permissive fallback. To activate
+trust later, the owner must provision public root metadata through the source/
+build process and rebuild; private signing keys must never be committed.
+
+The verifier uses `{datadir}/update-trust/metadata` and its sibling integrity
+checkpoint, separate from the updater's download/staging directories. Its
+HTTP client preserves the existing Server TLS/CA transport and timeout,
+reads the current token per request and confines requests/redirects to the
+Server origin and supported metadata filenames. Runtime integration does not
+strengthen any pre-existing intentionally configured insecure TLS policy;
+independent publisher signatures are still mandatory.
+
+The new machine-authenticated metadata route serves an operator-populated,
+read-only public mirror configured by `releases.publisher_metadata_dir` or
+`RELEASES_PUBLISHER_METADATA_DIR`. It does not fetch upstream files, sign them,
+or carry private keys. It confines reads to that directory, restricts filenames
+to top-level consistent snapshots, bounds file size and returns exact bytes.
+See [the metadata route contract](/api/protocol/#publisher-metadata-delivery-unreleased)
+for statuses, authentication and resource limits.
+
+Tests cover real signed metadata over custom-trusted TLS, current-token
+rotation, unrelated embedded root rejection, cross-origin and unrelated-path
+redirect rejection, caller cancellation, null/malformed roots, exact Server byte
+delivery, machine/user-token separation, absent/unconfigured mirror behavior,
+file/name bounds and TOML/environment configuration.
+
+**Still blocked:** this is wiring, not production activation. Current default
+builds remain unable to authorize updates until a real public root is
+provisioned and matching signed metadata is distributed. Restricted release/
+freshness automation, routine-key rotation/recovery tooling and owner ceremony
+are not complete. Package updates remain explicitly blocked; protected
+privileged handoff, application downgrade policy and real OS qualification are
+still required. P0-06/P0-07 remain open. No production keys, secrets, permissions
+or hosting changes were made.
+
+**Next recommended slice:** prepare tested owner key/root provisioning and
+rotation/recovery tooling before asking the owner to generate production keys,
+or complete authenticated package delivery/protected handoff first. Do not
+enable a remote dev rollout merely because the transport now works in tests.
 
 ### Resumed slice: runtime publisher authorization boundary (2026-10-19)
 

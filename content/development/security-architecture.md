@@ -24,13 +24,23 @@ update trust (P0-06) is not closed**. A subsequent
 [2026-10-19 runtime slice](https://github.com/Printmaster-Org/printmaster/commit/56e05f4f48e82074b870139ec326af48f6c37139) now
 requires injected publisher authorization before candidate acceptance and again
 before installation. Legacy manifest signatures no longer authorize updates.
-Actual production verifier/root provisioning and metadata delivery remain
-unfinished: default builds reject offered candidates explicitly, rather than
-fall back. Package handoffs are also blocked until the actual package is
+Subsequent startup wiring constructs the verifier from an embedded public root
+and authenticated unchanged Server metadata delivery. The committed root is
+deliberately unprovisioned (`null`): default builds reject offered candidates
+explicitly, rather than fall back. Actual owner key/root provisioning and signed
+publication/refresh activation remain unfinished. Package handoffs are also blocked until the actual package is
 authenticated. See the [runtime authorization slice](/development/auto-update-plan/#resumed-slice-runtime-publisher-authorization-boundary-2026-10-19)
 for coverage and operational impact. Artifact transport checks alone protect
 reliability, not authenticity against a compromised application Server supplying
 both malicious bytes and their matching hash.
+
+The [metadata delivery contract](/api/protocol/#publisher-metadata-delivery-unreleased)
+requires machine authentication, limits filenames/bytes, confines mirror access,
+preserves existing TLS/CA policy and rejects cross-origin credential forwarding.
+The Server only serves public publisher output unchanged; it neither signs
+metadata nor supplies initial Agent trust. Mount only public metadata read-only,
+never a private signing workspace. A compromised Server can deny service or
+serve rejected metadata; independent trust does not establish availability.
 
 The [2026-10-19 shared-client slice](https://github.com/Printmaster-Org/printmaster/commit/2693a7d3e7fcaaa6d36f4256f9380afadc474990)
 adds a persistent integrity checkpoint outside

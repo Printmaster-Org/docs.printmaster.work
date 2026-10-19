@@ -21,6 +21,7 @@ Route overview originally reviewed at `eeb6259f6060c0534798e3d14ac0cd9d289df9a7`
 | `/api/v1/agents/device-metadata` | GET authoritative pin snapshot; POST explicit managed-Agent metadata edits | Agent bearer token; current device ownership checked |
 | `/api/v1/agents/update/manifest` | Update manifest | Agent bearer token |
 | `/api/v1/agents/update/download/…` | Update artifact | Agent bearer token |
+| `/api/v1/agents/update/metadata/…` | Unchanged public publisher TUF metadata (unreleased) | Agent bearer token; not a user-session credential |
 | `/api/v1/agents/update/telemetry` | Update telemetry | Agent bearer token |
 | `/api/v1/agents/ws` | Persistent channel | WebSocket handler's token handshake |
 
@@ -150,13 +151,61 @@ This changes the client's acceptance behavior, not the manifest route/schema
 or machine protocol version. Existing Server signatures do not establish
 independent publisher authority.
 
-Production public-root embedding, verifier construction and unchanged metadata
-delivery remain unfinished. **Current default builds therefore reject offered
-update candidates.** Do not deploy them to remote sites relying on another
-unattended upgrade until those gates are complete. Agent runtime operation and
+The next wiring slice constructs the verifier from an embedded public-root file
+and authenticated metadata transport. That file intentionally remains
+unprovisioned (`null`), so **current default builds still reject offered update
+candidates**. Do not deploy them to remote sites relying on another unattended
+upgrade until real root provisioning, signed publishing and the remaining
+installation gates are complete. Agent runtime operation and
 post-restart version validation remain available. APT/DNF/YUM installations are
 blocked until actual package bytes, not merely discovery binaries, are
 authenticated. See the [runtime authorization slice](/development/auto-update-plan/#resumed-slice-runtime-publisher-authorization-boundary-2026-10-19).
+
+### Publisher metadata delivery (unreleased)
+
+Implemented at [source commit ec0735c](https://github.com/Printmaster-Org/printmaster/commit/ec0735c457a84cdb0b865a494086c7276f9eee83).
+
+`GET /api/v1/agents/update/metadata/{name}` is a machine-authenticated Server
+route. It does not accept an Agent ID or user-selected tenant: public publisher
+metadata is shared across authenticated Agents. User-session tokens do not
+grant machine access. It is outside the read-only user/Agent-local OpenAPI
+subsets; this addition does not bump the machine protocol version.
+
+Allowed names are `timestamp.json` and positive signed-64-bit decimal versions
+without leading zeroes followed by `.root.json`, `.targets.json` or
+`.snapshot.json`. Nested paths, local metadata/checkpoint files, signing keys,
+unversioned root/targets/snapshot and delegated-role names are not served.
+Only the top-level consistent-snapshot repository layout is supported.
+
+The Server reads only the configured `[releases].publisher_metadata_dir` public
+mirror (environment override `RELEASES_PUBLISHER_METADATA_DIR`, default empty).
+It confines file access to that directory with `os.OpenRoot`, requires regular
+files and buffers at most 16 MiB plus the overflow-detection byte. It checks
+cancellation around the read with a 30-second context budget; this is not an
+OS-level deadline for a stalled filesystem operation. The Agent's TUF refresh
+retains its two-minute overall context budget, shorter role-specific library
+size limits and the Server client's HTTP timeout.
+
+Success is `200 application/json`, exact file bytes, `Cache-Control: no-store`
+and `X-Content-Type-Options: nosniff`. There is no JSON reserialization, signature
+replacement, metadata synthesis, directory listing or fallback to cached
+Server-signed manifests. Non-GET returns `405` with `Allow: GET`; invalid names
+return `400`; missing/invalid machine authentication returns `401`; missing
+files return `404` (including the next root-version probe); an unconfigured or
+unopenable mirror returns `503`; invalid/oversized files and read failures
+return `500`. Error responses never authorize updates. Unexpected delivery
+failures use structured Server logs; routine next-root `404` is not an error.
+
+The Agent preserves its configured TLS transport/CA policy, attaches the current
+Agent bearer token on each request, and refuses requests/redirects outside the
+configured Server origin or supported metadata path. A supplied Server root or
+signing key never replaces the embedded root. This route distributes trust
+evidence; it is not itself a signing authority or a guarantee of availability.
+
+Mount/copy **only public metadata** from the publisher to the Server read-only;
+never mount the private signing workspace. Publish retained immutable versioned
+metadata before replacing `timestamp.json`. Automated distribution, signing,
+freshness scheduling and alerting remain release work.
 
 ### Inventory and status with metrics
 
