@@ -25,7 +25,7 @@ The current release work is tracked in tested implementation slices:
   root initialization/rotation primitives. This is a tested foundation, **not
   a provisioned production signing service**.
 - Implemented: fail-closed local TUF metadata integrity checkpoints in the shared
-  verifier. See the resumed trust-state slice below; Agent integration and OS
+  verifier. See the resumed trust-state slice below; Agent cleanup and OS
   permission qualification remain pending.
 - Implemented: mandatory injected publisher authorization in Agent candidate
   selection and pre-install execution, with explicit unprovisioned-trust and
@@ -35,6 +35,9 @@ The current release work is tracked in tested implementation slices:
 - Implemented: embedded-root verifier construction and machine-authenticated
   unchanged public metadata delivery. The embedded root intentionally remains
   unprovisioned until owner key setup; no signing/hosting activation is implied.
+- Implemented: offline owner initialization/root-rotation CLI, restored-key
+  verification and public-root release guards. These have only been exercised
+  with disposable keys; production provisioning and activation remain pending.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -171,6 +174,171 @@ Defer SBOM/provenance, printer/admin origin isolation and Agent credential
 hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
+
+### Resumed slice: owner provisioning tools and release guards (2026-10-19)
+
+Implemented at [source commit 0ab8856](https://github.com/Printmaster-Org/printmaster/commit/0ab88567d77178525d23591dc0152526193b1f04).
+
+The `common/cmd/update-keys` tool supports:
+
+- `init`: generates four distinct Ed25519 keys, an offline `root.pem`,
+  three routine PEM files and a self-signed public `1.root.json`. Outputs go
+  into three **new, separate** directories, never into the source checkout.
+- `verify-keys`: loads every restored private key and checks its public key ID
+  against an independently trusted public root. An unrelated or missing key is
+  an explicit failure. Verification remains available after root expiry for
+  offline recovery; it authorizes no updates. It does not establish backup
+  independence or encryption.
+- `rotate-root`: creates a replacement offline key and next versioned root,
+  signed by both old and new authorities. It leaves routine keys unchanged,
+  preserves the previous files and refuses existing output directories.
+- `check-root`: checks self-authorization, future expiry, positive version,
+  consistent snapshots and the initial policy: four distinct Ed25519 keys,
+  exactly one key and threshold one per role. It reports the public file's
+  SHA256 fingerprint, version and expiry, never private key material.
+
+New directories have owner-only Unix mode `0700`; private files use `0600`.
+On Windows, directories are created with a protected inheritable DACL granting
+full access only to the current user, SYSTEM and local Administrators. Files
+inherit those grants. Tests inspect the actual directory/file DACLs. Linked
+ancestors are rejected, including a real Windows junction in the tests.
+The owner must still choose trusted, non-shared parents on a trusted machine:
+this is not protection against an administrator, a compromised owner account
+or a concurrent process able to replace those parents. These ceremony ACLs
+do **not** close P0-07's separate installed-Agent/staging permission gate.
+
+Outputs are exclusive and synced; an interrupted/failed ceremony may leave
+partial protected output, which must be reviewed and not reused. There is no
+multi-file transaction, automatic key deletion, memory erasure or custom
+encryption scheme. The PEM files are plaintext on the ceremony filesystem;
+encrypted storage and encrypted backup custody remain owner responsibilities.
+
+Tagged Stable/Beta Agent CI builds now run `check-root` before building or
+packaging. Local Agent `-Release`/`--release` builds run it before optional
+version increments. Non-Dev Agent Docker builds run it in the builder before
+compilation. An unprovisioned, expired, malformed or policy-incompatible root
+stops these builds. Dev builds remain possible with the deliberately `null`
+root, but cannot authorize updates. Direct `go build` is not a release guard;
+the runtime still rejects unprovisioned trust. A valid root alone does not
+prove the remaining release gates or authorize a rollout.
+
+Tests use disposable keys for generation, role separation, Windows ACL/file
+inheritance, junction rejection, restored-key matches/mismatches, invalid
+arguments/paths/roots, old-signer rejection and non-overwrite. A real TUF client
+pins root 1, verifies a release, restarts and accepts published root 2 through
+the signed chain while persisting the new root. Policy/expiry/overflow and
+workflow guard tests cover failure cases. Unix mode/symlink tests require Unix
+execution; cross-compiling them is not runtime qualification.
+Both actual local build functions were also executed against an isolated
+copied-source fixture with the unprovisioned root: they rejected it before
+optional version increments and left the fixture's VERSION unchanged. Container
+guard placement has workflow/script tests, not a new container runtime test.
+
+**Still pending:** production key generation, verified encrypted backup custody,
+provisioning the embedded public root, routine-role replacement and
+loss/compromise recovery tooling, authoritative publisher-state recovery,
+serialized publishing/public distribution/freshness automation and alerts.
+Agent trust-state repair is a different problem and is not implemented here.
+No production keys, signing secrets, hosting or signing activation were changed.
+
+**Next slice:** routine-role replacement and key/publisher-state recovery,
+followed by protected publication/freshness automation and an owner activation
+rehearsal. Do not generate production keys merely because initialization is now
+available.
+
+#### Owner ceremony rehearsal and eventual provisioning
+
+**Do not run this with production keys yet.** First rehearse on disposable
+storage, finish the remaining key-operation/recovery and publishing gates,
+then explicitly authorize owner setup. Never paste a PEM, password, vault
+export or private signing file into chat, an issue or a CI log.
+
+1. Use a trusted personal machine and an encrypted, private filesystem outside
+   all checkouts, synced public folders, Server volumes and published metadata
+   trees. The parent must already exist; the tool does not create or secure
+   ancestors. Generate offline; no key-operation command needs network access
+   once Go dependencies/the tool have been built. Do not run as SYSTEM.
+2. From the application `common` directory, choose an explicit root expiry and
+   initialize **new** child directories. This example chooses three years, not
+   a built-in default; schedule renewal well before it expires.
+
+   ```powershell
+   $ceremony = 'D:\PrintMasterSigning' # Existing trusted encrypted parent
+   $expires = (Get-Date).ToUniversalTime().AddYears(3).ToString('yyyy-MM-ddTHH:mm:ssZ')
+   go run .\cmd\update-keys init `
+     -offline "$ceremony\offline-v1" `
+     -routine "$ceremony\routine-v1" `
+     -public "$ceremony\public-v1" -expires $expires
+   ```
+
+3. Record the public root SHA256, version and expiry independently of GitHub
+   and the application Server. Keep the exact public root and every subsequent
+   versioned root. A valid self-signature alone does not prove publisher identity.
+4. Create two independently recoverable **encrypted personal** backup copies
+   covering the offline root, routine keys, exact public roots and fingerprint
+   record. Keep one off-site; verify access/password recovery without relying
+   on the work account. Work-hosted Vaultwarden may be a third copy, never the
+   only second copy. Use an established encrypted vault/backup tool rather than
+   inventing encryption or treating these PEM files as encrypted.
+5. Restore **each** encrypted backup into fresh private directories on protected
+   storage. Check all four restored keys against the independently retained
+   public root:
+
+   ```powershell
+   go run .\cmd\update-keys verify-keys `
+     -root "$ceremony\public-v1\1.root.json" `
+     -offline 'E:\PrivateRestore\offline-v1' `
+     -routine 'E:\PrivateRestore\routine-v1'
+   ```
+
+   Verify the reported fingerprint against the independent record. This proves
+   key usability/matching, not that storage providers or custodians are separate.
+   Restore permissions are the owner's responsibility. Remove disposable
+   restores using the encrypted storage's normal lifecycle; no secure-erase
+   guarantee is made for SSDs, snapshots, memory or vault history.
+6. After explicit activation approval, copy **only** the public root's exact
+   bytes to `agent/update_publisher_root.json`, review the independent fingerprint
+   again, commit that public file and rebuild. Never commit any PEM files.
+   `check-root -root ..\agent\update_publisher_root.json` checks the release
+   policy; it cannot check provenance or remaining installer readiness.
+7. Provision only `targets.pem`, `snapshot.pem` and `timestamp.pem` into the
+   future restricted signing environment; never `root.pem` or the offline
+   backup vault. The application Server receives public metadata only.
+   Existing `update-metadata` publishing still requires exclusive workspace
+   ownership, retention of signed state and versioned files, and timestamp-last
+   distribution. The protected automation/distribution procedure is not ready.
+
+#### Root rotation and recovery limits
+
+With a usable previous offline key and independently trusted previous root,
+create new output directories and an explicit future expiry:
+
+```powershell
+go run .\cmd\update-keys rotate-root `
+  -root "$ceremony\public-v1\1.root.json" `
+  -old-key "$ceremony\offline-v1\root.pem" `
+  -offline "$ceremony\offline-v2" `
+  -public "$ceremony\public-v2" -expires $expires
+```
+
+Back up and restore-test the new key against `2.root.json` with the unchanged
+routine keys before making it authoritative. Preserve `1.root.json` and publish
+`2.root.json` without overwriting old versioned roots. Routine `update-metadata`
+can use root 2 with the unchanged routine keys; retain the same authoritative
+publication workspace. Clients pinned to root 1 need the complete root chain.
+Root rotation can be authorized by an expired previous root; that is standard
+TUF root maintenance, not permission to install using expired final metadata.
+The final root and refreshed routine metadata must pass normal expiry checks.
+
+For expired routine metadata with unchanged usable keys and intact signed
+publisher state, refresh with `update-metadata` using the existing workspace.
+Do not initialize a new workspace to hide missing/corrupt publication state or
+reset versions. Do not delete Agent trust checkpoints to bypass an error.
+If an offline key is unavailable, restore and verify an encrypted backup. If
+all authorized root keys are lost, there is no supported in-band replacement:
+an explicitly authenticated out-of-band binary/root recovery is required and
+is not yet qualified. Compromise, routine-role replacement, publisher-state
+loss and interrupted Agent checkpoints still need dedicated tested procedures.
 
 ### Resumed slice: embedded-root wiring and metadata delivery (2026-10-19)
 

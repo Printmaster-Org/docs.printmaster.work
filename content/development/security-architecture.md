@@ -34,6 +34,20 @@ for coverage and operational impact. Artifact transport checks alone protect
 reliability, not authenticity against a compromised application Server supplying
 both malicious bytes and their matching hash.
 
+The [owner provisioning tools and rehearsal](/development/auto-update-plan/#resumed-slice-owner-provisioning-tools-and-release-guards-2026-10-19)
+([source 0ab8856](https://github.com/Printmaster-Org/printmaster/commit/0ab88567d77178525d23591dc0152526193b1f04))
+now provide offline key initialization, restored-key verification, dual-authorized
+root rotation and public-root release guards. New key-output directories use
+real Windows ACLs or private Unix modes. The initial single-maintainer policy
+uses four distinct Ed25519 keys with threshold one per role; the root key must
+not enter routine automation. PEM staging is plaintext and requires trusted
+encrypted owner storage and independently recoverable encrypted backups.
+Self-signature validation is not independent publisher identification: confirm
+the public root fingerprint through the owner record before embedding it.
+These ceremony controls do not qualify installed-Agent ACLs, protect against
+machine administrators or activate production signing. Routine-role replacement,
+compromise/loss recovery and protected publication/refresh still remain gates.
+
 The [metadata delivery contract](/api/protocol/#publisher-metadata-delivery-unreleased)
 requires machine authentication, limits filenames/bytes, confines mirror access,
 preserves existing TLS/CA policy and rejects cross-origin credential forwarding.

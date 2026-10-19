@@ -92,6 +92,22 @@ This runner separation and device-control regression were verified against
 
 ### Making Releases
 
+**Unreleased 0.32 trust safeguard:** tagged Stable/Beta Agent CI builds,
+local Agent `-Release`/`--release` builds and non-Dev Agent Docker builds now
+require a provisioned, self-authorized, unexpired public TUF root with the initial
+four-distinct-Ed25519-key/threshold-one policy. Local build checks precede optional
+version increments; CI checks precede binary packaging. The committed root is
+still deliberately `null`, so these release builds currently fail explicitly.
+Dev builds remain available but reject offered updates without publisher trust.
+This guard does not prove publisher identity, activate signing or replace the
+remaining release qualification. Follow the
+[owner ceremony rehearsal](/development/auto-update-plan/#owner-ceremony-rehearsal-and-eventual-provisioning)
+before any production key setup; do not substitute a disposable root just to
+make a release build pass. Direct `go build` is not a guarded release workflow.
+Implemented at [source commit 0ab8856](https://github.com/Printmaster-Org/printmaster/commit/0ab88567d77178525d23591dc0152526193b1f04);
+container build guard placement is covered by script tests, not fresh container
+runtime qualification.
+
 The release scripts, Beta lifecycle, CI/CD publishing, and build-channel behavior
 in this section were reviewed against [source commit 869a0c1](https://github.com/Printmaster-Org/printmaster/commit/869a0c1174257409f8eb18fbe61612f34998b471).
 Other sections retain their earlier source review. Validation covers local
