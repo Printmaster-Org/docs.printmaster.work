@@ -62,6 +62,19 @@ operations, not client trust-state resets or a complete compromise-response
 system. Production custody, protected publication/refresh, poisoned-client
 recovery, root compromise and unrecoverable state/key loss remain limitations.
 
+Managed local publisher mode
+([source 108d75a](https://github.com/Printmaster-Org/printmaster/commit/108d75a6c1b8d17809eb3ff1817daa1f437e5032))
+now serializes cooperating writers using exclusive
+lock files, checks the workspace against retained publication-record high-water
+state, seals and revalidates a staged publication, and syncs/verifies backup and
+record files before timestamp-last workspace/mirror commits. Explicit resume
+uses the same authenticated bytes without signing another version.
+These are local trusted-filesystem controls, not cross-host/object-store
+transactions, permission provisioning or independently protected recovery
+storage. Crashes can leave locks/unsealed state requiring operator review.
+GitHub Actions plus Backblaze B2 is the selected future hosting direction;
+credentials, remote backup/retention, schedules and failure alerts are not active.
+
 The [metadata delivery contract](/api/protocol/#publisher-metadata-delivery-unreleased)
 requires machine authentication, limits filenames/bytes, confines mirror access,
 preserves existing TLS/CA policy and rejects cross-origin credential forwarding.

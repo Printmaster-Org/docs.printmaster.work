@@ -42,6 +42,11 @@ The current release work is tracked in tested implementation slices:
   pinned recovery/transition of publisher state, retaining targets and metadata
   versions. See [signing operations](/development/update-signing-operations/);
   this does not close incident response or protected publishing automation.
+- Implemented: managed single-host local publication with exclusive locks,
+  sealed resume, retained-record high-water checks, verified public-state
+  backup/record before timestamp-last distribution. GitHub Actions/B2 is the
+  agreed hosting direction; remote provisioning, scheduling and alerts remain
+  pending.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -178,6 +183,45 @@ Defer SBOM/provenance, printer/admin origin isolation and Agent credential
 hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
+
+### Resumed slice: managed local publication transaction (2026-10-19)
+
+Implemented at [source commit 108d75a](https://github.com/Printmaster-Org/printmaster/commit/108d75a6c1b8d17809eb3ff1817daa1f437e5032).
+
+The owner selected GitHub Actions plus Backblaze B2 and approved implementing
+the local transaction before remote credentials/hosting activation.
+`update-metadata` now offers managed mode with `-backup`, `-records` and
+`-mirror` together. Four existing non-nested directories are required; keys
+remain outside outputs and operators must pre-provision trusted permissions.
+
+Cooperating publishers acquire exclusive lock files across workspace, backup,
+record and mirror roots. The workspace must match the highest retained record.
+One signed publication is staged/sealed, signatures/hash bindings/expiry are
+revalidated, and immutable backup plus record files are synced/read back before
+workspace/mirror timestamps advance. Versioned files precede each timestamp.
+`-resume` finishes the sealed publication without signing again or loading keys;
+it rejects changed roots, tampering, expiry and divergent destinations.
+
+Tests exercise real TUF verification through the local mirror, freshness
+history retention, backup/record failures before visible commit, immutable
+conflicts, explicit resume after delivery failure, lock contention, workspace
+rollback, changed/missing/expired pending state, routine transition and CLI mode.
+This is local filesystem behavior, not B2 consistency/retention or live alerts.
+All shared-module tests and relevant vet passed; focused transaction/CLI suites
+also passed repeated runs. Actual Windows junction rejection passed. Unix tests
+cross-compiled only; no remote-storage or installer qualification is implied.
+
+**Limits:** local cooperating-process locks, protected directory assumptions and
+synced/read-back files do not prove independent backup custody or cross-host/
+power-loss-safe commits. Crash locks, unsealed preparations and interrupted
+final cleanup may need authorized manual repair. Low-level publishing remains
+an explicitly exclusive-owner primitive, not a lock-aware bypass.
+See the maintained [managed-mode runbook](/development/update-signing-operations/#managed-local-publication-transaction).
+
+**Next slice:** choose/provision GitHub/B2 bucket/state/record permissions and
+retention, wire remote backup-before-publication with timestamp-last delivery,
+then scheduled freshness and verified failure alerts. No production keys,
+secrets, buckets or signing activation were changed.
 
 ### Resumed slice: routine-key replacement and pinned publisher recovery (2026-10-19)
 

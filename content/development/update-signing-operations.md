@@ -103,6 +103,15 @@ Dev builds remain possible with `null` but cannot authorize updates.
 
 ## Routine publication and independent recovery records
 
+**Hosting direction agreed:** GitHub Actions will run routine signing and
+scheduled freshness jobs; Backblaze B2 will host public metadata and separately
+protected recovery storage. The offline root remains outside automation. B2
+credentials, bucket layout/retention, independent recovery permissions,
+scheduled workflows and failure-alert verification are **not provisioned**.
+The local managed transaction below is the tested prerequisite, not a B2 client
+or an active signing service. Existing home backups can be additional copies,
+not the only authoritative off-site state.
+
 `update-metadata` does not need a root private key. Use an exclusive, protected
 publisher workspace, distinct from the key directory and read-only Server mirror.
 Retain **all** versioned roots, targets and snapshots and the committed
@@ -115,12 +124,16 @@ the public root fingerprint/version and publication context in an independent
 owner-controlled **latest-publication record**, then back up the matching
 workspace. Preserve root fingerprints/history independently too. Stop if this
 record or the backup cannot be completed; do not distribute first and hope an
-older backup is sufficient. Future automation must enforce this sequencing.
+older backup is sufficient. Managed local mode enforces backup/record-before-
+distribution inside its configured local directories. Future GitHub/B2
+automation must enforce the remote equivalent and independent custody.
 
 Publish immutable versioned metadata first and `timestamp.json` last. Publisher
 writes, backup, records, key transitions and distribution must be serialized.
-The local tools assume exclusive ownership; protected automation, backup/record
-durability, upstream distribution and verified freshness alerts are still pending.
+Low-level publishing assumes exclusive ownership. Managed mode provides
+cooperating single-host locks and local commit sequencing; protected remote
+automation, independently durable storage and verified freshness alerts remain
+pending.
 
 For freshness with unchanged keys and intact signed state, omit `-inventory`:
 
@@ -134,6 +147,98 @@ Expired routine metadata can be authenticated and refreshed from intact
 publisher state; the current root and newly issued metadata must be unexpired.
 Normal publication verifies existing signatures using the current root only:
 it never silently falls back to historical role keys.
+
+## Managed local publication transaction
+
+Implemented at [source 108d75a](https://github.com/Printmaster-Org/printmaster/commit/108d75a6c1b8d17809eb3ff1817daa1f437e5032).
+
+Use four **existing, separate, non-nested** directories on reliable local
+filesystems: publisher workspace, publication backups, independent records
+and a public distribution mirror. Provision appropriate Windows ACLs/Unix
+ownership on these directories and all parents first. The tool checks ordinary
+non-linked ancestors (including Windows reparse points) but does not provision
+or qualify their permissions, encryption, physical independence or retention.
+Keys must remain outside these output trees. Only supported public TUF metadata
+is copied; backups/records contain no private signing keys.
+
+```powershell
+go run .\cmd\update-metadata `
+  -repository "$ceremony\publisher-state" `
+  -root "$ceremony\public-v1\1.root.json" -keys "$ceremony\routine-v1" `
+  -backup 'E:\SigningBackups' -records 'F:\SigningRecords' `
+  -mirror 'D:\PublicUpdateMetadata'
+```
+
+Supply all three managed flags together. For first initialization, the workspace
+must already exist and `-inventory` must specify a JSON target array (an empty
+array is allowed for rehearsal). Omit inventory for scheduled-style freshness;
+missing prior state is an error rather than an implicit new repository.
+The existing recovery/transition flags also work in managed mode.
+
+The operation:
+
+1. Acquires exclusive `.publisher.lock` files in all four directories in a
+   fixed order. Conflicting publishers fail promptly; they do not wait forever.
+   Every publishing process must use managed mode or honor these same locks.
+   Legacy low-level `Publish`/CLI mode is not automatically serialized.
+2. Checks workspace timestamp against the highest retained publication record
+   before signing another version. An older or divergent workspace fails.
+   This detects workspace rollback while records survive; loss/rollback of both
+   workspace and records still requires independently trusted recovery inputs.
+3. Copies retained public state into `.pending-publication` under the workspace
+   and signs one new publication there. It writes a protected `record.json`
+   containing root/timestamp fingerprints, timestamp version, previous commit
+   fingerprint and hashes of every staged metadata file.
+4. Revalidates sealed hashes, root history/signatures, dependency bindings and
+   final expiry. A restored/modified/expired pending publication is not silently
+   trusted. Workspace/mirror timestamps must still match the prior or new
+   commit (an empty mirror is allowed).
+5. Writes a content-addressed backup under the timestamp SHA256 and a matching
+   `<timestamp-sha256>.json` in the record directory. Files are synced and
+   read back; existing immutable conflicts fail.
+6. Only after those writes succeed, updates workspace and mirror, writing
+   immutable versioned files first and replacing each `timestamp.json` last.
+   A dependency-copy failure cannot expose a new timestamp. Successful delivery
+   removes known pending metadata/record files and releases locks.
+
+The mirror is **local output**, suitable for a read-only serving mount or the
+future B2 uploader. This command makes no network calls for distribution,
+creates no GitHub schedules and sends no alerts. Backups on two paths using the
+same disk/account are not independent disaster/credential recovery copies.
+File syncing/read-back is not an atomic multi-location transaction or a promise
+of power-loss safety on every filesystem: directory-entry fsync, remote object
+semantics, ACL qualification and cross-host locking are not implemented here.
+
+### Interrupted runs and explicit resume
+
+A handled failure releases its own locks but preserves pending state. Once
+the staged publication has a complete `record.json`, retry with `-resume` and
+the same root and managed directories:
+
+```powershell
+go run .\cmd\update-metadata `
+  -repository "$ceremony\publisher-state" `
+  -root "$ceremony\public-v1\1.root.json" -keys "$ceremony\routine-v1" `
+  -backup 'E:\SigningBackups' -records 'F:\SigningRecords' `
+  -mirror 'D:\PublicUpdateMetadata' -resume
+```
+
+Resume validates the sealed publication again and needs no private signing
+keys (`-keys` remains a required location argument but files are not loaded).
+It never signs another version. Omit inventory and transition/recovery flags;
+the sealed bytes already contain that decision. A distribution failure may have
+committed the workspace while the mirror still serves the prior timestamp;
+resume completes the same publication after the operator fixes the cause.
+Do not overwrite an immutable conflict just to bypass a failure.
+
+Crashes may leave lock files. Stop/confirm all participating processes are gone
+before an operator removes **only the identified stale lock files**. Never
+automatically break a lock based solely on its age/PID. An interrupted unsealed
+preparation, expired pending publication, corrupted record, or interruption
+during final pending-file cleanup fails closed and requires explicit operator
+review against protected backups/records. There is no automatic deletion/reset
+of that state and no claim of unattended recovery from every interruption.
+Keep public serving pointed at the last complete publication.
 
 ## Routine-key loss or replacement
 
