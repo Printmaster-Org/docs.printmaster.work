@@ -10,6 +10,8 @@ Reviewed implementation:
 and [routine replacement/publisher recovery 6596e21](https://github.com/Printmaster-Org/printmaster/commit/6596e21dec763d737b0f2605532519d68bce1529).
 Read-only B2 setup checks:
 [source 65cd3ab](https://github.com/Printmaster-Org/printmaster/commit/65cd3ab42eee107ffbc856f5f64ca91647831746).
+Sealed remote delivery:
+[source 19ca5a9](https://github.com/Printmaster-Org/printmaster/commit/19ca5a95413adbaf9cc223b50ce9925c1d26e3cd).
 
 **Unreleased; rehearse with disposable keys only.** The embedded Agent root is
 still `null`. These local tools do not activate production signing, distribution
@@ -108,12 +110,13 @@ Dev builds remain possible with `null` but cannot authorize updates.
 **Hosting direction agreed:** GitHub Actions will run routine signing and
 scheduled freshness jobs; Backblaze B2 will host public metadata and separately
 protected recovery storage. The offline root remains outside automation.
-B2 buckets have been owner-created (configuration observed in screenshots, not
-yet verified through authenticated API access). Restricted credentials,
-independent recovery permissions, scheduled workflows and failure-alert
-verification are **not provisioned**.
-The local managed transaction below is the tested prerequisite, not a B2 client
-or an active signing service. Existing home backups can be additional copies,
+B2 buckets have been owner-created and the authenticated read-only preflight
+passed on 2026-10-19. Separate inspection credentials and their GitHub
+environment are configured; delivery credentials, independent recovery
+permissions, scheduled workflows and failure-alert verification are **not
+provisioned**. Local managed transactions and the remote delivery primitive
+below are prerequisites, not an active signing service.
+Existing home backups can be additional copies,
 not the only authoritative off-site state.
 
 ### B2 owner setup and read-only preflight
@@ -128,7 +131,8 @@ The initial owner-created layout is:
 | Object Lock | Disabled | Enabled; default 365 days |
 | S3 endpoint | `https://s3.us-west-004.backblazeb2.com` | Same |
 
-These are dedicated B2 Cloud Storage buckets, not Backblaze Computer Backup.
+The API-verified recovery mode is Governance. These are dedicated B2 Cloud
+Storage buckets, not Backblaze Computer Backup.
 Never upload private signing keys to either bucket. Encryption at rest does
 not make a public object private. Independent encrypted key backups remain
 separate from this public-metadata/recovery-state storage.
@@ -240,11 +244,16 @@ go run .\cmd\update-storage-check `
   -s3-endpoint https://s3.us-west-004.backblazeb2.com
 ```
 
-No live API check has yet been run. Record the first successful run separately;
-a green preflight is not signing activation or proof of remote serialization,
-immutable recovery read-back, authoritative latest-state recovery, independent
-record custody, timestamp-last publication, anonymous serving or alert delivery.
-Those remain the next implementation/qualification slice. Existing Servers
+The first [live API preflight passed](https://github.com/Printmaster-Org/printmaster/actions/runs/39276227518)
+on 2026-10-19 at application revision `65cd3ab42eee107ffbc856f5f64ca91647831746`,
+including the actual inspection step after owner environment approval. The
+owner configured Governance defaults and restricted seven-day inspection keys.
+`ENABLE_UPDATE_STORAGE_PREFLIGHT=true` enables manual runs only; no schedule or
+production signing was activated. A green preflight is not proof of remote
+serialization, immutable recovery read-back, authoritative latest-state recovery,
+independent record custody, timestamp-last publication, anonymous serving or
+alert delivery. The delivery primitive below has local HTTP-fixture tests,
+not a live B2 upload rehearsal. Existing Servers
 still serve only their configured local metadata mirror; they do not fetch B2.
 Revoke inspection keys when no longer needed.
 
@@ -260,7 +269,113 @@ result. Do not assume retention dates/settings transfer during copying.
 Previously Compliance-locked versions may remain billable in the old account.
 Signing-custody transfer is a separate owner ceremony.
 
-### Local publication workspace
+## Remote delivery primitive (unreleased, not activated)
+
+Implemented at [source 19ca5a9](https://github.com/Printmaster-Org/printmaster/commit/19ca5a95413adbaf9cc223b50ce9925c1d26e3cd).
+
+`common/cmd/update-deliver` transfers a sealed backup produced by managed local
+publication. It does not sign or load private signing keys. The shared B2 Native
+API adapter reuses the preflight HTTP/configuration checks; the inspection CLI
+remains read-only and its existing workflow is unchanged.
+
+**Do not run against the production buckets yet.** Delivery credentials and a
+protected externally serialized publisher have not been provisioned. The next
+rehearsal must use disposable signing keys and isolated test buckets. It must
+not seed public production metadata with a disposable trust root.
+
+### Delivery contract and ordering
+
+The caller must exclusively control **all** writers for the whole operation,
+including manual tools and other repositories. `-externally-serialized` is an
+explicit assertion of that prerequisite, **not a distributed lock**. B2 Object
+Lock prevents deletion of retained versions, not creation of a new version at
+the same name. Read-before-write and the pre-commit timestamp recheck are not
+atomic compare-and-swap. No unattended delivery workflow is added in this slice.
+
+Required inputs are a protected sealed local backup directory, independently
+trusted current public root, exact intended timestamp SHA256 and either:
+
+- `-previous-timestamp-sha256`: the independently recorded last **remote**
+  publication pin (which can differ from the local signing predecessor); or
+- `-bootstrap`: explicit first remote initialization, never a repair/reset for
+  missing established state. Bootstrap retries accept the same desired commit,
+  but refuse a different existing timestamp.
+
+The tool:
+
+1. Reads the sealed record/metadata once and verifies exact digests, intended
+   root identity, complete root history, routine signatures/dependency hashes,
+   positive matching versions and expiry against those in-memory bytes.
+2. Requires the public timestamp to match the independently pinned previous
+   commit or the same desired commit. Established missing state, divergence and
+   non-advancing versions fail before any uploads.
+3. Uploads the full public metadata history to
+   `publications/<timestamp-sha256>/<metadata-name>` in private recovery, then
+   its `record.json` and `records/<timestamp-sha256>.json`. Every object must be
+   absent or byte-identical; conflicts stop, never overwrite silently.
+4. Checks each recovery version's identity/action/length and readable Governance
+   retention: still unexpired and covering at least 365 days from its upload.
+   Reads the exact uploaded version by B2 file ID and compares all bytes; also
+   reads back by the latest-version lookup before allowing public writes.
+5. Ensures public versioned metadata first. Rechecks the old remote commit,
+   root expiry and sealed routine expiry, then uploads `timestamp.json` last
+   and reads it back. A committed timestamp is never replaced by an older
+   version. Exact retries do not re-sign or create redundant versions.
+
+Both stores reject hide markers rather than interpret hidden state as a fresh
+repository. Errors/ambiguous upload outcomes are explicit; there are no automatic
+upload retries, metadata resets, deletes or retention-bypass calls. Preserve the
+same sealed directory/root/pins and explicitly rerun after diagnosing failures.
+An upload can succeed remotely while its response/read-back fails: retry checks
+existing bytes/retention instead of assuming nothing happened.
+
+Requests have 20-second per-request and ten-minute delivery bounds. Control
+responses are limited to 1 MiB; individual public-metadata objects to 16 MiB.
+Redirects are refused. Upload URLs are limited to authenticated B2-issued HTTPS
+endpoints (including documented `pod-*.backblaze.com` upload hosts); tokens,
+upload-URL queries and raw service errors are not logged. B2's mandatory SHA1
+upload checksum is transport-only; TUF/hash bindings and exact byte comparison
+remain the trust/integrity checks. Public uploads request `Cache-Control:
+no-store`; anonymous serving/cache behavior still requires live qualification.
+
+### Future delivery credentials
+
+**Do not replace or widen the current inspection keys.** A later controlled
+rehearsal needs separate delivery keys, each restricted to its intended bucket
+without a filename prefix:
+
+| Purpose | Required capabilities |
+| --- | --- |
+| Public metadata delivery | `listBuckets,readBucketRetentions,listFiles,readFiles,writeFiles` |
+| Private recovery delivery | Above plus `readFileRetentions` |
+
+No `deleteFiles`, key-management, bucket-writing, retention-writing or
+`bypassGovernance` permission is accepted. The adapter validates the bucket
+visibility/lifecycle/retention configuration again when connecting.
+
+Credentials are supplied only through process environment variables:
+`B2_METADATA_DELIVERY_KEY_ID`, `B2_METADATA_DELIVERY_APPLICATION_KEY`,
+`B2_RECOVERY_DELIVERY_KEY_ID`, `B2_RECOVERY_DELIVERY_APPLICATION_KEY`.
+They are not signing keys and do not belong in the inspection environment.
+Build the tool before exposing credentials to its process.
+
+### Remaining remote guarantees
+
+The retained `records/` object and the snapshot's record live in the same B2
+bucket; they are **not independently held latest-publication authority**.
+The owner/orchestrator must preserve the latest safe remote pin independently.
+This primitive does not enumerate every older object version, choose or restore
+the latest authoritative backup, reconstruct an interrupted publisher workspace,
+or detect loss/rollback of both independent records and all storage state.
+It cannot make an old owner-supplied pin current.
+
+Protected GitHub orchestration, remote high-water/history restoration, independent
+record custody, live retention/read-back/failure rehearsal, scheduled freshness,
+verified notifications, artifact publication and B2-to-Server mirroring remain
+open. The runtime Server still serves only its configured local public mirror.
+Passing local tests does not authorize production signing or close P0-06/P0-07.
+
+## Local publication workspace
 
 `update-metadata` does not need a root private key. Use an exclusive, protected
 publisher workspace, distinct from the key directory and read-only Server mirror.

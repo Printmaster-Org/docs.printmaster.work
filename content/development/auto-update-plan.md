@@ -49,9 +49,16 @@ The current release work is tracked in tested implementation slices:
   pending.
 - Implemented: opt-in manual read-only B2 preflight for bucket identity/access,
   keep-all lifecycle, default Governance/365-day recovery retention and strictly
-  restricted inspection credentials. Owner-created buckets are screenshot-
-  confirmed only; live API validation, publishing and retention behavior tests
-  remain pending. See [owner setup](/development/update-signing-operations/#b2-owner-setup-and-read-only-preflight).
+  restricted inspection credentials. The owner-approved
+  [live preflight](https://github.com/Printmaster-Org/printmaster/actions/runs/39276227518)
+  passed, including Governance/365-day defaults. Only manual inspection is
+  enabled; publishing and retention behavior tests remain pending.
+  See [owner setup](/development/update-signing-operations/#b2-owner-setup-and-read-only-preflight).
+- Implemented: explicit externally serialized delivery of sealed public metadata
+  with B2 version-specific read-back/retention checks, recovery objects/records
+  before public writes, timestamp-last commit and exact retry. No delivery
+  credentials/workflow or live uploads are activated; authoritative restoration,
+  independent latest records and protected orchestration remain open.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -189,6 +196,41 @@ hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
 
+### Resumed slice: sealed remote delivery primitive (2026-10-19)
+
+Implemented at [source 19ca5a9](https://github.com/Printmaster-Org/printmaster/commit/19ca5a95413adbaf9cc223b50ce9925c1d26e3cd).
+
+Added a B2 Native API adapter and `update-deliver` CLI for an already sealed
+local backup. The read-only preflight shares bounded HTTP/configuration checks
+with the adapter; it does not gain write authority. Delivery requires an exact
+publication pin, independently recorded previous remote pin (or explicit
+first-publication bootstrap), and asserted external single-writer ownership.
+
+Captured metadata bytes are checked for root/history identity, signatures,
+hash/version bindings and expiry. Private content-addressed recovery objects
+and records are retained/read back before public writes; every recovery version
+must report unexpired Governance retention covering at least 365 days from
+upload. Uploads are independently read back by B2 file ID. Public immutable
+metadata precedes timestamp-last delivery, with a pre-commit timestamp/expiry
+recheck and final read-back. Errors/hide markers/conflicts are explicit;
+ambiguous commits are retried using the same sealed bytes, not by signing
+again or automatically resetting metadata.
+
+Tests cover ordering, retention filtering/mode/duration failures, receipt/byte
+mismatches, foreign endpoints, hidden objects, backup/record failures,
+interrupted/ambiguous commit retry, diverged timestamp, expiry (including the
+exact boundary), replayed older publication and real TUF client authorization
+through a test public mirror. No live B2 upload, retention behavior,
+service/installer or remote restoration qualification is implied.
+
+**Limits/next:** the serialization flag is a caller assertion, not a lock.
+Object Lock preserves versions, not current names against new uploads.
+Records in the same recovery bucket are not independent latest-state custody.
+Next implement protected single-writer orchestration, remote history/high-water
+restoration and independently held latest pins, then a disposable-key rehearsal
+in isolated test buckets, scheduling/alerts and B2-to-Server delivery.
+No production keys, delivery credentials, uploads or workflow activation.
+
 ### Resumed slice: read-only B2 configuration preflight (2026-10-19)
 
 Implemented at [source commit 65cd3ab](https://github.com/Printmaster-Org/printmaster/commit/65cd3ab42eee107ffbc856f5f64ca91647831746).
@@ -206,10 +248,13 @@ not identify retention mode. The web-console procedure documents Compliance;
 the runbook now explains owner-only future-default changes through the CLI and
 minimal inspection-key/GitHub setup. No credentials, remote reads/writes,
 retention changes, workflow activation or production signing were performed by
-the implementation. Unit fixtures and workflow-structure tests do not replace
-a real B2 rehearsal.
+the implementation. Subsequently the owner configured the dedicated environment,
+inspection secrets and Governance defaults and approved a
+[successful live preflight](https://github.com/Printmaster-Org/printmaster/actions/runs/39276227518)
+at `65cd3ab42eee107ffbc856f5f64ca91647831746`. Only manual read-only inspection
+is enabled; this does not replace a real upload/retention rehearsal.
 
-**Next:** owner configures inspection credentials/environment and confirms
+**Historical next:** owner configures inspection credentials/environment and confirms
 Governance defaults; perform live preflight, then implement serialized remote
 state restoration, verified recovery-before-publication, independent latest
 records and timestamp-last delivery/resume. Scheduled freshness, live failure

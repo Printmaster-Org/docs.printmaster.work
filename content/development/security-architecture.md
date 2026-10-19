@@ -84,10 +84,26 @@ refuses redirects, bounds requests/responses and suppresses raw service errors.
 The manual GitHub workflow requires explicit opt-in on `main` and a dedicated
 environment. This does not prove immutable object retention behavior, external
 serialization, backup read-back, independent latest-state custody or alerts.
-Owner screenshots show created buckets but no authenticated live check has
-yet run. Default retention mode must be verified before any upload; web-console
-defaults must not be assumed to be Governance. No signing or distribution is
+The owner-approved [live read-only check](https://github.com/Printmaster-Org/printmaster/actions/runs/39276227518)
+passed at `65cd3ab42eee107ffbc856f5f64ca91647831746`, including Governance/365-day
+defaults. Only manual inspection is enabled; no signing or distribution is
 activated by preflight.
+
+The subsequent [remote delivery primitive](/development/update-signing-operations/#remote-delivery-primitive-unreleased-not-activated)
+([source 19ca5a9](https://github.com/Printmaster-Org/printmaster/commit/19ca5a95413adbaf9cc223b50ce9925c1d26e3cd))
+authenticates captured sealed bytes, checks explicit intended/previous remote
+pins, verifies retained recovery versions and exact file-ID read-back before
+public writes, and commits public timestamp last with an expiry/commit recheck.
+It rejects hide markers, conflicts and ambiguous operations explicitly; retry
+uses the same signed bytes. B2's required SHA1 transport checksum does not
+replace TUF verification. The read-only checker and delivery adapter share HTTP/
+configuration checks but retain different capability allowlists.
+This is not a distributed transaction/lock or automatic latest-state recovery:
+external serialization is required, and records in the same B2 bucket do not
+establish independent latest-publication custody. Protected orchestration,
+authoritative history restoration, live upload/retention/failure qualification,
+scheduled freshness and Server mirroring remain open. No delivery credentials
+or signing workflow have been activated.
 
 The [metadata delivery contract](/api/protocol/#publisher-metadata-delivery-unreleased)
 requires machine authentication, limits filenames/bytes, confines mirror access,
