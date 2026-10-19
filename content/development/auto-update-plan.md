@@ -12,7 +12,8 @@ This document captures the agreed strategy for server- and agent-driven updates,
 This is a historical plan, not proof that its checked items are enforced.
 In particular, older claims below about embedded publisher trust, upstream
 checksum verification and mandatory signatures do not describe the current
-log-only Server-manifest signature audit.
+legacy Server-manifest signature audit. The runtime authorization slice below
+replaces that audit as the update decision boundary.
 
 The current release work is tracked in tested implementation slices:
 
@@ -22,10 +23,15 @@ The current release work is tracked in tested implementation slices:
   ([source 1765ea9](https://github.com/Printmaster-Org/printmaster/commit/1765ea9f60fcc0011b7d0e018a0c2c4c4bd1c731)).
 - Implemented: shared TUF verification, routine metadata publishing and offline
   root initialization/rotation primitives. This is a tested foundation, **not
-  active Agent enforcement or a provisioned production signing service**.
+  a provisioned production signing service**.
 - Implemented: fail-closed local TUF metadata integrity checkpoints in the shared
   verifier. See the resumed trust-state slice below; Agent integration and OS
   permission qualification remain pending.
+- Implemented: mandatory injected publisher authorization in Agent candidate
+  selection and pre-install execution, with explicit unprovisioned-trust and
+  unauthenticated-package blocking. Production root/client construction and
+  metadata delivery are still pending, so current default builds cannot perform
+  unattended updates.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -162,6 +168,57 @@ Defer SBOM/provenance, printer/admin origin isolation and Agent credential
 hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
+
+### Resumed slice: runtime publisher authorization boundary (2026-10-19)
+
+Implemented at [source commit 56e05f4](https://github.com/Printmaster-Org/printmaster/commit/56e05f4f48e82074b870139ec326af48f6c37139).
+
+The Agent manager now requires a `PublisherVerifier` with the shared TUF
+client's `Verify(context.Context, updatetrust.Target)` contract. There is no
+default allow implementation and no fallback to Server signature auditing.
+An unprovisioned verifier returns an explicit publisher authorization error
+when a candidate is offered; startup logs warn that updates will be rejected.
+The running Agent and post-update version validation still operate.
+
+**Operational change:** the production worker does not yet construct a verifier,
+embed a publisher root or provide metadata transport. Consequently this slice's
+default builds reject offered update candidates. Do not release these builds
+to inaccessible sites expecting another unattended upgrade until provisioning
+and metadata delivery are finished. Earlier handoff advice about a
+reliability-only dev release predates this fail-closed runtime change.
+
+Candidate selection snapshots the transport's manifest, validates the install
+format, rejects mismatched component/OS/architecture/channel, and passes an exact
+target to the verifier using the operation's intended identity. The verifier
+must authorize its version, size and hash. Scheduled checks, Check now, forced
+installation and explicit-channel installation share this boundary. Execution
+checks authorization again before cache/download/install work. Verification
+errors retain their underlying cause, are classified as manifest errors rather
+than Server outages, and public operation failures persist in ordered progress.
+Legacy signature fields can neither grant authority nor veto a TUF-authorized
+candidate.
+
+APT/DNF/YUM handoff is explicitly blocked even when the discovery binary is
+authorized. The former package orchestration path is removed rather than
+retained as an alternate bypass. Existing low-level command helpers remain for
+subsequent authenticated package delivery work. No repository package is
+installed by this blocked path, and no update-pending handoff is created.
+
+Tests use both explicit orchestration stubs and real, disposable signed TUF
+repositories. They prove acceptance of an authorized candidate, rejection of a
+Server substitution with a matching malicious hash/length, missing/malformed/
+expired metadata rejection, no fallback to a valid legacy signature, intended
+identity binding, all public entry-point rejection without trust, package
+blocking and legitimate retry after rejection. Failed authorization leaves the
+installed test Agent unchanged.
+
+This slice does not finish public-root embedding, production verifier wiring,
+unchanged Server metadata mirroring, application downgrade policy, package
+targets, protected expected-value handoff, staging/privileged boundary integrity
+or automatic recovery. Post-restart version checks are not installation
+authorization or an independent recovery path. P0-06 and P0-07 remain open.
+The next slice must provide independent root/client construction and bounded
+metadata delivery without using Server-provided keys as bootstrap authority.
 
 ### Resumed slice: persistent trust-state integrity (2026-10-19)
 

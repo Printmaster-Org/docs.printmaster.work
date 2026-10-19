@@ -20,11 +20,17 @@ This scoped update is reviewed against application revision
 it does not validate the historical proposal below.
 
 The shared TUF verifier/publisher foundation is implemented, but **independent
-update trust (P0-06) is not closed**. The Agent runtime still audits legacy
-manifest signatures without blocking and uses Server-supplied hashes; the TUF
-library is not yet wired into installation authorization. Artifact transport
-checks protect reliability, not authenticity against a compromised application
-Server supplying both malicious bytes and their matching hash.
+update trust (P0-06) is not closed**. A subsequent
+[2026-10-19 runtime slice](https://github.com/Printmaster-Org/printmaster/commit/56e05f4f48e82074b870139ec326af48f6c37139) now
+requires injected publisher authorization before candidate acceptance and again
+before installation. Legacy manifest signatures no longer authorize updates.
+Actual production verifier/root provisioning and metadata delivery remain
+unfinished: default builds reject offered candidates explicitly, rather than
+fall back. Package handoffs are also blocked until the actual package is
+authenticated. See the [runtime authorization slice](/development/auto-update-plan/#resumed-slice-runtime-publisher-authorization-boundary-2026-10-19)
+for coverage and operational impact. Artifact transport checks alone protect
+reliability, not authenticity against a compromised application Server supplying
+both malicious bytes and their matching hash.
 
 The [2026-10-19 shared-client slice](https://github.com/Printmaster-Org/printmaster/commit/2693a7d3e7fcaaa6d36f4256f9380afadc474990)
 adds a persistent integrity checkpoint outside
