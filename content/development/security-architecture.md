@@ -178,13 +178,24 @@ authorize arbitrary releases: release Agents pin publisher root metadata,
 routine signing authority stays separate from the application Server, and every
 supported update path enforces standard TUF verification without legacy fallback.
 Authenticated target identity includes component, OS, architecture, format and
-allowed channel. Persistent trusted metadata, expiry, clock failures, explicit
-application downgrade policy, key rotation and recovery are release gates, not
+allowed channel. The unreleased
+[application-policy/descriptor implementation](/development/auto-update-plan/#application-policy-and-installation-descriptors-unreleased)
+now freezes operation channels, enforces pins/no downgrades even for Force,
+orders same-line Dev releases using authenticated immutable target sequences,
+and binds final handoff to the target/run/artifact and exact previous backup.
+Only recorded failed-apply recovery may restore that previous artifact; this
+does not permit arbitrary signed-version downgrades or add health-gated rollback.
+Persistent trusted metadata, expiry/clock diagnostics, protected installation,
+production key provisioning and supported recovery remain release gates, not
 assumed guarantees. Legacy bootstrap cannot retroactively protect an old Agent
 that has no pinned independent trust against its already compromised Server.
 
 The closely coupled privileged-updater hardening scope (P0-07) also remains open.
-The current download check precedes staging and path-based installer handoff.
+The final descriptor checks reauthorize publisher identity/policy and verify
+staged bytes/backup before path-based handoff. Windows binary/MSI helpers
+recheck embedded expected length/hash before use. These checks and the local
+pending/installation receipts are **not** protected authority against local
+writers and do not eliminate verification-to-use races.
 Actual Windows ACLs/Unix ownership, writable parents, reparse points/symlinks and
 replacement of artifacts/helpers must be inspected and tested. The exact bytes
 installed must remain bound to the TUF-authenticated length/hash through a

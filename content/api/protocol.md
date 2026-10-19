@@ -116,8 +116,9 @@ each sync has a one-hour deadline. Individual artifact/manifest failures produce
 an error outcome, not a successful 100% completion, and successful artifacts
 remain cached for the next retry.
 
-This is integrity/reliability work, not publisher authentication. TUF production
-trust provisioning, publishing, refresh and Agent enforcement remain release gates.
+These transport checks alone are integrity/reliability work, not publisher
+authentication. Mandatory TUF authorization is implemented below; production
+trust provisioning/activation and protected installation remain release gates.
 
 ### Bounded existing installer commands (unreleased)
 
@@ -151,7 +152,7 @@ This changes the client's acceptance behavior, not the manifest route/schema
 or machine protocol version. Existing Server signatures do not establish
 independent publisher authority.
 
-The next wiring slice constructs the verifier from an embedded public-root file
+The implemented startup wiring constructs the verifier from an embedded public-root file
 and authenticated metadata transport. That file intentionally remains
 unprovisioned (`null`), so **current default builds still reject offered update
 candidates**. Do not deploy them to remote sites relying on another unattended
@@ -160,6 +161,52 @@ installation gates are complete. Agent runtime operation and
 post-restart version validation remain available. APT/DNF/YUM installations are
 blocked until actual package bytes, not merely discovery binaries, are
 authenticated. See the [runtime authorization slice](/development/auto-update-plan/#resumed-slice-runtime-publisher-authorization-boundary-2026-10-19).
+
+### Application selection and installation descriptors (unreleased)
+
+Reviewed implementation:
+[3b76a8f](https://github.com/Printmaster-Org/printmaster/commit/3b76a8fd6a4b22d87b99c9c8d3bd26a21218a22a).
+This changes Agent-side selection/handoff behavior, not routes, credentials,
+message envelopes or the reviewed OpenAPI subsets.
+
+The Agent resolves/fixes its channel once per operation and always sends the
+existing optional `explicit_channel: true`; the Server must not replace it with
+another managed selection mid-operation. Managed changes apply on the next run.
+This is compatible with the existing manifest route/envelope; no manifest
+sequence supplied by the Server is trusted.
+
+Force/`install_channel` bypass maintenance timing, not publisher trust, pins,
+upgrade restrictions, or application downgrade policy. Older versions are
+rejected, including a channel switch to older Stable. Invalid/unorderable
+versions/pins fail explicitly with progress/telemetry `APPLICATION_POLICY`.
+Scheduled pin exclusions and equal-version checks remain no-op. A manual
+same-version reinstall must match installed raw-binary bytes or a previously
+recorded authenticated MSI identity.
+
+New publisher targets carry signed TUF
+`custom.printmaster_release_sequence`, immutable per release identity and
+increasing within component/channel/platform/architecture/format. Same-line Dev
+changes require authentication of the installed Dev bytes and a strictly newer
+candidate sequence. Server publication times, commit-hash lexical order and
+fresh TUF timestamp versions do not establish application ordering. Legacy Dev
+targets lacking ordering require owner-managed migration; metadata freshness
+refresh does not backfill/promote old targets.
+
+Local pending state now includes an installation descriptor binding the run,
+from-version, exact authorized target/sequence, staging/destination/backup paths
+and previous artifact length/hash. It is a local receipt, **not a new
+Server-signed instruction format or independent trust authority**. Final apply
+rechecks authorization/policy and all artifact identities; Windows helpers
+check embedded expected staged length/hash before copy/MSI execution.
+Failed synchronous apply may restore only that run's hash-verified previous
+backup, not an arbitrary older release. Binary startup checks installed bytes
+before retaining the descriptor as an installation receipt. Legacy version-only
+pending journals are still reconciled without authorizing a new installation.
+
+Protected ACLs/paths, verification-to-use races and durable detached-helper/MSI
+outcomes remain open. These checks do not establish universal automatic
+rollback or health-gated recovery. Production trust stays unprovisioned.
+See the [policy scope and next gates](/development/auto-update-plan/#application-policy-and-installation-descriptors-unreleased).
 
 ### Publisher metadata delivery (unreleased)
 
@@ -474,7 +521,7 @@ Persistent-channel/legacy-manifest follow-up: [source commit 589e269](https://gi
 
 Reviewed at [source commit 685f0fe](https://github.com/Printmaster-Org/printmaster/commit/685f0feccd16b02916cb814f6cdea6d91693738c), specifically `server/main.go::handleAgentCommand`, `agent/autoupdate_worker.go::handleServerCommand`, `agent/autoupdate/manager.go::ForceInstallLatestFromChannel`, `server/releases/intake_worker.go` and `server/releases/manager.go`. This additive command review does not expand the read-only OpenAPI subsets or certify every machine operation.
 
-The existing token-authenticated WebSocket command envelope supports `command: install_channel` with `channel: stable|beta|dev` and an optional `reason`. It requests a one-shot forced install; scheduled channel/policy remains unchanged. Existing `check_update` and `force_update` stay supported. Older Agents ignore `install_channel`; **Force install Fleet channel** instead uses their existing `force_update` command together with saved Server-side channel resolution, allowing stable 0.31.1 bootstrap. The Server's user-session `POST /api/v1/agents/command/{agentID}` retains Agent-write role/tenant authorization and acknowledges dispatch only. These writes remain outside read-only OpenAPI subsets.
+The existing token-authenticated WebSocket command envelope supports `command: install_channel` with `channel: stable|beta|dev` and an optional `reason`. It requests a one-shot forced install; scheduled channel/policy remains unchanged. Updated Agents enforce [application selection policy](#application-selection-and-installation-descriptors-unreleased), including no downgrades and version pins; Force only bypasses maintenance timing. Existing `check_update` and `force_update` stay supported. Older Agents ignore `install_channel`; **Force install Fleet channel** instead uses their existing `force_update` command together with saved Server-side channel resolution, allowing stable 0.31.1 bootstrap under the legacy updater's weaker policy. The Server's user-session `POST /api/v1/agents/command/{agentID}` retains Agent-write role/tenant authorization and acknowledges dispatch only. These writes remain outside read-only OpenAPI subsets.
 
 `POST /api/v1/agents/update/manifest` still uses machine credentials. It now requires a middleware-authenticated Agent (`401` otherwise) and matching request `agent_id` (`403` on mismatch), preventing channel resolution against another Agent/tenant. For component `agent`, ordinary requests use the stored `features.agent_update_channel` when Features is managed and the value nonempty; the existing settings resolver applies global/tenant/allowed-Agent precedence. Empty/unmanaged defaults retain the requested channel, with missing channel defaulting stable. Resolution failure returns plain-text `500`, never silently stable. Invalid channels return plain-text `400`. Older payloads omit the new optional `explicit_channel` boolean and therefore follow saved defaults. Updated clients send `explicit_channel: true` only for explicit one-shot installs, bypassing default selection—not machine authentication.
 
@@ -502,7 +549,7 @@ Since [source commit 9bd42d2](https://github.com/Printmaster-Org/printmaster/com
 
 The unsigned fields are rebuilt from storage and cannot be re-serialized byte-for-byte, so Agents verify `signature` against `signed_payload`. They then compare `component`, `version`, `platform`, `arch`, `format`, `channel`, `sha256` and `size_bytes` with the signed copy. If the key record is missing, the Server still serves the manifest without `signing_public_key`.
 
-Agents pin the first key that produces a valid, consistent signature, in `signing_key_pin.json` in the update state directory. If a later valid signature uses a different key, the Agent logs one warning and pins the new key. Tampered or invalid manifests are never pinned. Verification is log-only: the SHA-256 download check is still the only enforced control. Older Servers omit these fields, and Agents log them as unverifiable. Older Agents ignore the fields. No protocol version bump is required.
+Legacy Agents pin the first key that produces a valid, consistent signature, in `signing_key_pin.json` in the update state directory. If a later valid signature uses a different key, the Agent logs one warning and pins the new key. Tampered or invalid manifests are never pinned. That legacy verification is log-only; it does not establish publisher authority. Updated Agents instead enforce the independent TUF authorization described above, with no fallback to these fields. Older Servers omit the fields, and older Agents ignore them. No protocol version bump is required.
 
 **Compatibility:** Agents that predate this field omit `format` and keep receiving the binary, as before. Older MSI-installed Agents therefore still cannot update through the fleet updater; reinstall them once with the current MSI. The Server migrates SQLite and Postgres release tables in place on startup. Existing rows become `binary` unless their cached filename identifies another format; reclassified MSI manifests are re-signed. No machine-protocol version bump is required.
 

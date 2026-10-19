@@ -23,8 +23,17 @@ The current release work is tracked in tested implementation slices:
   B2-to-Server mirror pulls. The isolated disposable-key live matrix passed,
   including interrupted bootstrap, exact fresh-runner recovery, normal version
   advance and read-only health checks. This closes the previously open hosting
-  item; production keys/real root/credentials/activation remain the next separate
-  gate. See [live evidence](/development/update-hosting/#qualification-evidence).
+  item; production keys/real root/credentials/activation remain deferred until
+  the earlier code and qualification gates below pass.
+  See [live evidence](/development/update-hosting/#qualification-evidence).
+- **Implemented application policy and installation descriptors (unreleased):**
+  one no-downgrade/pin policy covers scheduled, manual, forced, channel-switch,
+  retry and final apply paths. Same-line Dev changes use publisher-signed release
+  sequences, not hash ordering or Server timestamps. Final installation checks
+  bind the run, publisher identity, staged length/hash, destination and exact
+  previous backup. Recorded failed-install recovery may restore that previous
+  artifact; it is not an arbitrary downgrade authorization. See
+  [application policy and descriptors](#application-policy-and-installation-descriptors-unreleased).
 - Implemented: durable ordered Agent/Server progress, retryable terminal outcomes
   and running-version validation across restart.
 - Implemented: validated artifact delivery/cache repair and truthful intake errors
@@ -50,34 +59,14 @@ The current release work is tracked in tested implementation slices:
   pinned recovery/transition of publisher state, retaining targets and metadata
   versions. See [signing operations](/development/update-signing-operations/);
   this does not close incident response or protected publishing automation.
-- Implemented: managed single-host local publication with exclusive locks,
-  sealed resume, retained-record high-water checks, verified public-state
-  backup/record before timestamp-last distribution. GitHub Actions/B2 is the
-  agreed hosting direction; remote provisioning, scheduling and alerts remain
-  pending.
-- Implemented: opt-in manual read-only B2 preflight for bucket identity/access,
-  keep-all lifecycle, default Governance/365-day recovery retention and strictly
-  restricted inspection credentials. The owner-approved
-  [live preflight](https://github.com/Printmaster-Org/printmaster/actions/runs/39276227518)
-  passed, including Governance/365-day defaults. Only manual inspection is
-  enabled; publishing and retention behavior tests remain pending.
-  See [owner setup](/development/update-signing-operations/#b2-owner-setup-and-read-only-preflight).
-- Implemented: explicit externally serialized delivery of sealed public metadata
-  with B2 version-specific read-back/retention checks, recovery objects/records
-  before public writes, timestamp-last commit and exact retry. No delivery
-  credentials/workflow or live uploads are activated; automatic authoritative
-  selection, independent latest records and protected orchestration remain open.
-- Implemented: explicit pinned remote restoration using independently saved
-  timestamp and sealed-record fingerprints, read-only bounded retained-version
-  lookup and empty protected local workspace/high-water outputs. Routine expiry
-  can be recovered for refresh, never bypassed for delivery. Live rehearsal and
-  independently correct/latest record custody remain owner/orchestration gates.
-- Implemented: optional protected GitHub publication-record custody with
-  conditional pending-before-delivery/completed-after-readback advancement and
-  refusal to select pending/missing authority. The owner-approved public records
-  repository is initialized and protected, with Actions disabled. Restricted
-  credentials, protected signing workflow and live advancement remain pending.
-  See [publication custody](/development/update-publication-custody/).
+- Implemented and live-qualified with disposable keys: local managed publication,
+  B2 delivery/preflight, bounded independently pinned retained-state restoration,
+  protected GitHub publication custody and serialized hosting automation. Earlier
+  primitive-specific limitations below are historical; use the
+  [current hosting runbook](/development/update-hosting/) and
+  [custody runbook](/development/update-publication-custody/) for the qualified
+  boundary. Both publisher opt-ins are disabled after rehearsal; production
+  credentials/root/activation remain unprovisioned.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -97,6 +86,100 @@ Dependency vulnerability alerts will be triaged and addressed in the final-beta/
 pre-0.32.0 release pass, per the owner's 2026-10-19 sequencing decision. They
 remain a release gate, not accepted or resolved risk; this updater slice does
 not investigate or change dependencies.
+
+### Recommended execution order: nine remaining items
+
+Hosting and the application-policy/descriptor item are complete within their
+documented scope. The remaining work is ordered by actual prerequisites, not
+by the historical checklist numbering:
+
+1. Installation permissions, safe paths and verification-to-use protection.
+2. Failure-safe installer execution, MSI/helper deadlines and durable outcomes.
+3. Authentication of the actual Linux packages installed.
+4. Client trust-state lifecycle, clock/expiry diagnostics and explicit repair.
+5. Truthful bounded update UX.
+6. Supported 0.31.x, mixed-version and long-offline migration qualification.
+7. Final-beta dependency vulnerability triage/fixes.
+8. Explicitly approved production trust provisioning, verified independent
+   encrypted backups, public-root embedding and scoped credentials; activation
+   initially remains off.
+9. Final adversarial/platform/service/package/release qualification and go/no-go.
+   Production activation requires separate explicit approval after the gates.
+
+Each item includes its own regression tests and documentation. Final
+qualification is not permission to defer testing. No production ceremony is
+needed to work on the next code gate.
+
+### Application policy and installation descriptors (unreleased)
+
+Implementation:
+[3b76a8f](https://github.com/Printmaster-Org/printmaster/commit/3b76a8fd6a4b22d87b99c9c8d3bd26a21218a22a).
+
+The Agent freezes its effective channel for each operation and sends
+`explicit_channel: true` on every manifest lookup. Managed changes take effect
+on the next operation, not during download/apply. MSI/package installs retain
+their Stable-only restriction.
+
+Scheduled/manual checks, Force, explicit channel installs, retries and final
+apply share one application policy. Force bypasses maintenance timing, not
+version pins, major-upgrade restrictions, channel constraints or publisher
+trust. An invalid installed/candidate version or pin fails explicitly with
+`APPLICATION_POLICY`; there is no unequal-string installation fallback.
+Existing supported SemVer/legacy four-part versions remain understood, as do
+numeric Git hashes with leading zeros in Dev build identities.
+Scheduled pin exclusions and equal-version checks remain no-op.
+Manual equal-version reinstalls must match the installed raw-binary length/hash,
+or the exact recorded authenticated MSI identity. An older MSI installation
+without that receipt needs an owner-managed reinstall instead.
+
+Lower application versions are rejected even for Force and a Beta/Dev-to-Stable
+switch. Wait for a sufficiently new Stable release or perform an owner-managed
+installation; choosing a channel is not downgrade approval. Same-line Dev hashes
+have no chronological order. The publisher assigns immutable positive
+`custom.printmaster_release_sequence` values to new TUF targets within each
+component/channel/OS/architecture/format stream. The Agent authenticates both
+the installed Dev artifact and candidate, then requires a strictly greater
+sequence. Re-publishing an old target or refreshing metadata never promotes it.
+Legacy targets without sequences are retained unchanged; an unorderable Dev
+baseline fails closed with migration guidance, not a Server-time/hash fallback.
+Keep the installed Dev target in publisher inventory.
+
+The in-memory installation descriptor binds run/from-version, exact TUF target
+and sequence, staged/destination/backup paths, and the previous artifact's
+length/hash. Publisher authorization, application policy, staged bytes, unchanged
+installed bytes and backup are checked again at apply. A missing/invalid backup
+blocks handoff. The pending journal retains the descriptor; successful binary
+startup validation checks installed bytes before persisting an installation
+receipt. Windows binary/MSI helpers recheck the embedded expected length/hash
+before copy/installer invocation, without trusting a replaceable manifest path.
+
+**Recovery exception:** synchronous failed-apply recovery may restore only the
+recorded backup for that failed run, after checking its exact previous
+length/hash. A substituted backup or another run is rejected. This preserves
+rollback to the previous version without permitting arbitrary signed-version
+downgrades. It does **not** add automatic health-gated rollback, MSI downgrade
+transactions, an independent watchdog or durable detached-helper recovery.
+
+Tests cover entrypoint/pin/downgrade negatives, real TUF Dev ordering in both
+lexical hash directions, retained ordering through refresh/client restart,
+descriptor/backup substitution, final-policy tightening, journal receipts and
+actual Windows PowerShell integrity execution. Whole-installation OS/service
+qualification remains separate.
+
+Local validation passed the full shared/Common and Agent Go suites, shared/
+Agent static analysis, real Server/TUF metadata integration, repeated focused
+policy/sequence tests, 25 focused JavaScript tests and the documentation
+tests/build/link checks. Linux updater tests cross-compile but were not executed
+on Linux in this session. Race-detector execution was unavailable because this
+Windows environment has CGO disabled and no C compiler; no race-test pass is
+claimed. Real installer/service and cross-platform qualification remain in the
+listed gates.
+
+**Boundary still open:** descriptors/receipts and helpers are not yet protected
+against local writers by qualified installed-platform ACLs. Rehashing paths
+does not close verification-to-use races; Unix replacement/copy and Windows
+helper-result failure-safety are still subsequent gates. No P0-07 closure or
+production activation is claimed here.
 
 ### Remaining 0.32 release gates: security handoff reconciliation
 
@@ -1051,7 +1134,7 @@ Older Agents still require updating before accepting `install_channel`; they do 
 
 - The server UI now exposes a **Force Reinstall** action on each agent detail view. This button is only enabled when the agent maintains an active WebSocket session so the command can be delivered instantly.
 - Clicking the action prompts for confirmation, then issues a `force_update` command over the agent command channel. The payload includes a simple reason tag (currently `server_ui_force_reinstall`) for downstream logging and auditing.
-- Upon receiving the command, the agent's auto-update manager bypasses the usual `isUpdateNeeded` guard and downloads/reinstalls the latest manifest even when the reported version already matches. Maintenance-window and version-pin policies are intentionally skipped for this manual override, but disk-space checks, hashing, staging, and telemetry reporting still run.
+- Updated Agents allow an exact same-version reinstall and bypass maintenance timing, but enforce publisher trust, channel restrictions, version pins and no-downgrade policy. Legacy Agents may still bypass pins or downgrade; do not treat their Force behavior as the hardened policy.
 - The force flow reuses the existing download/staging pipeline, so telemetry and log noise remain consistent with regular updates, and the helper restart logic still ensures the service restarts cleanly after the reinstall.
 - Every manual `check_update` or `force_update` invocation now emits a structured audit log entry capturing the actor, agent identity, payload metadata (reason/trigger), and tenant scope so compliance teams can trace both ad-hoc and scheduled rollouts. Future orchestration jobs should call the shared `logAgentUpdateAudit` helper to record automated runs with a `trigger=scheduled` tag.
 
@@ -1062,7 +1145,7 @@ Older Agents still require updating before accepting `install_channel`; they do 
 - The panel polls `/api/autoupdate/status` every 45 seconds and exposes a "Refresh Status" button for on-demand snapshots when troubleshooting.
 - Two local actions are available:
    - **Check for Update**: POST `/api/autoupdate/check`, identical to the server-driven `check_update` command.
-   - **Force Reinstall**: POST `/api/autoupdate/force` with reason `agent_ui_force_reinstall`, which bypasses version/policy guards but still enforces disk-space, hashing, and restart health checks.
+   - **Force Reinstall**: POST `/api/autoupdate/force` with reason `agent_ui_force_reinstall`, which bypasses maintenance timing only and permits an exact authenticated same-version reinstall. It does not bypass pins/downgrade policy or establish automatic health-gated recovery.
 - Buttons automatically disable when the auto-update manager is unavailable (agent offline, policy disabled, etc.) or when a run is already in progress, preventing conflicting operations.
 - The Agent manager holds exclusive operation ownership from manifest lookup through installation. Overlapping scheduled checks, manual checks, and forced reinstalls return an `update operation already in progress` error inside the manager; a `pending` status does not release ownership. Requests are rejected rather than queued. Scheduled checks retain their normal rescheduling behavior.
 - The local POST handlers above still acknowledge background dispatch with HTTP `200` (`check_triggered` or `force_triggered`), not installation success or a synchronous busy response. A later manager busy error is logged; inspect status/logs before retrying. Server-delivered commands report manager errors through update progress. These write operations are outside the reviewed [Agent OpenAPI read subset](/api/agent/); no route, authorization, or response-schema change is introduced by operation locking.

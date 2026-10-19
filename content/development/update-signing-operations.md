@@ -122,17 +122,43 @@ Dev builds remain possible with `null` but cannot authorize updates.
 
 ## Routine publication and independent recovery records
 
-**Hosting direction agreed:** GitHub Actions will run routine signing and
-scheduled freshness jobs; Backblaze B2 will host public metadata and separately
-protected recovery storage. The offline root remains outside automation.
-B2 buckets have been owner-created and the authenticated read-only preflight
-passed on 2026-10-19. Separate inspection credentials and their GitHub
-environment are configured; delivery credentials, independent recovery
-permissions, scheduled workflows and failure-alert verification are **not
-provisioned**. Local managed transactions and the remote delivery primitive
-below are prerequisites, not an active signing service.
+**Hosting infrastructure is qualified with disposable keys:** GitHub Actions
+implements routine signing/freshness, Backblaze B2 public metadata and separately
+protected recovery storage, independent GitHub custody and failure/recovery
+notifications. The offline root remains outside automation. See the
+[live evidence and current activation state](/development/update-hosting/#qualification-evidence);
+the primitive-specific setup history below is not the current completion list.
+Both publisher opt-ins are disabled; production keys/root/credentials are not
+provisioned. Production provisioning follows the earlier code/qualification
+gates, not hosting completion alone.
 Existing home backups can be additional copies,
 not the only authoritative off-site state.
+
+### Signed application release ordering (unreleased)
+
+Implemented at
+[3b76a8f](https://github.com/Printmaster-Org/printmaster/commit/3b76a8fd6a4b22d87b99c9c8d3bd26a21218a22a).
+
+Publishing new immutable targets automatically assigns positive
+`custom.printmaster_release_sequence` values within each
+component/channel/platform/architecture/format stream. Input order determines
+the order of multiple new releases in one publication; submit them oldest to
+newest. The targets role signs the sequence with the existing target length/hash.
+No new online/root key or Server-manifest field is needed.
+
+Identical re-publication retains its original sequence; metadata freshness
+refresh, backup/restore and resume preserve it. Legacy retained targets without
+sequences stay unchanged: re-publishing one must not promote an old release.
+Do not remove installed Dev targets from retained inventory or reset publisher
+state to manufacture newer ordering. Application versions still have their own
+no-downgrade check; a higher publication sequence cannot authorize an older
+numeric version line.
+
+Same-line Dev updates authenticate the installed artifact baseline and require
+a strictly newer signed candidate sequence. Missing/unorderable legacy Dev
+baselines fail closed and require owner-managed migration, not a trust reset,
+Server timestamp or hash-sort exception. See
+[application policy and recovery scope](/development/auto-update-plan/#application-policy-and-installation-descriptors-unreleased).
 
 ### B2 owner setup and read-only preflight
 
