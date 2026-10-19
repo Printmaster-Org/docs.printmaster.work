@@ -280,12 +280,25 @@ With `mode = "local"` and `allow_local_admin = true`, protected routes permit lo
   check_interval_minutes = 360
 
 [releases]
+  # Unreleased: read-only public TUF metadata mirror, never signing secrets.
+  # Empty disables metadata delivery (Agents fail closed).
+  publisher_metadata_dir = ""
   # Max releases to cache
   max_releases = 6
   
   # Poll interval for new releases
   poll_interval_minutes = 240
 ```
+
+The unreleased `releases.publisher_metadata_dir` setting can also be supplied as
+`RELEASES_PUBLISHER_METADATA_DIR`. Restart the Server after changing it. It must
+point at a public metadata-only mirror, preferably mounted read-only; it must
+not point at the publisher's private key directory or signing workspace.
+This configures delivery, not trust or signing activation. Current source
+builds intentionally have an unprovisioned embedded publisher root and cannot
+perform unattended updates until owner setup and remaining release gates are
+complete. See [publisher metadata delivery](/api/protocol/#publisher-metadata-delivery-unreleased)
+and the [update release plan](/development/auto-update-plan/).
 
 ### Database Settings
 
