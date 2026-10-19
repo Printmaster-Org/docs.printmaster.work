@@ -75,6 +75,20 @@ storage. Crashes can leave locks/unsealed state requiring operator review.
 GitHub Actions plus Backblaze B2 is the selected future hosting direction;
 credentials, remote backup/retention, schedules and failure alerts are not active.
 
+A subsequent [read-only B2 preflight](/development/update-signing-operations/#b2-owner-setup-and-read-only-preflight)
+([source 65cd3ab](https://github.com/Printmaster-Org/printmaster/commit/65cd3ab42eee107ffbc856f5f64ca91647831746))
+checks API-reported bucket identity/access, keep-all lifecycle and Governance/
+365-day recovery defaults using separate bucket-scoped inspection keys. It
+rejects authority outside its read-only allowlist, confines HTTPS endpoints,
+refuses redirects, bounds requests/responses and suppresses raw service errors.
+The manual GitHub workflow requires explicit opt-in on `main` and a dedicated
+environment. This does not prove immutable object retention behavior, external
+serialization, backup read-back, independent latest-state custody or alerts.
+Owner screenshots show created buckets but no authenticated live check has
+yet run. Default retention mode must be verified before any upload; web-console
+defaults must not be assumed to be Governance. No signing or distribution is
+activated by preflight.
+
 The [metadata delivery contract](/api/protocol/#publisher-metadata-delivery-unreleased)
 requires machine authentication, limits filenames/bytes, confines mirror access,
 preserves existing TLS/CA policy and rejects cross-origin credential forwarding.

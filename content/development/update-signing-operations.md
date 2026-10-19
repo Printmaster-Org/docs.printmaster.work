@@ -8,6 +8,8 @@ description: "Unreleased owner procedures for TUF key custody, rotation and publ
 Reviewed implementation:
 [owner initialization/guards 0ab8856](https://github.com/Printmaster-Org/printmaster/commit/0ab88567d77178525d23591dc0152526193b1f04)
 and [routine replacement/publisher recovery 6596e21](https://github.com/Printmaster-Org/printmaster/commit/6596e21dec763d737b0f2605532519d68bce1529).
+Read-only B2 setup checks:
+[source 65cd3ab](https://github.com/Printmaster-Org/printmaster/commit/65cd3ab42eee107ffbc856f5f64ca91647831746).
 
 **Unreleased; rehearse with disposable keys only.** The embedded Agent root is
 still `null`. These local tools do not activate production signing, distribution
@@ -105,12 +107,160 @@ Dev builds remain possible with `null` but cannot authorize updates.
 
 **Hosting direction agreed:** GitHub Actions will run routine signing and
 scheduled freshness jobs; Backblaze B2 will host public metadata and separately
-protected recovery storage. The offline root remains outside automation. B2
-credentials, bucket layout/retention, independent recovery permissions,
-scheduled workflows and failure-alert verification are **not provisioned**.
+protected recovery storage. The offline root remains outside automation.
+B2 buckets have been owner-created (configuration observed in screenshots, not
+yet verified through authenticated API access). Restricted credentials,
+independent recovery permissions, scheduled workflows and failure-alert
+verification are **not provisioned**.
 The local managed transaction below is the tested prerequisite, not a B2 client
 or an active signing service. Existing home backups can be additional copies,
 not the only authoritative off-site state.
+
+### B2 owner setup and read-only preflight
+
+The initial owner-created layout is:
+
+| Setting | Public metadata | Private recovery |
+| --- | --- | --- |
+| Bucket | `printmaster-update-metadata` | `printmaster-update-recovery` |
+| Access | Public | Private |
+| Lifecycle | Keep all versions | Keep all versions |
+| Object Lock | Disabled | Enabled; default 365 days |
+| S3 endpoint | `https://s3.us-west-004.backblazeb2.com` | Same |
+
+These are dedicated B2 Cloud Storage buckets, not Backblaze Computer Backup.
+Never upload private signing keys to either bucket. Encryption at rest does
+not make a public object private. Independent encrypted key backups remain
+separate from this public-metadata/recovery-state storage.
+
+**Retention-mode correction:** the Backblaze web-console retention dialog only
+asks for days; its documented procedure describes resulting files as Compliance
+mode. Do not assume the screenshot's "Default 365 Days" means Governance.
+Object Lock enablement cannot be undone. A default policy affects future
+uploads; changing it does not unlock already retained versions. Do not upload
+test files before checking the policy.
+
+The new `common/cmd/update-storage-check` and manual
+`.github/workflows/update-storage-preflight.yml` inspect configuration only.
+They cannot upload, delete, change settings, sign, reset publisher state or
+prove publication/recovery works. The checker requires:
+
+- Exactly one intended bucket per inspection key, with no filename prefix.
+- `listBuckets` and `readBucketRetentions`; only an explicit read-only capability
+  allowlist is accepted. Account-wide, multi-bucket, write/delete/key-management,
+  retention-change and Governance-bypass credentials fail.
+- Expected S3 endpoint and exact bucket identity/access.
+- Explicitly empty lifecycle rules (keep all versions).
+- Readable disabled Object Lock for public metadata; enabled default
+  **Governance, 365 days** for recovery.
+
+Requests use the B2 Native API v4, HTTPS Backblaze endpoints, no redirects,
+20-second HTTP/one-minute overall bounds and a 1 MiB response limit.
+Authorization tokens, credentials, raw service bodies and transport error
+strings are not printed. This is a point-in-time configuration check, not
+continuous enforcement or an anonymous download/retention behavior test.
+
+#### Owner-only local administration
+
+Use the official [B2 CLI](https://www.backblaze.com/docs/cloud-storage-command-line-tools)
+on a trusted owner machine. Authenticate locally using its supported secure
+credential mechanism; do not put administrative credentials into GitHub,
+chat, shell transcripts or source. Do not regenerate an existing master key
+used by home backups. Key creation requires `writeKeys`, which grants broad
+account authority: never give that permission to workflow credentials.
+
+After reviewing the intended bucket, the owner can explicitly change the
+**future-upload default** using the current CLI:
+
+```powershell
+b2 bucket update --default-retention-mode governance `
+  --default-retention-period '365 days' printmaster-update-recovery allPrivate
+```
+
+This is a mutating owner command, not something the preflight runs. It does
+not shorten existing Compliance retention. Do not add lifecycle/deletion
+options. Confirm the result using the read-only check before uploading anything.
+
+Create two short-lived inspection keys, one per bucket. The current CLI
+supports these exact minimal capabilities (examples expire after seven days):
+
+```powershell
+b2 key create --bucket printmaster-update-metadata --duration 604800 `
+  printmaster-metadata-check 'listBuckets,readBucketRetentions'
+b2 key create --bucket printmaster-update-recovery --duration 604800 `
+  printmaster-recovery-check 'listBuckets,readBucketRetentions'
+```
+
+**These commands print secret application keys once.** Run privately, without
+transcription or shared logs; store the results directly in a password manager
+and GitHub environment secrets. Do not send their output to chat/issues.
+Avoid guessing web-console Read Only preset capabilities: use the explicit
+minimal set, or inspect the resulting permissions and let the checker reject
+any extra authority. These are not future publishing credentials.
+
+#### GitHub configuration and activation
+
+In `Printmaster-Org/printmaster`, create environment
+`update-storage-preflight`, restrict deployment branches to `main`, and enable
+owner approval if the repository's plan supports required reviewers. Do not
+assume the environment name alone supplies approval protection.
+
+Add these **environment secrets**, copying values privately from the two
+inspection-key results:
+
+| Secret | Value |
+| --- | --- |
+| `B2_METADATA_CHECK_KEY_ID` | Metadata inspection key ID |
+| `B2_METADATA_CHECK_APPLICATION_KEY` | Metadata inspection application key |
+| `B2_RECOVERY_CHECK_KEY_ID` | Recovery inspection key ID |
+| `B2_RECOVERY_CHECK_APPLICATION_KEY` | Recovery inspection application key |
+
+Add these **environment variables**:
+
+| Variable | Value |
+| --- | --- |
+| `B2_METADATA_BUCKET` | `printmaster-update-metadata` |
+| `B2_RECOVERY_BUCKET` | `printmaster-update-recovery` |
+| `B2_S3_ENDPOINT` | `https://s3.us-west-004.backblazeb2.com` |
+
+After the workflow is reviewed and pushed, explicitly set repository variable
+`ENABLE_UPDATE_STORAGE_PREFLIGHT=true`. Run **Actions -> Update Storage
+Preflight -> Run workflow**, selecting `main`. There is no push, PR or scheduled
+trigger. The job skips unless explicitly enabled on `main`; credentials are
+exposed only to the prebuilt checker step, not checkout/setup/build. No signing keys belong in
+this environment. Expired/missing credentials fail explicitly.
+
+For a local check, supply the same four secrets through a trusted process
+environment (not command arguments), then from `common`:
+
+```powershell
+go run .\cmd\update-storage-check `
+  -metadata-bucket printmaster-update-metadata `
+  -recovery-bucket printmaster-update-recovery `
+  -s3-endpoint https://s3.us-west-004.backblazeb2.com
+```
+
+No live API check has yet been run. Record the first successful run separately;
+a green preflight is not signing activation or proof of remote serialization,
+immutable recovery read-back, authoritative latest-state recovery, independent
+record custody, timestamp-last publication, anonymous serving or alert delivery.
+Those remain the next implementation/qualification slice. Existing Servers
+still serve only their configured local metadata mirror; they do not fetch B2.
+Revoke inspection keys when no longer needed.
+
+#### Later account migration
+
+Bucket names/endpoints/credentials are configuration, not Agent trust anchors.
+Moving personal B2 storage to an organization account does not itself require
+signing-key rotation or rebuilding Agents that obtain metadata through their
+Server. Pause publishing, preserve and hash-verify all metadata history and
+recovery records, provision/verify destination retention and restricted access,
+then switch publication and Server delivery configuration and qualify the
+result. Do not assume retention dates/settings transfer during copying.
+Previously Compliance-locked versions may remain billable in the old account.
+Signing-custody transfer is a separate owner ceremony.
+
+### Local publication workspace
 
 `update-metadata` does not need a root private key. Use an exclusive, protected
 publisher workspace, distinct from the key directory and read-only Server mirror.

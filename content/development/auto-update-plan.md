@@ -47,6 +47,11 @@ The current release work is tracked in tested implementation slices:
   backup/record before timestamp-last distribution. GitHub Actions/B2 is the
   agreed hosting direction; remote provisioning, scheduling and alerts remain
   pending.
+- Implemented: opt-in manual read-only B2 preflight for bucket identity/access,
+  keep-all lifecycle, default Governance/365-day recovery retention and strictly
+  restricted inspection credentials. Owner-created buckets are screenshot-
+  confirmed only; live API validation, publishing and retention behavior tests
+  remain pending. See [owner setup](/development/update-signing-operations/#b2-owner-setup-and-read-only-preflight).
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -184,6 +189,32 @@ hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
 
+### Resumed slice: read-only B2 configuration preflight (2026-10-19)
+
+Implemented at [source commit 65cd3ab](https://github.com/Printmaster-Org/printmaster/commit/65cd3ab42eee107ffbc856f5f64ca91647831746).
+
+Added a Native API v4 checker and manually dispatched GitHub workflow, disabled
+unless explicitly enabled on `main`, using a dedicated environment and separate
+bucket-scoped inspection keys. The checker rejects write/delete/key-management/
+retention-bypass authority, wrong bucket visibility/endpoint, lifecycle cleanup
+and missing or non-Governance/365-day recovery defaults. Requests are bounded,
+redirects are rejected, and service bodies/credentials are not logged.
+
+The owner created dedicated public metadata/private recovery buckets with
+keep-all versions and recovery default retention of 365 days. Screenshots do
+not identify retention mode. The web-console procedure documents Compliance;
+the runbook now explains owner-only future-default changes through the CLI and
+minimal inspection-key/GitHub setup. No credentials, remote reads/writes,
+retention changes, workflow activation or production signing were performed by
+the implementation. Unit fixtures and workflow-structure tests do not replace
+a real B2 rehearsal.
+
+**Next:** owner configures inspection credentials/environment and confirms
+Governance defaults; perform live preflight, then implement serialized remote
+state restoration, verified recovery-before-publication, independent latest
+records and timestamp-last delivery/resume. Scheduled freshness, live failure
+notifications and B2-to-Server mirroring remain open.
+
 ### Resumed slice: managed local publication transaction (2026-10-19)
 
 Implemented at [source commit 108d75a](https://github.com/Printmaster-Org/printmaster/commit/108d75a6c1b8d17809eb3ff1817daa1f437e5032).
@@ -218,7 +249,7 @@ final cleanup may need authorized manual repair. Low-level publishing remains
 an explicitly exclusive-owner primitive, not a lock-aware bypass.
 See the maintained [managed-mode runbook](/development/update-signing-operations/#managed-local-publication-transaction).
 
-**Next slice:** choose/provision GitHub/B2 bucket/state/record permissions and
+**Historical next slice:** choose/provision GitHub/B2 bucket/state/record permissions and
 retention, wire remote backup-before-publication with timestamp-last delivery,
 then scheduled freshness and verified failure alerts. No production keys,
 secrets, buckets or signing activation were changed.
