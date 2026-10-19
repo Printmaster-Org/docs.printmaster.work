@@ -213,6 +213,33 @@ tests do not qualify real MSI transactions, service recovery, power-loss
 behavior, or every supported installer-created ACL. Those platform gates
 remain open.
 
+The [execution follow-up](https://github.com/Printmaster-Org/printmaster/commit/da1460783111474a2707f10e8fd5da178a6d49a9)
+covers actual PowerShell hashing, atomic replacement,
+durable JSON writes and verified predecessor restoration with simulated
+service/process control. It exposed and fixes PowerShell's conversion of `$null`
+to an empty backup-path string (`[NullString]::Value` is required), and ensures
+a service that has stopped after the parent exits is still restarted.
+ServiceController start/stop requests use bounded status waits rather than
+blocking service cmdlets. These tests run with PowerShell 7 where available;
+the production launcher still uses Windows PowerShell 5.1.
+
+The launcher checks its effective execution policy before launching unsigned
+helpers. An enforced `AllSigned` or `Restricted` policy rejects the handoff
+explicitly without exiting the Agent or changing machine policy; the rejected
+pending handoff is removed so an owner-managed repair can be retried.
+`-ExecutionPolicy Bypass` cannot override Group Policy. Automatic signing and
+switching the production host to PowerShell 7 are not implemented.
+
+Owner-observed Windows 11 migration smoke test (2026-10-19): an existing
+LocalSystem raw-binary service migrated from the legacy ProgramData executable
+to the protected Program Files copy. Source/installed SHA-256 values matched;
+directory and executable ACLs granted only SYSTEM and Administrators. The
+service resumed uploads, settings/devices were retained, and the Server
+recognized the same Agent identity. This used an unversioned development build;
+it qualifies this manual migration smoke case, not version ordering, automatic
+helper installation, MSI, or every supported 0.31.x baseline. The verified
+stopped-service backup was retained. Publisher trust remains unprovisioned.
+
 ### Installer permissions and safe-path implementation (unreleased)
 
 Implementation: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/da0f9e2c3714bea251512f3363328f9b8d21d22a).
