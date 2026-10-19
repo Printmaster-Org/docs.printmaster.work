@@ -256,7 +256,9 @@ branch deletion; its Actions are disabled. The explicit generation-zero state
 contains no publication. No signing or delivery credentials were provisioned.
 
 The optional delivery integration conditionally reserves the exact authenticated
-publication before B2 writes and advances latest only after verified delivery.
+publication before public writes and advances latest only after verified delivery.
+The subsequent hosting slice retains the complete payload before this reservation
+so a fresh runner can recover it.
 Interrupted/lost responses require explicit retries of the same sealed bytes;
 pending/conflicting authority cannot be selected as latest or silently reset.
 Restore can obtain both pins from the independently configured authority and

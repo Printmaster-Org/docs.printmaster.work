@@ -124,7 +124,7 @@ or live uploads have been activated.
 The subsequent [publication-record custody integration](/development/update-publication-custody/)
 ([source 67567b2](https://github.com/Printmaster-Org/printmaster/commit/67567b26ca121e8a18e6bedf28c9183d9774e49a))
 conditionally records an authenticated pending candidate in a separate protected
-GitHub repository before B2 writes, then advances latest only after exact verified
+GitHub repository before public writes, then advances latest only after exact verified
 delivery. Missing, malformed, conflicting or pending authority fails closed for
 latest selection; root changes need separate owner review. Restore may select
 completed pins from this independently configured authority after matching the
