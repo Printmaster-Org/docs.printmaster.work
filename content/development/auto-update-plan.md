@@ -212,6 +212,22 @@ hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
 
+### Resumed slice: end-to-end publisher hosting (2026-10-19)
+
+Implemented at [source fee8571](https://github.com/Printmaster-Org/printmaster/commit/fee8571297bc24a22da4a579b576a6d7d02ef984).
+
+The [hosting runbook](/development/update-hosting/) consolidates the previously
+open orchestration/qualification item: protected lane-serialized workflow,
+retained-payload recovery before fresh signing, conditional custody, twelve-hour
+freshness scheduling, explicit failure/recovery issues and authenticated public
+B2-to-Server mirror pulls. Owner-approved isolated rehearsal uses separate
+buckets, protected authority, disposable root/routine keys and scoped expiring
+credentials; existing production bucket contents and backup keys are untouched.
+
+Live results are recorded in that runbook before this hosting gate is marked
+qualified. Production root/key provisioning and explicit activation remain the
+next separate gate; no production signing or release authorization is implied.
+
 ### Resumed slice: independent publication-record custody (2026-10-19)
 
 Implemented at [source 67567b2](https://github.com/Printmaster-Org/printmaster/commit/67567b26ca121e8a18e6bedf28c9183d9774e49a).

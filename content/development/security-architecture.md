@@ -144,6 +144,16 @@ metadata nor supplies initial Agent trust. Mount only public metadata read-only,
 never a private signing workspace. A compromised Server can deny service or
 serve rejected metadata; independent trust does not establish availability.
 
+The subsequent [publisher hosting pipeline](/development/update-hosting/)
+([source fee8571](https://github.com/Printmaster-Org/printmaster/commit/fee8571297bc24a22da4a579b576a6d7d02ef984))
+retains exact sealed payload before pending reservation, recovers pending bytes
+on fresh runners without loading signers and serializes workflow lanes. Public
+inventory delivery enables an independently pinned HTTPS pull process to verify
+full metadata before timestamp-last Server mirror commit. Workflow failure/
+recovery issues and freshness checks are explicit; they are not an independent
+scheduler/watchdog. Production root/credentials/activation remain gated separately
+from disposable-key hosting qualification and installed-platform permissions.
+
 The [2026-10-19 shared-client slice](https://github.com/Printmaster-Org/printmaster/commit/2693a7d3e7fcaaa6d36f4256f9380afadc474990)
 adds a persistent integrity checkpoint outside
 the metadata-cache directory. It detects missing/changed previously recorded

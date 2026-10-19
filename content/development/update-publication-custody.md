@@ -59,11 +59,12 @@ The optional `update-deliver -state-repository` integration:
    the matching previous pin and root, or explicitly bootstrap an unprovisioned
    authority. Root changes require a separate owner-reviewed transition; they
    are not silently accepted.
-4. Conditionally records the exact candidate as **pending before any B2 writes**.
+4. Retains and verifies the entire exact sealed payload in B2, then conditionally
+   records the candidate as **pending before any public writes**.
    It uses GitHub's Contents API with the previously read blob SHA, reads back
    the exact new state and carries that reservation through delivery.
-5. Retains and reads back recovery metadata/records, distributes public immutable
-   metadata, then commits and verifies the public timestamp.
+5. Distributes public immutable metadata and its public sealed inventory, then
+   commits and verifies the public timestamp.
 6. Only then conditionally moves pending to latest and reads back that state.
 
 A different pending candidate, stale reservation, conflicting revision,
@@ -81,13 +82,17 @@ sealed bytes and pending state; do not sign a replacement or clear pending.
 Expired pending metadata or unrecoverable divergence needs owner review, not
 an expiry bypass or automatic abort.
 
+The [hosting pipeline](/development/update-hosting/) adds retained-payload
+recovery on fresh runners before any new signing, scheduled freshness,
+failure/recovery issues and verified public Server mirror pulls. Its isolated
+live qualification is documented there; production activation remains separate.
+
 **This is not a distributed bucket lock.** Matching concurrent retries can share
 the same pending identity. External serialization of all sign/deliver/recovery
-writers remains mandatory. Protected single-writer GitHub workflow wiring,
-credential provisioning, pending sealed-byte recovery before new signing,
-freshness scheduling and verified alerts remain the next orchestration work.
-No workflow was activated, dispatched or depended on during the reported
-Actions/Pages degradation.
+writers remains mandatory. At completion of the original custody-only slice,
+workflow wiring, credentials, pending recovery, scheduling and live alerts were
+still pending. The subsequent hosting work does not waive qualification because
+of GitHub Actions/Pages degradation.
 
 ## Future credentials and commands
 
@@ -156,9 +161,9 @@ tests verify pending precedes B2 writes and completion follows verified delivery
 The live read-only check authenticated branch protection and the initial state,
 then correctly refused to select a latest publication.
 
-There has been no live automated custody advancement, B2 upload/retained-version
-recovery or failure rehearsal. GitHub Actions/Pages degradation does not waive
-these tests. Production key ceremony, independent encrypted backups, real root
-embedding, protected signing orchestration, live disposable-key qualification
-and the other [0.32 release gates](/development/auto-update-plan/#remaining-032-release-gates-security-handoff-reconciliation)
-remain open.
+The original custody-only slice had no live automated advancement or B2 uploads;
+the subsequent [hosting evidence](/development/update-hosting/#qualification-evidence)
+tracks these outcomes. Production key ceremony, independent encrypted backups,
+real root embedding and the other
+[0.32 release gates](/development/auto-update-plan/#remaining-032-release-gates-security-handoff-reconciliation)
+remain separate.

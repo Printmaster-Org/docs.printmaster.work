@@ -22,6 +22,12 @@ with its [dedicated custody runbook](/development/update-publication-custody/).
 still `null`. These local tools do not activate production signing, distribution
 or unattended updates. See the [release gates](/development/auto-update-plan/#remaining-032-release-gates-security-handoff-reconciliation).
 
+For the end-to-end serialized workflow, exact pending recovery, freshness
+notifications and B2-to-Server pulls, use the
+[publisher hosting runbook](/development/update-hosting/)
+([source fee8571](https://github.com/Printmaster-Org/printmaster/commit/fee8571297bc24a22da4a579b576a6d7d02ef984)). Its rehearsal
+credentials/root are isolated from production and must never be promoted.
+
 TUF is the sole publisher-signature implementation. Four distinct Ed25519 keys
 use threshold one per role for the initial single-maintainer policy. Root
 authority stays offline; routine automation receives only targets, snapshot and
@@ -390,6 +396,11 @@ Protected GitHub orchestration, live retention/read-back/failure rehearsal, sche
 verified notifications, artifact publication and B2-to-Server mirroring remain
 open. The runtime Server still serves only its configured local public mirror.
 Passing local tests does not authorize production signing or close P0-06/P0-07.
+
+Those were open at completion of the remote-delivery primitive. The subsequent
+[hosting implementation and qualification](/development/update-hosting/) is the
+current authority for workflow, pending recovery, freshness/alerts and mirror
+delivery status; production key provisioning/activation remain separate.
 
 ## Pinned remote-state restoration (unreleased)
 
