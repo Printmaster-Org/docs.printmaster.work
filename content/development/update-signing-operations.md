@@ -12,6 +12,8 @@ Read-only B2 setup checks:
 [source 65cd3ab](https://github.com/Printmaster-Org/printmaster/commit/65cd3ab42eee107ffbc856f5f64ca91647831746).
 Sealed remote delivery:
 [source 19ca5a9](https://github.com/Printmaster-Org/printmaster/commit/19ca5a95413adbaf9cc223b50ce9925c1d26e3cd).
+Pinned remote restoration:
+[source 0444e42](https://github.com/Printmaster-Org/printmaster/commit/0444e42f038e4ce3c977e856b4569ac5995bdb4c).
 
 **Unreleased; rehearse with disposable keys only.** The embedded Agent root is
 still `null`. These local tools do not activate production signing, distribution
@@ -363,17 +365,135 @@ Build the tool before exposing credentials to its process.
 
 The retained `records/` object and the snapshot's record live in the same B2
 bucket; they are **not independently held latest-publication authority**.
-The owner/orchestrator must preserve the latest safe remote pin independently.
-This primitive does not enumerate every older object version, choose or restore
-the latest authoritative backup, reconstruct an interrupted publisher workspace,
-or detect loss/rollback of both independent records and all storage state.
-It cannot make an old owner-supplied pin current.
+The owner/orchestrator must preserve the latest safe remote timestamp **and
+sealed-record SHA256** independently. `update-deliver` now prints both after
+verified delivery and binds its record output to the sealed bytes it delivered.
+The timestamp authorizes the current signed dependency chain; the record
+fingerprint also authenticates the inventory of historical/orphan metadata.
+Do not derive either pin from the recovery bucket during an incident.
 
-Protected GitHub orchestration, remote high-water/history restoration, independent
+The [explicit restore primitive](#pinned-remote-state-restoration-unreleased)
+below can recover exactly pinned retained history, not choose the latest safe
+publication or reconstruct an interrupted workspace in place. It cannot detect
+loss/rollback of both independent records and all storage state, or make an old
+owner-supplied pair of pins current.
+
+Protected GitHub orchestration, automatic authoritative high-water selection, independent
 record custody, live retention/read-back/failure rehearsal, scheduled freshness,
 verified notifications, artifact publication and B2-to-Server mirroring remain
 open. The runtime Server still serves only its configured local public mirror.
 Passing local tests does not authorize production signing or close P0-06/P0-07.
+
+## Pinned remote-state restoration (unreleased)
+
+Implemented at [source 0444e42](https://github.com/Printmaster-Org/printmaster/commit/0444e42f038e4ce3c977e856b4569ac5995bdb4c).
+
+`common/cmd/update-restore` restores a sealed public-metadata publication and its
+matching local high-water record. It requires the independently trusted current
+root, latest-safe timestamp SHA256 and matching sealed-record SHA256. All three
+must come from owner records outside the application Server and recovery bucket.
+These are recovery pins, not a parallel update-signature scheme or Agent bypass.
+The current root must remain unexpired and match the sealed publication; key
+transitions still use the separate reviewed owner transition procedure.
+
+**Not activated or live-qualified.** This is explicit operator recovery, not
+automatic publisher bootstrap, newest-object selection or a GitHub signing
+workflow. It does not upload, sign, reset Agent trust or modify existing local
+publisher state.
+
+### Read-only credentials and bounded retained-version lookup
+
+Use a separate recovery-reader application key restricted to the private
+recovery bucket, no filename prefix, with:
+
+```text
+listBuckets,readBucketRetentions,listFiles,readFiles,readFileRetentions
+```
+
+The existing two-capability inspection keys are intentionally insufficient.
+Do not widen them or reuse a delivery/master key. Write/delete/key-management,
+retention-changing and bypass capabilities are rejected; the recovery reader's
+upload method also refuses locally before making a request.
+
+Provide credentials privately through `B2_RECOVERY_RESTORE_KEY_ID` and
+`B2_RECOVERY_RESTORE_APPLICATION_KEY`. Build before exposing those values to
+the executable. No credentials have been requested or configured for this slice.
+
+Ordinary delivery still rejects hide markers. **Explicit pinned recovery**
+may inspect behind hide markers or newer conflicting versions to locate exact
+SHA256-matching bytes. The reader downloads by immutable B2 file ID and checks
+matching versions' identity, length and still-unexpired Governance retention of
+at least 365 days from upload. It never accepts an arbitrary older backup.
+Malformed/repeated pagination, missing pinned bytes, filtered/invalid retention
+and service errors fail explicitly; no fresh-repository fallback.
+
+Lookup is bounded per object: ten pages of at most ten versions (100 total),
+64 MiB downloaded candidate bytes and a one-minute context. Control responses
+remain capped at 1 MiB and individual objects at 16 MiB, with 20-second HTTP
+timeouts and no redirects. Overall restoration is capped at ten minutes,
+4,096 metadata files and 256 MiB of selected record/metadata bytes. Exceeding
+these bounds requires owner review, not silent truncation or a weaker lookup.
+Heavy version poisoning can deny recovery; retained storage is not availability.
+
+### Local recovery procedure
+
+Stop/serialize all signing, delivery and recovery writers first. Use **two
+existing empty, separate, non-nested protected directories** for the recovered
+workspace and high-water records. Provision their Windows ACLs/Unix ownership
+and every ancestor before running the tool; it checks ordinary/reparse-free
+ancestors but does not create or qualify these permissions. Never restore over
+existing state, stale locks or partial output. Preserve those for review and
+select new empty destinations.
+
+After building from `common`, invoke the resulting executable with public
+configuration and fingerprints only (replace the descriptive placeholders):
+
+```powershell
+go build -o .\update-restore.exe .\cmd\update-restore
+# Supply the two private recovery-reader variables to the executable's
+# environment using trusted local tooling, not arguments or shared transcripts.
+.\update-restore.exe `
+  -repository 'D:\PrivateRecovery\workspace' `
+  -records 'E:\PrivateRecovery\records' `
+  -root 'D:\PrivateRecovery\trusted-root.json' `
+  -timestamp-sha256 '<independently saved latest-safe timestamp SHA256>' `
+  -record-sha256 '<independently saved matching sealed-record SHA256>' `
+  -recovery-bucket printmaster-update-recovery `
+  -s3-endpoint https://s3.us-west-004.backblazeb2.com `
+  -externally-serialized
+```
+
+This is a future operator procedure, **not a request to create real credentials
+or run a production recovery now**. `-externally-serialized` asserts a required
+owner-controlled boundary; it does not acquire a remote lock.
+
+The operation acquires local `.publisher.lock` files, verifies both retained
+record copies against the independent record pin, validates all filenames/hashes
+and bounds before using the inventory, fetches exact pinned metadata, then
+checks root history/current identity, TUF signatures/dependency hashes/versions
+and the matching timestamp. Only after authentication does it write a durable
+`.restore-incomplete` marker, high-water record and read-back-verified workspace
+files, with timestamp last among metadata and the sealed record also retained.
+Success removes the marker and releases handled-operation locks.
+
+Expired routine metadata is permitted **only for authenticated publisher-state
+restoration**. Refresh it with the existing signing tool/current routine keys
+before delivery; normal sealed delivery still rejects expired metadata.
+The next managed publication continues retained target inventory and versions;
+it does not initialize a new repository.
+
+Network/authentication failures leave no restored metadata. Local write failures
+can leave partial output with `.restore-incomplete`; crashes can also leave
+locks. Both low-level and managed publishing reject incomplete restore state.
+Do not remove markers/locks automatically or rerun into partial directories;
+preserve evidence and use new empty destinations after authorized review.
+There is no in-place restore resume or multi-directory/power-loss transaction.
+
+This proves exact recovery under independently correct/latest owner pins,
+protected local filesystem and exclusive-writer assumptions. Automatic
+authoritative latest-state selection, independent record storage/advancement,
+protected orchestration and a live disposable-key retained-version rehearsal
+remain open.
 
 ## Local publication workspace
 

@@ -105,6 +105,22 @@ authoritative history restoration, live upload/retention/failure qualification,
 scheduled freshness and Server mirroring remain open. No delivery credentials
 or signing workflow have been activated.
 
+The subsequent [pinned state restoration](/development/update-signing-operations/#pinned-remote-state-restoration-unreleased)
+([source 0444e42](https://github.com/Printmaster-Org/printmaster/commit/0444e42f038e4ce3c977e856b4569ac5995bdb4c))
+requires independently held latest-safe timestamp **and sealed-record SHA256**
+pins plus the trusted current root. Pinning the record authenticates historical/
+orphan inventory outside the current signed dependency chain. Read-only bounded
+B2 version lookup may inspect behind poisoned latest versions/hide markers but
+accepts only exact pinned bytes from valid retained versions. It cannot infer
+latest authority from object timestamps or repair stale owner records.
+Authentication precedes writes into empty protected local workspace/high-water
+directories. Partial restores retain a durable marker rejected by low-level and
+managed publishing. Expired routine state can be restored only for authenticated
+refresh; delivery continues enforcing expiry. This is not Agent trust reset,
+automatic root transition, in-place restore resume, independent record custody
+or a cross-location power-loss transaction. No recovery credentials/workflow
+or live uploads have been activated.
+
 The [metadata delivery contract](/api/protocol/#publisher-metadata-delivery-unreleased)
 requires machine authentication, limits filenames/bytes, confines mirror access,
 preserves existing TLS/CA policy and rejects cross-origin credential forwarding.

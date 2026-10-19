@@ -57,8 +57,13 @@ The current release work is tracked in tested implementation slices:
 - Implemented: explicit externally serialized delivery of sealed public metadata
   with B2 version-specific read-back/retention checks, recovery objects/records
   before public writes, timestamp-last commit and exact retry. No delivery
-  credentials/workflow or live uploads are activated; authoritative restoration,
-  independent latest records and protected orchestration remain open.
+  credentials/workflow or live uploads are activated; automatic authoritative
+  selection, independent latest records and protected orchestration remain open.
+- Implemented: explicit pinned remote restoration using independently saved
+  timestamp and sealed-record fingerprints, read-only bounded retained-version
+  lookup and empty protected local workspace/high-water outputs. Routine expiry
+  can be recovered for refresh, never bypassed for delivery. Live rehearsal and
+  independently correct/latest record custody remain owner/orchestration gates.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -73,6 +78,11 @@ the initial alert channel. Six months offline is the initial compatibility test
 target, not an intentional cutoff; preserve required versioned root history.
 Production secrets, access changes and signing activation require an explicit
 owner setup step.
+
+Dependency vulnerability alerts will be triaged and addressed in the final-beta/
+pre-0.32.0 release pass, per the owner's 2026-10-19 sequencing decision. They
+remain a release gate, not accepted or resolved risk; this updater slice does
+not investigate or change dependencies.
 
 ### Remaining 0.32 release gates: security handoff reconciliation
 
@@ -195,6 +205,43 @@ Defer SBOM/provenance, printer/admin origin isolation and Agent credential
 hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
+
+### Resumed slice: pinned retained-state restoration (2026-10-19)
+
+Implemented at [source 0444e42](https://github.com/Printmaster-Org/printmaster/commit/0444e42f038e4ce3c977e856b4569ac5995bdb4c).
+
+Added `update-restore`: explicit read-only recovery from a separately held
+latest-safe timestamp fingerprint and matching sealed-record fingerprint.
+The second pin authenticates retained history/orphan inventory outside the
+current signed timestamp dependency chain. Delivery now prints both fingerprints
+and binds its record output to the actual sealed inventory.
+
+The B2 reader accepts only restricted read-only recovery access and can locate
+exact pinned bytes behind newer conflicting versions/hide markers. Matching
+versions require valid identity/length and unexpired Governance/365-day retention.
+Pagination, versions, downloaded bytes, file inventory, selected aggregate bytes
+and elapsed time are bounded; missing/corrupt/expired/unreadable state does not
+become an automatic insecure reset.
+
+Only existing empty, protected, separate local workspace/record directories
+are accepted. Complete root/history/TUF/hash/version authentication precedes
+local metadata writes. A durable incomplete marker gates both low-level and
+managed publishers after partial local writes; crashes/stale locks and partial
+restores require authorized review, not auto-cleanup. Valid restored state
+preserves inventory/high-water and continues versions. Expired routine metadata
+can be restored for authenticated refresh but remains blocked for delivery.
+
+Tests exercise poisoned-latest/hidden versions, exact pagination/byte/version
+bounds, read-only capability enforcement and upload blocking, independent-pin
+failures, corrupt/unsigned/missing dependencies/history, empty-directory/lock/
+Windows junction checks, local write failures, subsequent version advancement
+and routine-expiry recovery without a delivery bypass.
+
+**Next:** independent latest-record custody/advancement, protected single-writer
+orchestration and authoritative high-water selection; isolated disposable-key
+live recovery/publication rehearsal, then freshness/alerts and Server mirroring.
+The tool cannot tell that an owner-supplied old pin pair is latest. No production
+keys, credentials, uploads, workflow activation or pushes in this slice.
 
 ### Resumed slice: sealed remote delivery primitive (2026-10-19)
 
