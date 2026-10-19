@@ -17,6 +17,14 @@ replaces that audit as the update decision boundary.
 
 The current release work is tracked in tested implementation slices:
 
+- **Qualified hosting/automation infrastructure (2026-10-19):** independent
+  protected custody, lane-serialized workflow, retained exact pending recovery,
+  freshness schedule/checks, live failure/recovery issues and authenticated
+  B2-to-Server mirror pulls. The isolated disposable-key live matrix passed,
+  including interrupted bootstrap, exact fresh-runner recovery, normal version
+  advance and read-only health checks. This closes the previously open hosting
+  item; production keys/real root/credentials/activation remain the next separate
+  gate. See [live evidence](/development/update-hosting/#qualification-evidence).
 - Implemented: durable ordered Agent/Server progress, retryable terminal outcomes
   and running-version validation across restart.
 - Implemented: validated artifact delivery/cache repair and truthful intake errors
@@ -224,9 +232,18 @@ B2-to-Server mirror pulls. Owner-approved isolated rehearsal uses separate
 buckets, protected authority, disposable root/routine keys and scoped expiring
 credentials; existing production bucket contents and backup keys are untouched.
 
-Live results are recorded in that runbook before this hosting gate is marked
-qualified. Production root/key provisioning and explicit activation remain the
-next separate gate; no production signing or release authorization is implied.
+The [live matrix](/development/update-hosting/#qualification-evidence) passed:
+intentional interrupted bootstrap, exact pending version-1 recovery on a fresh
+runner, normal version-2 advancement and read-only health/mirror verification.
+Failure issue creation and automatic recovery closure were verified. A separate
+Windows live pull matched independent authority; the real authenticated Server/
+TUF target boundary is covered by integration tests.
+
+**Hosting item qualified and closed.** Rehearsal and production publisher opt-ins
+are disabled after testing. Production root/key provisioning, independent backup
+verification and explicit activation remain the next separate gate; no production
+signing or release authorization is implied. Deployed Server timer/permissions
+are installation configuration, not a silently active production mirror.
 
 ### Resumed slice: independent publication-record custody (2026-10-19)
 

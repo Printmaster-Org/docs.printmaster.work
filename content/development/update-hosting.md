@@ -6,6 +6,10 @@ description: "Serialized GitHub publishing, retained pending recovery, freshness
 ## Scope and activation
 
 Implemented at [source fee8571](https://github.com/Printmaster-Org/printmaster/commit/fee8571297bc24a22da4a579b576a6d7d02ef984).
+Live-route correction:
+[source 2a391c7](https://github.com/Printmaster-Org/printmaster/commit/2a391c773aa887f7ae5b9b842c70a305f46b5706).
+Final qualified workflow/regression revision:
+[source 0f9e234](https://github.com/Printmaster-Org/printmaster/commit/0f9e2346a87179661d1d6f573fcc54497dbdc354).
 
 This is the end-to-end hosting implementation for the
 [0.32 update work](/development/auto-update-plan/), not production key activation.
@@ -197,11 +201,57 @@ configuration, not evidence of automatic installation or production activation.
 
 ## Qualification evidence
 
-Live isolated workflow qualification is recorded here after execution. Local
-tests cover bootstrap, normal refresh, exact pending recovery without key access,
+**Hosting/automation qualification completed on 2026-10-19.** This closes the
+infrastructure/qualification item, not the separate production key/activation
+gate. Both publisher opt-in variables are now `false`; the original manual
+read-only storage preflight opt-in is unchanged.
+
+| Live run | Expected outcome | Observed outcome |
+| --- | --- | --- |
+| [Initial integration attempt](https://github.com/Printmaster-Org/printmaster/actions/runs/39287187189) | Discover real service incompatibilities | Rejected a service-issued legacy upload route before uploading/reserving; failure issue opened |
+| [Interrupted bootstrap](https://github.com/Printmaster-Org/printmaster/actions/runs/39288355823) | Retain payload, reserve pending v1, stop before public timestamp | Intentional failure, pending generation 1; public timestamp returned HTTP 404 |
+| [Fresh-runner pending recovery](https://github.com/Printmaster-Org/printmaster/actions/runs/39288888411) | Deliver exact pending v1 without signing again | Success, `recovered_pending:true`, identical timestamp/record pins, generation 2, public mirror and 48h freshness verified |
+| [Normal freshness advance](https://github.com/Printmaster-Org/printmaster/actions/runs/39289096348) | Restore completed v1 and advance to v2 | Success, `recovered_pending:false`, version 2/generation 4, no pending publication |
+| [Read-only health/mirror check](https://github.com/Printmaster-Org/printmaster/actions/runs/39289349609) | Verify authority/public bytes/freshness without new signatures or B2 writes | Success at final source revision; generation remains 4/version 2 |
+
+The real B2 control endpoint returned a supported upload-operation route that
+was not the single canonical v4 path previously assumed. The correction accepts
+service-issued v1–v4 upload-operation paths and legacy opaque routing segments
+while retaining trusted HTTPS host/bucket/token validation, no redirects,
+receipt verification, retention inspection and exact file-ID read-back.
+Regression tests reject foreign hosts, other operations and unsupported API
+versions. Diagnostic errors expose only validation classes, not routing URLs,
+queries or tokens.
+
+The failure notification opened/updated owner-assigned
+[issue #64](https://github.com/Printmaster-Org/printmaster/issues/64); the exact
+successful recovery automatically closed it with its recovery-run link.
+This verifies the configured GitHub issue channel, not email receipt.
+The workflow archive contains public JSON mirror evidence only.
+
+An additional live Windows `-mode mirror` invocation pulled the public B2 bytes
+with no B2 credentials or routine signers and produced the same version-2
+timestamp fingerprint as independent authority:
+
+```text
+timestamp SHA256: b1be99eafe70ab742797c4300795b0cf69babb0ddb9a447d1198f8c192458b71
+record SHA256:    7a9f5fca89c5fa5cfcd7c1409f5e1f9a3b4ee2be8b860095d60a26d6d013dcb6
+```
+
+The production authority remains its original generation-zero blob
+`26441951db3792b88be9895138dc89e2a07f8388`; production environment secrets remain
+empty. No production bucket content, production trust root, existing backup
+keys or signing activation were changed.
+
+Local tests cover bootstrap, normal refresh, exact pending recovery without key access,
 ambiguous timestamp/completion outcomes, missing retained payload, wrong root/
 authority, public corruption/missing inventory, rollback/conflict, expiry,
-redirection/path validation and the real authenticated Server/TUF boundary.
+redirection/path validation, retained real artifact inventory across freshness
+runs and the real authenticated Server/TUF boundary. Full shared Go tests,
+relevant vet and 20 workflow/release tests passed; the Linux workflow also
+executes its credential-free Go tests. The Linux executable was cross-built
+locally and the live Linux runs executed successfully; the Windows mirror
+executable was exercised against live public storage.
 
 Production remains gated on its own owner key ceremony, restored encrypted
 backups, real root embedding, scoped production credentials and explicit

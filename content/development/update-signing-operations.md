@@ -27,6 +27,10 @@ notifications and B2-to-Server pulls, use the
 [publisher hosting runbook](/development/update-hosting/)
 ([source fee8571](https://github.com/Printmaster-Org/printmaster/commit/fee8571297bc24a22da4a579b576a6d7d02ef984)). Its rehearsal
 credentials/root are isolated from production and must never be promoted.
+The [live hosting qualification](/development/update-hosting/#qualification-evidence)
+passed on 2026-10-19, including interrupted exact recovery, normal refresh,
+failure/recovery alerts and public mirrors. This closes hosting infrastructure
+qualification; production key provisioning/embedding/activation remain separate.
 
 TUF is the sole publisher-signature implementation. Four distinct Ed25519 keys
 use threshold one per role for the initial single-maintainer policy. Root

@@ -153,6 +153,12 @@ full metadata before timestamp-last Server mirror commit. Workflow failure/
 recovery issues and freshness checks are explicit; they are not an independent
 scheduler/watchdog. Production root/credentials/activation remain gated separately
 from disposable-key hosting qualification and installed-platform permissions.
+The [isolated live matrix](/development/update-hosting/#qualification-evidence)
+passed on 2026-10-19, including interrupted retained-payload recovery, ordinary
+version advancement, actual failure/recovery issue notifications and Linux/
+Windows public mirror pulls. Both publisher opt-ins are disabled afterward;
+production authority is still unprovisioned. This qualifies hosting infrastructure,
+not production trust or P0-07 installation permissions.
 
 The [2026-10-19 shared-client slice](https://github.com/Printmaster-Org/printmaster/commit/2693a7d3e7fcaaa6d36f4256f9380afadc474990)
 adds a persistent integrity checkpoint outside
