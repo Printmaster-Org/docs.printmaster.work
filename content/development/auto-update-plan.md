@@ -42,8 +42,9 @@ The current release work is tracked in tested implementation slices:
   root initialization/rotation primitives. This is a tested foundation, **not
   a provisioned production signing service**.
 - Implemented: fail-closed local TUF metadata integrity checkpoints in the shared
-  verifier. See the resumed trust-state slice below; Agent cleanup and OS
-  permission qualification remain pending.
+  verifier. See the resumed trust-state slice below; updater-state permissions
+  are now enforced by the Agent, with installer/platform qualification tracked
+  below.
 - Implemented: mandatory injected publisher authorization in Agent candidate
   selection and pre-install execution, with explicit unprovisioned-trust and
   unauthenticated-package blocking. Production root provisioning and
@@ -93,7 +94,8 @@ Hosting and the application-policy/descriptor item are complete within their
 documented scope. The remaining work is ordered by actual prerequisites, not
 by the historical checklist numbering:
 
-1. Installation permissions, safe paths and verification-to-use protection.
+1. **Implemented, pending platform qualification:** installation permissions,
+   safe paths and verification-to-use protection.
 2. Failure-safe installer execution, MSI/helper deadlines and durable outcomes.
 3. Authentication of the actual Linux packages installed.
 4. Client trust-state lifecycle, clock/expiry diagnostics and explicit repair.
@@ -175,19 +177,43 @@ Windows environment has CGO disabled and no C compiler; no race-test pass is
 claimed. Real installer/service and cross-platform qualification remain in the
 listed gates.
 
-**Boundary still open:** descriptors/receipts and helpers are not yet protected
-against local writers by qualified installed-platform ACLs. Rehashing paths
-does not close verification-to-use races; Unix replacement/copy and Windows
-helper-result failure-safety are still subsequent gates. No P0-07 closure or
-production activation is claimed here.
+### Installer permissions and safe-path implementation (unreleased)
+
+Implementation: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/da0f9e2c3714bea251512f3363328f9b8d21d22a).
+
+Updater state creation now fails closed unless it can establish private
+permissions before metadata or update artifacts are used. Unix data directories
+are restricted to the service identity; updater state rejects symlinks, special
+files and multiply linked files. Installation targets must be ordinary files
+owned by root or the updater identity, with safe ancestors and no hard links.
+Same-filesystem replacement remains an atomic rename; cross-filesystem copy-over
+is now rejected rather than truncating the installed executable.
+
+Windows updater state and publisher metadata receive protected ACLs for the
+running identity, SYSTEM and local Administrators; existing updater contents
+are resecured and reparse points are rejected. Raw Windows service installs
+register a protected copy under `Program Files\PrintMaster\Agent`, with
+ProgramData service directories restricted to trusted principals. The manual
+PowerShell update script now writes the Agent to that location and elevates
+before stopping services. A service still registered from an older writable
+location must be reinstalled with `--service update` before automatic updating
+is accepted from it.
+
+These controls are implementation and targeted regression coverage, not
+qualification of every supported installer. Windows ACL tests ran on Windows;
+Unix execution on Linux/macOS, MSI-created paths, existing-install migration,
+and service/helper failure outcomes remain to be qualified. The updater does
+not defend against local administrators, a compromised service identity, or
+arbitrary machine rollback. MSI and package-manager handoffs keep their
+separate release gates; cross-filesystem raw-binary replacement is unsupported.
 
 ### Remaining 0.32 release gates: security handoff reconciliation
 
 This checklist reconciles the security handoff with application revision
 `0d64d3d`, not the contributor fork implementation. These are required outcomes,
 not newly completed controls. **P0-06 (independent update trust) remains open.**
-**P0-07 (privileged updater hardening) remains open for the relevant update
-paths** until platform permissions and the handoff are inspected and tested.
+**P0-07 (privileged updater hardening) remains open for installer and platform
+qualification** after the permission/safe-path implementation below.
 The security handoff is a code-inspection assessment, not an exploit
 demonstration.
 
@@ -206,22 +232,19 @@ demonstration.
    Missing, invalid, expired or untrusted metadata must stop the update with
    an actionable failure; never fall back to log-only signature checks.
 
-2. **Protect verification through installation (P0-07 update scope).**
-   Inspect actual installer-created permissions for raw Windows, MSI and Unix
-   installs, including existing installations being migrated. Restrict update
-   artifacts, helpers, backups, trust state and their parent directories to
-   the service identity and appropriate administrators. Windows requires real
-   ACL handling; Go's Unix-style modes are not evidence of that protection.
-   Reject unsafe junction/reparse-point/symlink redirection and writable-parent
-   substitutions at privileged write boundaries. Bind the handoff to the
-   TUF-authenticated expected length/hash in protected state, not replaceable
-   manifest or sidecar data. Use a protected handoff and/or verification at
-   the privileged boundary that also prevents a verification-to-use race;
-   rehashing an attacker-writable path and then reopening it is insufficient.
-   Preserve the installed Agent when authorization or final integrity checks
-   fail. Test adversarial replacement of staged artifacts and helper inputs.
-   There is no confirmed local privilege-escalation claim without establishing
-   the applicable ACL/write-access preconditions.
+2. **Qualify protection from verification through installation (P0-07).**
+   The Agent now creates protected Unix updater trees and Windows ACL-protected
+   updater/trust trees, rejects symlink/reparse redirection, binds final paths
+   to the TUF descriptor and previous backup, and uses atomic Unix replacement
+   without a copy-over fallback. Raw Windows service installation now registers
+   a protected Program Files copy. Verify these guarantees with actual Linux/
+   macOS service identities, Windows installer-created ACLs, MSI/package paths
+   and supported 0.31.x migrations. Test adversarial substitution and failures
+   at each platform handoff. A raw Windows service still registered outside the
+   protected location must be migrated before auto-update; MSI and package
+   transactions are not qualified by the raw-binary path. Do not treat path
+   rehashing alone as eliminating races, and do not claim resistance to local
+   administrators or a compromised service identity.
 
 3. **Preserve trust state and enforce clock/rollback behavior.**
    Keep authenticated metadata/high-water state outside ordinary artifact-cache

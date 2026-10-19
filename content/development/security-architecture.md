@@ -158,7 +158,10 @@ passed on 2026-10-19, including interrupted retained-payload recovery, ordinary
 version advancement, actual failure/recovery issue notifications and Linux/
 Windows public mirror pulls. Both publisher opt-ins are disabled afterward;
 production authority is still unprovisioned. This qualifies hosting infrastructure,
-not production trust or P0-07 installation permissions.
+not production trust. Agent updater permissions and path checks are now
+implemented as documented in the
+[installer-permission slice](/development/auto-update-plan/#installer-permissions-and-safe-path-implementation-unreleased);
+installed-platform qualification remains open.
 
 The [2026-10-19 shared-client slice](https://github.com/Printmaster-Org/printmaster/commit/2693a7d3e7fcaaa6d36f4256f9380afadc474990)
 adds a persistent integrity checkpoint outside
@@ -168,10 +171,10 @@ failed refreshes, and reports checkpoint failures instead of authorizing an
 update. This is local loss/corruption detection under protected-filesystem and
 exclusive-owner assumptions, not a second signature protocol. See the
 [resumed trust-state slice](/development/auto-update-plan/#resumed-slice-persistent-trust-state-integrity-2026-10-19)
-for exact storage, tests and recovery limitations. Agent cleanup integration,
-real ACL validation, clock diagnostics and operator recovery tooling remain
-release work. A metadata/checkpoint mismatch after an interrupted write fails
-closed and may need explicit recovery; the installed Agent must remain usable.
+for exact storage, tests and recovery limitations. Cross-platform permission
+qualification, clock diagnostics and operator recovery tooling remain release
+work. A metadata/checkpoint mismatch after an interrupted write fails closed
+and may need explicit recovery; the installed Agent must remain usable.
 
 The required 0.32 guarantee is that serving updates does not grant authority to
 authorize arbitrary releases: release Agents pin publisher root metadata,
@@ -185,23 +188,22 @@ orders same-line Dev releases using authenticated immutable target sequences,
 and binds final handoff to the target/run/artifact and exact previous backup.
 Only recorded failed-apply recovery may restore that previous artifact; this
 does not permit arbitrary signed-version downgrades or add health-gated rollback.
-Persistent trusted metadata, expiry/clock diagnostics, protected installation,
-production key provisioning and supported recovery remain release gates, not
-assumed guarantees. Legacy bootstrap cannot retroactively protect an old Agent
-that has no pinned independent trust against its already compromised Server.
+Persistent trusted metadata, expiry/clock diagnostics, installed-platform
+qualification, production key provisioning and supported recovery remain
+release gates, not assumed guarantees. Legacy bootstrap cannot retroactively
+protect an old Agent that has no pinned independent trust against its already
+compromised Server.
 
-The closely coupled privileged-updater hardening scope (P0-07) also remains open.
-The final descriptor checks reauthorize publisher identity/policy and verify
-staged bytes/backup before path-based handoff. Windows binary/MSI helpers
-recheck embedded expected length/hash before use. These checks and the local
-pending/installation receipts are **not** protected authority against local
-writers and do not eliminate verification-to-use races.
-Actual Windows ACLs/Unix ownership, writable parents, reparse points/symlinks and
-replacement of artifacts/helpers must be inspected and tested. The exact bytes
-installed must remain bound to the TUF-authenticated length/hash through a
-protected privileged boundary; a replaceable sidecar or a path-only rehash is
-not sufficient. This is a hardening requirement, **not a confirmed local
-privilege-escalation finding** without established write-access preconditions.
+The [2026-10-19 installer-permission implementation](/development/auto-update-plan/#installer-permissions-and-safe-path-implementation-unreleased)
+protects updater state and raw Windows service installation paths. Windows ACL
+tests ran on Windows; Linux/macOS execution, MSI-created ACLs, legacy migration
+and end-to-end service/helper failure behavior have not yet been qualified.
+Final descriptors reauthorize publisher policy and bind staged bytes and the
+previous backup; Windows helpers recheck embedded expected hashes. These
+controls reduce unprivileged path substitution but do not protect against local
+administrators or a compromised service identity, and do not qualify MSI or
+helper-result failure recovery. The limitations do not establish a
+privilege-escalation finding without applicable write-access preconditions.
 
 See the [0.32 update release checklist](/development/auto-update-plan/#remaining-032-release-gates-security-handoff-reconciliation)
 for required implementation slices, adversarial regression evidence, package

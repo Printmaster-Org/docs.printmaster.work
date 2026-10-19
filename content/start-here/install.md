@@ -197,6 +197,14 @@ Invoke-WebRequest -Uri "https://github.com/printmaster-org/printmaster/releases/
 .\printmaster-agent.exe --service start
 ```
 
+The raw-binary service installer copies the Agent to
+`%ProgramFiles%\PrintMaster\Agent\printmaster-agent.exe` and registers that
+protected copy. Service data remains under
+`C:\ProgramData\PrintMaster\agent\`. Existing raw-binary services installed
+from a different path must be migrated by running `--service update` from an
+elevated PowerShell prompt before automatic updates can be applied. MSI-created
+installation paths still require separate qualification.
+
 #### Service Management
 
 ```powershell

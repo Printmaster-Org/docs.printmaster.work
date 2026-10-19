@@ -36,7 +36,9 @@ printmaster-agent
 
 **Requirements**: Administrator privileges
 
-**Data Directory**: `C:\ProgramData\PrintMaster\`
+**Service executable**: `%ProgramFiles%\PrintMaster\Agent\printmaster-agent.exe`
+
+**Data Directory**: `C:\ProgramData\PrintMaster\agent\`
 
 **Installation**:
 ```powershell
@@ -49,8 +51,14 @@ cd C:\Path\To\PrintMaster
 Get-Service PrintMasterAgent
 
 # Check logs
-Get-Content "C:\ProgramData\PrintMaster\logs\agent.log" -Tail 50
+Get-Content "C:\ProgramData\PrintMaster\agent\logs\agent.log" -Tail 50
 ```
+
+The raw-binary service installer copies the executable to the protected
+Program Files location before registering the service. Existing raw-binary
+services installed from another path must be migrated by running
+`--service update` as Administrator before automatic updates can be applied.
+MSI installation and upgrade paths require separate qualification.
 
 **Access Web UI**: http://localhost:8080 (or https://localhost:8443)
 
@@ -163,4 +171,3 @@ For production deployments:
 - [Full Service Deployment Guide](/components/agent/service/)
 - [Configuration Guide](/guides/configuration/)
 - [Security Architecture](/development/security-architecture/)
-
