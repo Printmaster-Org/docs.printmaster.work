@@ -6,7 +6,7 @@ source: "docs/dev/README.md"
 sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 groups:
   - title: "Build & test"
-    pages: ["/development/project-structure", "/development/build-workflow", "/development/testing-ci", "/development/testing", "/development/test-coverage-analysis"]
+    pages: ["/development/project-structure", "/development/build-workflow", "/development/update-signing-operations", "/development/testing-ci", "/development/testing", "/development/test-coverage-analysis"]
   - title: "Architecture & implementation"
     pages: ["/components", "/development/shared-progressive-loading", "/development/websocket-proxy", "/development/range-syntax", "/development/usb-implementation", "/development/cloudflare-proxy-worker"]
   - title: "Protocols & vendor research"

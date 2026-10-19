@@ -101,7 +101,7 @@ still deliberately `null`, so these release builds currently fail explicitly.
 Dev builds remain available but reject offered updates without publisher trust.
 This guard does not prove publisher identity, activate signing or replace the
 remaining release qualification. Follow the
-[owner ceremony rehearsal](/development/auto-update-plan/#owner-ceremony-rehearsal-and-eventual-provisioning)
+[owner ceremony rehearsal](/development/update-signing-operations/#owner-ceremony-rehearsal-and-eventual-provisioning)
 before any production key setup; do not substitute a disposable root just to
 make a release build pass. Direct `go build` is not a guarded release workflow.
 Implemented at [source commit 0ab8856](https://github.com/Printmaster-Org/printmaster/commit/0ab88567d77178525d23591dc0152526193b1f04);

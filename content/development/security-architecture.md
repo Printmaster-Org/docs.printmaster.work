@@ -34,7 +34,7 @@ for coverage and operational impact. Artifact transport checks alone protect
 reliability, not authenticity against a compromised application Server supplying
 both malicious bytes and their matching hash.
 
-The [owner provisioning tools and rehearsal](/development/auto-update-plan/#resumed-slice-owner-provisioning-tools-and-release-guards-2026-10-19)
+The [owner provisioning tools and rehearsal](/development/update-signing-operations/)
 ([source 0ab8856](https://github.com/Printmaster-Org/printmaster/commit/0ab88567d77178525d23591dc0152526193b1f04))
 now provide offline key initialization, restored-key verification, dual-authorized
 root rotation and public-root release guards. New key-output directories use
@@ -45,8 +45,22 @@ encrypted owner storage and independently recoverable encrypted backups.
 Self-signature validation is not independent publisher identification: confirm
 the public root fingerprint through the owner record before embedding it.
 These ceremony controls do not qualify installed-Agent ACLs, protect against
-machine administrators or activate production signing. Routine-role replacement,
-compromise/loss recovery and protected publication/refresh still remain gates.
+machine administrators or activate production signing.
+
+Offline-authorized routine-role replacement and explicitly pinned publisher
+recovery are implemented at
+[source 6596e21](https://github.com/Printmaster-Org/printmaster/commit/6596e21dec763d737b0f2605532519d68bce1529).
+The unchanged offline root authorizes a new root
+version replacing all three online keys, without needing old online secrets.
+Importing old-role-signed publisher state requires an explicit immediate previous
+root and an independently recorded latest timestamp SHA256; normal publishing
+never tries old role authority as a fallback. Recovery preserves retained
+targets/versions and checks complete internally consistent root history, but
+cannot prove a backup is latest if the owner supplies an older record too.
+History consistency is not retrospective provenance. These are publisher
+operations, not client trust-state resets or a complete compromise-response
+system. Production custody, protected publication/refresh, poisoned-client
+recovery, root compromise and unrecoverable state/key loss remain limitations.
 
 The [metadata delivery contract](/api/protocol/#publisher-metadata-delivery-unreleased)
 requires machine authentication, limits filenames/bytes, confines mirror access,

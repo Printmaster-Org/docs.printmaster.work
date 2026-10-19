@@ -38,6 +38,10 @@ The current release work is tracked in tested implementation slices:
 - Implemented: offline owner initialization/root-rotation CLI, restored-key
   verification and public-root release guards. These have only been exercised
   with disposable keys; production provisioning and activation remain pending.
+- Implemented: offline replacement of all routine role keys and explicitly
+  pinned recovery/transition of publisher state, retaining targets and metadata
+  versions. See [signing operations](/development/update-signing-operations/);
+  this does not close incident response or protected publishing automation.
 - Required before release: bounded installer/service handoffs, supported 0.31.x
   migration fixtures, TUF publisher metadata and client verification, production
   root provisioning and restricted routine signing/refresh.
@@ -175,6 +179,56 @@ hardening to their own workstreams. The independent watchdog, comprehensive
 power-loss recovery and health-gated rollback remain architectural follow-ups;
 that deferral does not excuse bypassable trust or unsafe pre-install validation.
 
+### Resumed slice: routine-key replacement and pinned publisher recovery (2026-10-19)
+
+Implemented at [source commit 6596e21](https://github.com/Printmaster-Org/printmaster/commit/6596e21dec763d737b0f2605532519d68bce1529).
+
+`update-keys rotate-routine` now generates three replacement routine keys in
+protected new outputs and authorizes the next root using the unchanged offline
+root key. No previous routine private key is required. Previous files are
+preserved; old routine keys no longer authorize the new root's metadata.
+
+`update-metadata` now prints the committed timestamp SHA256 for an independent
+latest-publication record. Its optional `-expected-timestamp-sha256` pins a
+restored workspace to that exact independently recorded commit before refresh.
+It checks signatures, dependency hashes/versions and complete, internally
+consistent root history, preserves targets and increments metadata versions.
+Expired routine metadata can be refreshed; the final root must be unexpired.
+
+For a key transition, `-previous-root` additionally requires that timestamp pin
+and verifies an exactly-one-version root successor through both authorities.
+Only this explicit operation imports the previous role signatures; normal
+publishing has no old-key fallback. New metadata uses replacement routine keys
+only. Interrupted pre-commit attempts retain immutable outputs; retries do not
+overwrite orphan versions or conflicting root bytes.
+
+Tests cover real TUF clients across restart and a skipped publication, retained
+targets/monotonic versions, old-key revocation, lost old routine keys, unauthorized
+offline signers, key reuse/separation, protected CLI outputs, stale/missing
+backups, invalid pins, missing/corrupt dependencies, skipped roots, incomplete
+history, repeated transitions and explicit CLI recovery/transition paths.
+All shared tests and relevant vet, Agent client/updater suites and focused
+Server metadata tests passed. Rotation/recovery suites also passed twice with
+fresh disposable keys. Unix ceremony tests cross-compiled only; no installed
+service/package/ACL qualification is implied.
+
+**Limits:** the independent record must actually identify the latest safe
+publication. Signatures alone cannot establish that a backup is latest, and
+root-history consistency is not proof of historical provenance. Owners must not
+compute a recovery pin from the backup or Server. Publication, record backup
+and distribution still require exclusive serialized ownership. Already
+compromised artifacts/clients, lost latest records or all root keys, root
+compromise, and Agent checkpoint repair are not automatically recoverable.
+Production signing and release readiness remain blocked.
+
+The current [owner runbook](/development/update-signing-operations/) now lives
+separately from this historical release plan. It replaces the embedded setup
+instructions below, retaining their old anchors as links.
+
+**Next slice:** protected serialized publication, independent state-record/
+backup sequencing, public distribution and scheduled freshness/verified alerts,
+then an explicit owner activation rehearsal. Do not generate production keys yet.
+
 ### Resumed slice: owner provisioning tools and release guards (2026-10-19)
 
 Implemented at [source commit 0ab8856](https://github.com/Printmaster-Org/printmaster/commit/0ab88567d77178525d23591dc0152526193b1f04).
@@ -234,111 +288,24 @@ copied-source fixture with the unprovisioned root: they rejected it before
 optional version increments and left the fixture's VERSION unchanged. Container
 guard placement has workflow/script tests, not a new container runtime test.
 
-**Still pending:** production key generation, verified encrypted backup custody,
-provisioning the embedded public root, routine-role replacement and
-loss/compromise recovery tooling, authoritative publisher-state recovery,
-serialized publishing/public distribution/freshness automation and alerts.
-Agent trust-state repair is a different problem and is not implemented here.
-No production keys, signing secrets, hosting or signing activation were changed.
-
-**Next slice:** routine-role replacement and key/publisher-state recovery,
-followed by protected publication/freshness automation and an owner activation
-rehearsal. Do not generate production keys merely because initialization is now
-available.
+**Historical slice boundary:** routine-role replacement and pinned publisher
+recovery were implemented in the subsequent slice above. Production key setup,
+protected publishing/freshness automation and Agent trust-state repair remain
+pending. No production keys, signing secrets, hosting or activation were changed.
 
 #### Owner ceremony rehearsal and eventual provisioning
 
-**Do not run this with production keys yet.** First rehearse on disposable
-storage, finish the remaining key-operation/recovery and publishing gates,
-then explicitly authorize owner setup. Never paste a PEM, password, vault
-export or private signing file into chat, an issue or a CI log.
-
-1. Use a trusted personal machine and an encrypted, private filesystem outside
-   all checkouts, synced public folders, Server volumes and published metadata
-   trees. The parent must already exist; the tool does not create or secure
-   ancestors. Generate offline; no key-operation command needs network access
-   once Go dependencies/the tool have been built. Do not run as SYSTEM.
-2. From the application `common` directory, choose an explicit root expiry and
-   initialize **new** child directories. This example chooses three years, not
-   a built-in default; schedule renewal well before it expires.
-
-   ```powershell
-   $ceremony = 'D:\PrintMasterSigning' # Existing trusted encrypted parent
-   $expires = (Get-Date).ToUniversalTime().AddYears(3).ToString('yyyy-MM-ddTHH:mm:ssZ')
-   go run .\cmd\update-keys init `
-     -offline "$ceremony\offline-v1" `
-     -routine "$ceremony\routine-v1" `
-     -public "$ceremony\public-v1" -expires $expires
-   ```
-
-3. Record the public root SHA256, version and expiry independently of GitHub
-   and the application Server. Keep the exact public root and every subsequent
-   versioned root. A valid self-signature alone does not prove publisher identity.
-4. Create two independently recoverable **encrypted personal** backup copies
-   covering the offline root, routine keys, exact public roots and fingerprint
-   record. Keep one off-site; verify access/password recovery without relying
-   on the work account. Work-hosted Vaultwarden may be a third copy, never the
-   only second copy. Use an established encrypted vault/backup tool rather than
-   inventing encryption or treating these PEM files as encrypted.
-5. Restore **each** encrypted backup into fresh private directories on protected
-   storage. Check all four restored keys against the independently retained
-   public root:
-
-   ```powershell
-   go run .\cmd\update-keys verify-keys `
-     -root "$ceremony\public-v1\1.root.json" `
-     -offline 'E:\PrivateRestore\offline-v1' `
-     -routine 'E:\PrivateRestore\routine-v1'
-   ```
-
-   Verify the reported fingerprint against the independent record. This proves
-   key usability/matching, not that storage providers or custodians are separate.
-   Restore permissions are the owner's responsibility. Remove disposable
-   restores using the encrypted storage's normal lifecycle; no secure-erase
-   guarantee is made for SSDs, snapshots, memory or vault history.
-6. After explicit activation approval, copy **only** the public root's exact
-   bytes to `agent/update_publisher_root.json`, review the independent fingerprint
-   again, commit that public file and rebuild. Never commit any PEM files.
-   `check-root -root ..\agent\update_publisher_root.json` checks the release
-   policy; it cannot check provenance or remaining installer readiness.
-7. Provision only `targets.pem`, `snapshot.pem` and `timestamp.pem` into the
-   future restricted signing environment; never `root.pem` or the offline
-   backup vault. The application Server receives public metadata only.
-   Existing `update-metadata` publishing still requires exclusive workspace
-   ownership, retention of signed state and versioned files, and timestamp-last
-   distribution. The protected automation/distribution procedure is not ready.
+Moved to the maintained
+[owner ceremony](/development/update-signing-operations/#owner-ceremony-rehearsal-and-eventual-provisioning).
+The procedure remains rehearsal-only until explicit production approval.
 
 #### Root rotation and recovery limits
 
-With a usable previous offline key and independently trusted previous root,
-create new output directories and an explicit future expiry:
-
-```powershell
-go run .\cmd\update-keys rotate-root `
-  -root "$ceremony\public-v1\1.root.json" `
-  -old-key "$ceremony\offline-v1\root.pem" `
-  -offline "$ceremony\offline-v2" `
-  -public "$ceremony\public-v2" -expires $expires
-```
-
-Back up and restore-test the new key against `2.root.json` with the unchanged
-routine keys before making it authoritative. Preserve `1.root.json` and publish
-`2.root.json` without overwriting old versioned roots. Routine `update-metadata`
-can use root 2 with the unchanged routine keys; retain the same authoritative
-publication workspace. Clients pinned to root 1 need the complete root chain.
-Root rotation can be authorized by an expired previous root; that is standard
-TUF root maintenance, not permission to install using expired final metadata.
-The final root and refreshed routine metadata must pass normal expiry checks.
-
-For expired routine metadata with unchanged usable keys and intact signed
-publisher state, refresh with `update-metadata` using the existing workspace.
-Do not initialize a new workspace to hide missing/corrupt publication state or
-reset versions. Do not delete Agent trust checkpoints to bypass an error.
-If an offline key is unavailable, restore and verify an encrypted backup. If
-all authorized root keys are lost, there is no supported in-band replacement:
-an explicitly authenticated out-of-band binary/root recovery is required and
-is not yet qualified. Compromise, routine-role replacement, publisher-state
-loss and interrupted Agent checkpoints still need dedicated tested procedures.
+See [offline root rotation](/development/update-signing-operations/#offline-root-rotation),
+[publisher recovery](/development/update-signing-operations/#publisher-state-recovery)
+and [compromise/loss limits](/development/update-signing-operations/#compromise-and-unrecoverable-loss).
+These maintained procedures supersede this slice's earlier incomplete notes;
+there is still no automatic Agent-checkpoint reset or root-compromise recovery.
 
 ### Resumed slice: embedded-root wiring and metadata delivery (2026-10-19)
 
