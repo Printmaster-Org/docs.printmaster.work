@@ -6,6 +6,11 @@ sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 
 This document describes how to write fast, deterministic tests for the PrintMaster agent and server.
 
+Run `.\tests.ps1` (Windows) or `./tests.sh` (Unix/macOS) from the application
+checkout for the shared default lint/Go/Jest/Playwright baseline. CI invokes
+the same suite definitions. See [Testing](/development/testing/) for
+prerequisites, selection flags and platform qualification boundaries.
+
 ## Test Types
 
 PrintMaster has three levels of testing:
@@ -65,20 +70,26 @@ For full-network tests that exercise the real SNMP stack, maintain separate manu
 
 E2E tests that verify agent-server communication are located in the `tests/` directory at the project root. These tests:
 
-- Start actual server and agent instances
+- Cover mock cross-component workflows by default, with actual Docker services in the opt-in tagged suite
 - Test full workflows (registration, heartbeat, WebSocket, proxy)
-- Run in CI/CD after unit tests pass
+- Run in CI/CD as shared runner suites
 - Use ephemeral ports and temp databases
 
 See [`../tests/E2E_TESTING.md`](/development/testing/e2e-testing/) for complete documentation.
 
-**Running E2E tests:**
+**Running cross-component tests from the repository root:**
 ```bash
-cd tests
-go test -v ./...
+# Mock E2E (also included in the default Go suite)
+./tests.sh --suite go --module tests
+
+# Actual isolated Docker services, offline SQLite seeding and tagged tests
+./tests.sh --suite docker
 ```
 
-**Skipping E2E tests (fast unit tests only):**
+**Focused component Go tests (not the complete baseline):**
 ```bash
-go test -short ./...
+./tests.sh --suite go --module agent,common,server
 ```
+
+Use `.\tests.ps1` with the same arguments on Windows. `--with-docker` adds
+both PostgreSQL integration and real Docker E2E to the default baseline.

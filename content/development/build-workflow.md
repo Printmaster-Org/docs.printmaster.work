@@ -6,40 +6,26 @@ sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 
 ## Quick Start (Development)
 
-### Windows PowerShell Quick Launch
-
-Use the helper script to test, build, and launch the agent:
+### Windows PowerShell
 
 ```powershell
-# From project root (where dev/ exists)
-pwsh -NoProfile -ExecutionPolicy Bypass .\dev\launch.ps1
-```
+# From the application repository root: lint, all Go modules, Jest and browsers
+.\tests.ps1
 
-This script will:
-- Run `go test ./...` (exits if tests fail)
-- Build agent into `./bin/printmaster-agent.exe`
-- Start the built binary
-- Open browser to `http://localhost:8080`
-
-### Manual Development Workflow
-
-If you prefer manual control:
-
-```powershell
-# Run tests
-go test ./...
-
-# Build (from project root)
-go build -o ./bin/printmaster-agent.exe ./agent
+# Build after the selected tests pass
+.\build.ps1 agent
 
 # Run the agent
-./bin/printmaster-agent.exe
+.\bin\printmaster-agent.exe
 
 # Open UI
 Start-Process 'http://localhost:8080'
 ```
 
-**Note**: The launch script is intentionally conservative - tests must pass before build and server start.
+On Unix/macOS use `./tests.sh` and `./build.sh agent`. The shared runner does not
+launch or replace installed services. See [Testing](/development/testing/) for
+prerequisites, optional Docker/docs suites and explicit skips. The legacy
+`dev/launch.ps1` convenience launcher is not the complete test baseline.
 
 ---
 
@@ -58,7 +44,7 @@ Start-Process 'http://localhost:8080'
 .\build.ps1 both
 
 # Run tests
-.\build.ps1 test-all
+.\tests.ps1
 
 # Clean artifacts
 .\build.ps1 clean
@@ -66,18 +52,19 @@ Start-Process 'http://localhost:8080'
 
 ### VS Code Tasks (Ctrl+Shift+B)
 
-JavaScript validation uses separate runners: `npm run test:js` runs Jest unit
-tests, and `npm run test:playwright` runs browser tests under
-`common/web/__tests__/playwright`. CI runs the cross-browser variant,
-`npm run test:playwright:all`. Device selection/details controls are checked by
+The default **Test: Core** task and `tests.ps1`/`tests.sh` run the same shared
+suite definitions used by CI: Go vet/staticcheck, every discovered Go module,
+Jest and all six Playwright projects with no retries. `--skip-playwright`
+explicitly omits browsers; it is not a complete baseline. Device selection/details controls are checked by
 Playwright with column pinning and horizontal scrolling; browser checks must
 not be placed under Jest's unit-test directories as standalone scripts.
-This runner separation and device-control regression were verified against
-[source commit cb88bee](https://github.com/Printmaster-Org/printmaster/commit/cb88bee07d0393563b250a2b9d00263363d3ff54).
+CI installs prerequisites; the runner owns suite execution. Underlying npm
+commands remain available for focused debugging.
 
 - **Build: Agent (Dev)** - Default build task
 - **Build: Server (Dev)** - Build server
 - **Build: Both (Dev)** - Build both components
+- **Test: Core** - Shared default suite selection
 - **Test: Agent (all)** - Run all agent tests
 - **Test: Server (all)** - Run all server tests
 - **Show Version** - Display current versions
@@ -436,7 +423,7 @@ git checkout -b feature/new-scanner
 
 # 2. Make changes, test locally
 .\build.ps1 agent
-.\build.ps1 test-all
+.\tests.ps1
 
 # 3. Commit work
 git add -A

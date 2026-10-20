@@ -47,7 +47,7 @@ cd agent
 **Version Management**:
 ```powershell
 # Check current version
-.\version.ps1
+Get-Content .\agent\VERSION
 
 # Build with current version
 .\build.ps1 release
