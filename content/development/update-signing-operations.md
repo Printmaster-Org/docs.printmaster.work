@@ -211,12 +211,32 @@ startup success. Emergency abort, unsafe policy, native failures and snapshot
 substitution fail visibly.
 
 This consumer has no CLI/sudo/automatic-update wiring and must not be activated
-before durable outcomes and service reconciliation are implemented. Native
+before explicit recovery and service reconciliation are implemented. Native
 scripts can stop/restart the service or terminate a parent, and a bounded
 command failure may require package database repair. The root-controlled policy
 source is still to be wired; service-user policy cannot become root authority.
 Tests simulate commands, not real DEB/RPM transactions.
 Native consumer: [source commit cae4bb4](https://github.com/Printmaster-Org/printmaster/commit/cae4bb484c0f40eddc4c949aa613e86fc391a258).
+
+The root installer now persists `native-transaction.json` under its intake lock
+before invoking native installation. Its `installing` intent binds a random
+run identifier, exact authenticated target, previous version and timestamps.
+Private-file sync, atomic rename and directory sync must finish before any
+native modification. Successful native database validation records
+`awaiting-startup`, not Agent startup success; failures/cancellation record
+`recovery-required`. Failed outcome writes remain visible alongside the native
+error. An abrupt exit leaves the previous intent for inspection.
+
+Every existing record blocks a new install, even if malformed or
+`awaiting-startup`. There is no automatic retry/reset, repair or rollback.
+Preserve the protected record and inspect native package/service state; an
+explicit reconciliation path is still to be implemented. Temporary snapshots
+are not recovery backups. The journal adds durable evidence, not atomic native
+transactions or a power-loss recovery guarantee. Portable tests simulate the
+command lifecycle; Linux journal persistence tests are prepared for hosted CI
+and cross-compiled locally, not runtime-qualified here.
+Transaction records: [source commit e1f251e](https://github.com/Printmaster-Org/printmaster/commit/e1f251ed1d91d28165919d9b4d68de06d51b15bb).
+
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 

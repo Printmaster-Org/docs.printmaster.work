@@ -242,7 +242,8 @@ checks their protected root ownership and starts them with a minimal explicit
 environment, rather than inheriting service-user loader/plugin/configuration
 variables. Commands retain bounded deadlines and output. Deadline termination
 can leave package-manager state needing repair; maintainer scripts may restart
-the service or terminate a parent. These are **not yet durable transactions**.
+the service or terminate a parent. Durable intent/outcome records now track
+this boundary, but do **not** make the native package transaction atomic.
 No helper CLI, sudo permission or automatic-update entrypoint invokes this
 consumer. The existing Agent handoff still fails closed.
 
@@ -252,7 +253,45 @@ snapshot substitution and cancellation. Full updater tests and Windows
 vet/staticcheck pass; the Linux implementation cross-compiles and passes vet.
 No real DEB/RPM transaction or hosted Linux runtime is qualified by these tests.
 
-**Remaining implementation:** wire durable native outcomes/recovery, a
+#### Native transaction records and interrupted-install blocking (unreleased)
+
+Implementation: [source commit e1f251e](https://github.com/Printmaster-Org/printmaster/commit/e1f251ed1d91d28165919d9b4d68de06d51b15bb).
+
+The staged root installer now writes `native-transaction.json` in its protected
+state directory, while holding the same intake lock. Immediately before the
+native install command, it persists a schema-versioned record containing a
+random run identifier, the authenticated target identity, previous installed
+version, UTC timestamps and phase `installing`. File sync, atomic rename and
+parent-directory sync must succeed before the installer runs. Persistence
+errors stop the operation; temporary-file cleanup and close failures are
+surfaced rather than ignored.
+
+After native installation and database validation it records
+`awaiting-startup`, **not** update success. A command error, cancellation or
+post-install validation failure records `recovery-required`. Outcome writes
+are attempted even when the command context is cancelled; failure to save an
+outcome is joined with the original installation error. If the helper exits
+before recording an outcome, the previous `installing` intent remains.
+No command output or untrusted policy is stored in the journal.
+
+Any existing transaction file, including malformed content, blocks a new
+installation. Neither native success nor a fresh helper process implicitly
+clears or retries a previous run. There is intentionally no automatic journal
+reset, package rollback, repair command or recovery CLI yet. Preserve the
+root-owned record and inspect the package database/service before any future
+explicit reconciliation. Snapshots are still temporary and are not retained
+as authorized rollback artifacts. This is durable evidence and conservative
+retry blocking, not power-loss-safe installation or unattended recovery.
+
+Portable simulated-command tests cover intent ordering, write failure before
+modification, outcomes after native/post-check failures and cancellation,
+combined installer/journal errors, and no journal activity on policy rejection.
+Linux journal tests cover persisted identities/phases, private permissions,
+invalid transitions, stale/corrupt record blocking and failed writes. They are
+included in the hosted intake test selector; locally they have cross-compiled
+only, not run on Linux. Native DEB/RPM runtime qualification remains open.
+
+**Remaining implementation:** wire explicit transaction reconciliation, a
 root-controlled policy source, restricted helper transport and service startup
 reconciliation before enabling the consumer.
 The current package service runs as `printmaster`, not root; an authorization
@@ -261,7 +300,7 @@ The shared file check is a prerequisite, not a privileged installer: callers
 must prevent modification until consumption, and may not verify one file then
 install another by version or mutable pathname. Native package identity
 checks and no-downgrade/pin enforcement now exist in the staged consumer.
-Dependency/recovery behavior, durable outcomes, startup validation and Linux
+Dependency/recovery behavior, startup validation and Linux
 runtime qualification remain part of that follow-up.
 
 The development Windows machine intentionally retains owner-approved
