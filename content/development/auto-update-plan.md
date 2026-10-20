@@ -624,6 +624,26 @@ not real installed service qualification: fixtures contain no maintainer scripts
 or systemd units. RPM transactions, service restart/readiness, helper packaging
 and production authority remain open.
 
+#### In-lifetime repository acquisition handoff (unreleased, staged)
+
+Repository acquisition now has a synchronous `withRepositoryPackage` consumer:
+it keeps the exact authenticated private snapshot open until the handoff
+returns, then closes and removes both snapshot and acquisition workspace.
+No deleted pathname or service-user receipt is passed as installation authority.
+Consumer errors, cancellation and cleanup errors return no acquisition
+authorization. An error can still follow completed native modification:
+inspect the root journal rather than retrying. The existing acquire-only caller retains its blocked-installation
+behavior; this does **not** activate the Manager or grant sudo permission.
+
+The real isolated DEB rehearsal now starts with this acquisition lifetime,
+authenticates independently on both service and root sides, exchanges bytes with
+the supervised subprocess, then verifies native database/journal outcomes and
+cleanup. Only repository download is simulated with fixture bytes; native
+inspection and installation are real. Success and actual dependency failure
+passed three repeated runs, including replay blocking. Separate cross-platform
+tests cover consumer failure/cancellation, unauthenticated bytes, missing
+consumer, closed descriptors and deleted workspaces.
+
 **Remaining implementation:** package the fixed helper and wire the Manager sender,
 service restart/readiness and Agent outcome reporting, and
 explicit failed-transaction recovery before enabling automatic installation.

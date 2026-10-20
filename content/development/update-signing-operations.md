@@ -424,6 +424,16 @@ remote execution not yet observed). This is not RPM or real service qualificatio
 Reproduction and remaining boundaries are in the
 [native update plan](/development/auto-update-plan/#real-isolated-debian-transaction-qualification-unreleased).
 
+Acquisition now supports a synchronous, open-snapshot handoff: the authenticated
+file remains valid until the consumer returns, and descriptors/workspaces are
+cleaned on success or failure. The real isolated DEB rehearsal uses this bridge
+through independently authorized root intake and supervised process exit.
+Consumer errors/cancellation return no acquisition authorization, but do not
+prove native modification did not occur; inspect the protected journal. Production
+Manager installation remains blocked; there is no sudo grant or automatic
+replay. Repository downloads in this rehearsal are fixture-simulated; native
+package inspection/installation and both trust boundaries are real.
+
 Native entrypoint integration, failed-transaction repair and installed-service qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
