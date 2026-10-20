@@ -275,11 +275,12 @@ before recording an outcome, the previous `installing` intent remains.
 No command output or untrusted policy is stored in the journal.
 
 Any existing transaction file, including malformed content, blocks a new
-installation. Neither native success nor a fresh helper process implicitly
-clears or retries a previous run. There is intentionally no automatic journal
-reset, package rollback, repair command or recovery CLI yet. Preserve the
-root-owned record and inspect the package database/service before any future
-explicit reconciliation. Snapshots are still temporary and are not retained
+installation until the explicit startup-confirmation path below completes.
+Neither native success nor a fresh helper process implicitly clears or retries
+a previous run. There is intentionally no automatic journal reset, package
+rollback, repair command or recovery CLI yet. Preserve failed/indeterminate
+root-owned records and inspect package database/service state before repair.
+Snapshots are still temporary and are not retained
 as authorized rollback artifacts. This is durable evidence and conservative
 retry blocking, not power-loss-safe installation or unattended recovery.
 
@@ -331,9 +332,44 @@ twice on Linux WSL, alongside the root intake/journal tests. Portable package
 regressions and Windows vet/staticcheck passed. Native installer qualification
 and actual service reconciliation are separate gates.
 
-**Remaining implementation:** wire explicit transaction reconciliation, a
-root-controlled policy source, restricted helper transport and service startup
-reconciliation before enabling the consumer.
+#### Explicit service confirmation and retained native evidence (unreleased)
+
+Implementation: [source commit be65d30](https://github.com/Printmaster-Org/printmaster/commit/be65d30b3e72c43db218d014d1f1e41eb6c9289a).
+
+`ReconcilePrivilegedRepositoryPackage` now takes an explicit run identifier and
+holds the root intake lock throughout confirmation. Only an `awaiting-startup`
+run is eligible. It checks the native installed target version, queries the
+fixed `printmaster-agent.service` through fixed `/usr/bin/systemctl`, and
+requires a loaded, active/running unit with no pending daemon reload, a valid
+MainPID and nonzero systemd invocation identifier. Kernel `/proc/<pid>/exe`
+identity must match the protected ordinary `/usr/bin/printmaster-agent` file.
+Repeated service, process and package observations reject changed invocations,
+replaced/old executables and concurrently changed package versions.
+
+Confirmation persists `startup-confirmed` with the PID/invocation evidence,
+then saves an exact root-private `transactions/<run-id>.json` archive before
+retiring the active blocker. Files and both affected directories are synced.
+An interrupted archive can be explicitly resumed using the same run identifier
+without reinstalling or rewriting conflicting evidence. Archive failures retain
+the active record until durable evidence is present; a conflicting archive
+fails closed. This is point-in-time systemd/process confirmation, **not**
+application readiness, printer/Server connectivity or future service health.
+
+`installing` and `recovery-required` runs cannot be promoted by this success
+path, even if the native database currently reports the candidate version.
+There is no failure reset, implicit rollback, service restart, CLI/sudo/API
+wiring or production trust activation. Linux WSL tests passed twice for native
+and systemd command simulations, changed identities, cancellation, archive
+failure/conflict/resume, and an actual disposable child process's procfs
+executable identity. No installed Agent/service or native package transaction
+was modified.
+The full unprivileged Linux updater suite also passed in WSL; Windows updater
+tests and vet/staticcheck passed. Linux vet passed, with only the two previously
+recorded Unix Windows-helper staticcheck warnings remaining.
+
+**Remaining implementation:** wire a root-controlled policy source, restricted
+helper transport, service restart/readiness and Agent outcome reporting, and
+explicit failed-transaction recovery before enabling automatic installation.
 The current package service runs as `printmaster`, not root; an authorization
 receipt supplied by that user must not become arbitrary root install authority.
 The shared file check is a prerequisite, not a privileged installer: callers

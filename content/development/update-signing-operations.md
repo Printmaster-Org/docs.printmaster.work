@@ -227,10 +227,10 @@ native modification. Successful native database validation records
 `recovery-required`. Failed outcome writes remain visible alongside the native
 error. An abrupt exit leaves the previous intent for inspection.
 
-Every existing record blocks a new install, even if malformed or
-`awaiting-startup`. There is no automatic retry/reset, repair or rollback.
-Preserve the protected record and inspect native package/service state; an
-explicit reconciliation path is still to be implemented. Temporary snapshots
+Every existing record blocks a new install until explicit startup-confirmed
+archival. There is no automatic retry/reset, repair or rollback.
+Preserve failed/indeterminate records and inspect native package/service state.
+Temporary snapshots
 are not recovery backups. The journal adds durable evidence, not atomic native
 transactions or a power-loss recovery guarantee. Portable tests simulate the
 command lifecycle; Linux journal persistence tests are included in hosted CI.
@@ -254,6 +254,23 @@ replays, resets or unblocks the run and cannot establish service health.
 DEB/RPM command simulations and preservation checks passed twice in Linux WSL;
 this is not a real native transaction qualification.
 Recovery assessment: [source commit f5a19c5](https://github.com/Printmaster-Org/printmaster/commit/f5a19c56fd8e2ae3a9f2338e0437fc6d68382ae7).
+
+Explicit root-only `ReconcilePrivilegedRepositoryPackage` now requires the
+matching run identifier and `awaiting-startup` phase, rechecks the installed
+candidate, and confirms systemd's fixed Agent unit is loaded, active/running
+with no pending daemon reload. Repeated PID/invocation and kernel executable
+identity checks must match the protected installed `/usr/bin/printmaster-agent`;
+an old/replaced binary or changed package/service invocation fails.
+
+It saves `startup-confirmed` evidence, then retains an exact private
+`transactions/<run-id>.json` archive before retiring the active record, syncing
+files and directories. Interrupted archival can be explicitly resumed for that
+same run; conflicts are never overwritten. This does not promote failed or
+indeterminate installs, restart the service, establish application readiness
+or grant automatic repair/rollback. No external entrypoint has been enabled.
+Linux command simulations, archive failure/resume and real temporary-child
+procfs identity tests passed in WSL without touching the installed Agent.
+Startup reconciliation: [source commit be65d30](https://github.com/Printmaster-Org/printmaster/commit/be65d30b3e72c43db218d014d1f1e41eb6c9289a).
 
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
