@@ -289,7 +289,27 @@ combined installer/journal errors, and no journal activity on policy rejection.
 Linux journal tests cover persisted identities/phases, private permissions,
 invalid transitions, stale/corrupt record blocking and failed writes. They are
 included in the hosted intake test selector; locally they have cross-compiled
-only, not run on Linux. Native DEB/RPM runtime qualification remains open.
+only in that original slice. The inspection slice below subsequently ran this
+selection on Linux. Native DEB/RPM runtime qualification remains open.
+
+#### Protected native transaction inspection (unreleased)
+
+Implementation: [source commit ed6d1d9](https://github.com/Printmaster-Org/printmaster/commit/ed6d1d9cb67f75fe5faa24997ace9f552a730ebd).
+
+`InspectPrivilegedRepositoryPackage` now reads existing evidence offline under
+the same root-owned state lock as installation. It does not initialize TUF,
+create a missing state tree, run native package commands or alter the journal.
+It rejects oversized/noncanonical JSON, unknown or duplicate fields, unsupported
+schemas/phases, malformed run/digest identities, wrong platform/channel/architecture,
+invalid timestamps and non-upgrade version ordering. Corrupt evidence remains
+in place and blocks further installs; inspection is not permission to reset it.
+Only trusted helper configuration supplies the state directory. No CLI, sudo
+or HTTP surface has been added.
+
+The Linux root intake, state-isolation, journal and inspection tests passed in
+the existing Ubuntu WSL distribution using temporary test directories, without
+running installers or touching services. This adds actual Linux file-sync,
+lock and ownership evidence, not native DEB/RPM transaction qualification.
 
 **Remaining implementation:** wire explicit transaction reconciliation, a
 root-controlled policy source, restricted helper transport and service startup

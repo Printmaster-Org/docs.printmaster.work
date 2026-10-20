@@ -233,9 +233,17 @@ Preserve the protected record and inspect native package/service state; an
 explicit reconciliation path is still to be implemented. Temporary snapshots
 are not recovery backups. The journal adds durable evidence, not atomic native
 transactions or a power-loss recovery guarantee. Portable tests simulate the
-command lifecycle; Linux journal persistence tests are prepared for hosted CI
-and cross-compiled locally, not runtime-qualified here.
+command lifecycle; Linux journal persistence tests are included in hosted CI.
 Transaction records: [source commit e1f251e](https://github.com/Printmaster-Org/printmaster/commit/e1f251ed1d91d28165919d9b4d68de06d51b15bb).
+
+Offline root-only `InspectPrivilegedRepositoryPackage` now validates existing
+records under the shared intake lock without TUF refresh, native commands,
+journal mutation or missing-state initialization. Bounded canonical decoding
+rejects ambiguous/corrupt records and invalid schema, identity, phase, timestamps
+or version ordering. Failed inspection never resets evidence. The root intake,
+journal, ownership/lock and inspection tests passed in Ubuntu WSL with temporary
+test state; no real package installation or service was touched.
+Protected inspection: [source commit ed6d1d9](https://github.com/Printmaster-Org/printmaster/commit/ed6d1d9cb67f75fe5faa24997ace9f552a730ebd).
 
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
