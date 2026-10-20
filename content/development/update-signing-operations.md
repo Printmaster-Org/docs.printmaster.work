@@ -181,8 +181,13 @@ Do not enable package auto-update based on that primitive alone. A constrained
 privileged installer must independently verify and protect the file it
 consumes; checking a writable download and then installing by version is not
 sufficient. The Agent's package handoff remains fail-closed, and the old
-version-only installation routines have been removed. Repository acquisition,
-privileged handoff and runtime qualification are still
+version-only installation routines have been removed. Repository acquisition
+now downloads an exact version/architecture into a private temporary workspace,
+checks native package fields and authenticates that file's own TUF identity.
+Acquisition implementation: [3857a3c](https://github.com/Printmaster-Org/printmaster/commit/3857a3c0a4aa831d8f19789848c3b9ba09e6f1fb).
+No sudo or install command is issued; download plugins must already be present.
+The workspace is removed afterward, including on authorization failure.
+The constrained privileged handoff and native runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
 ### B2 owner setup and read-only preflight

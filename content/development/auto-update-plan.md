@@ -136,15 +136,45 @@ version. Tests keep all three package handoffs explicitly fail-closed.
 This slice does **not** enable Linux package auto-update or change repository,
 sudoers, service-account or fleet-manifest configuration.
 
-**Remaining implementation:** download the exact repository package without
-installing it, then use a constrained privileged handoff that independently
+Repository acquisition: [source commit 3857a3c](https://github.com/Printmaster-Org/printmaster/commit/3857a3c0a4aa831d8f19789848c3b9ba09e6f1fb).
+
+The next acquisition slice now downloads without installing: `apt-get download`
+pins `printmaster-agent:<native-arch>=<version>`, `dnf download` selects the
+version and native architecture, and YUM uses `yumdownloader`. Each attempt
+uses a new private workspace and accepts exactly one regular package file.
+Native `dpkg-deb`/`rpm` queries must match the fixed package name, selected
+Stable version and architecture. RPM epoch must be zero and release must
+match the build scripts' `1` with optional distribution suffix. Supported
+architectures map Go `amd64`, `arm64`, `arm` to their Debian/RPM names.
+Prerelease/noncanonical versions and unknown identities fail before commands.
+No sudo, metadata refresh, dependency install or versionless fallback is run.
+Missing native download tooling/plugins fails explicitly.
+
+The exact package file is then authenticated using its own TUF target, not
+the discovery binary's digest. Command cancellation inherits the operation
+context, deadlines/output remain bounded, and the temporary package workspace
+is cleaned on success or failure. A successful acquisition still returns a
+visible blocked-installation error: it does not write a pending installation,
+restart the service or claim an installed update.
+
+Acquisition tests use real disposable-key TUF verification with simulated
+native download/query commands. They assert exact command arguments and
+architecture mappings, reject missing/multiple/nonregular downloads, native
+identity/epoch/release mismatches, substituted bytes, command failures and
+cancellation, and verify workspace cleanup. The command runner separately
+executes real subprocesses to verify working-directory and parent-cancellation
+handling. The full Windows updater suite, vet/staticcheck and documentation
+checks passed; Linux tests cross-compiled only. These fixtures are not proof
+that native APT/DNF/YUM behavior has been qualified on Linux.
+
+**Remaining implementation:** use a constrained privileged handoff that independently
 authenticates and protects the actual file consumed by the native installer.
 The current package service runs as `printmaster`, not root; an authorization
 receipt supplied by that user must not become arbitrary root install authority.
 The shared file check is a prerequisite, not a privileged installer: callers
 must prevent modification until consumption, and may not verify one file then
 install another by version or mutable pathname. Native package identity/
-architecture checks, dependency handling, durable outcomes, startup validation
+checks at that privileged boundary, dependency handling, durable outcomes, startup validation
 and Linux runtime qualification remain part of that follow-up.
 
 The development Windows machine intentionally retains owner-approved
