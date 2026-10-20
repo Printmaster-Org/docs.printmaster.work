@@ -272,6 +272,15 @@ Linux command simulations, archive failure/resume and real temporary-child
 procfs identity tests passed in WSL without touching the installed Agent.
 Startup reconciliation: [source commit be65d30](https://github.com/Printmaster-Org/printmaster/commit/be65d30b3e72c43db218d014d1f1e41eb6c9289a).
 
+The Unix Windows-helper lint follow-up removes the two previously recorded
+updater staticcheck warnings without suppressions. Final batch validation passed
+the full Windows and unprivileged Linux updater suites, the Linux root
+intake/recovery/startup test selection twice, and updater vet/staticcheck for
+both platforms. Linux execution used the existing Ubuntu WSL distribution with
+temporary state/processes, not installed Agent services or native transactions.
+No hosted CI run, production trust provisioning or activation is implied.
+Linux lint follow-up: [source commit 5235994](https://github.com/Printmaster-Org/printmaster/commit/5235994ef6d6e31a477cce01eb62dcec0d09d4f9).
+
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 

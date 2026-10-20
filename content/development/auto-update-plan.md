@@ -100,7 +100,9 @@ by the historical checklist numbering:
 2. **Implemented, pending platform qualification:** failure-safe Windows
    binary/MSI helper handoffs, bounded deadlines and durable run-bound outcomes.
    Real MSI/service behavior and failure recovery still require qualification.
-3. Authentication of the actual Linux packages installed.
+3. **Authentication and staged native consumer implemented:** finish restricted
+   Linux helper/policy wiring, failed-transaction recovery and native package
+   qualification before enabling unattended installation.
 4. Client trust-state lifecycle, clock/expiry diagnostics and explicit repair.
 5. Truthful bounded update UX.
 6. Supported 0.31.x, mixed-version and long-offline migration qualification.
@@ -209,8 +211,8 @@ This step is prepared but has not run remotely in this local-only slice.
 Locally, real TUF snapshot/acquisition tests and the full Windows updater
 suite passed with vet/staticcheck; Linux tests cross-compiled and Linux vet
 passed. Linux staticcheck also exposed pre-existing Unix Windows-helper stub
-warnings (`SA4023` and `ST1005`), outside this intake slice; they remain a CI
-lint follow-up rather than a claimed clean Linux lint run.
+warnings (`SA4023` and `ST1005`), outside that intake slice. The later Linux
+qualification follow-up below resolves them without diagnostic suppression.
 
 #### Native package consumer and privileged policy checks (unreleased)
 
@@ -364,8 +366,26 @@ failure/conflict/resume, and an actual disposable child process's procfs
 executable identity. No installed Agent/service or native package transaction
 was modified.
 The full unprivileged Linux updater suite also passed in WSL; Windows updater
-tests and vet/staticcheck passed. Linux vet passed, with only the two previously
-recorded Unix Windows-helper staticcheck warnings remaining.
+tests and vet/staticcheck passed. Linux vet passed. The following lint slice
+then resolved the two previously recorded Unix Windows-helper warnings.
+
+#### Linux qualification and lint follow-up (unreleased)
+
+Implementation: [source commit 5235994](https://github.com/Printmaster-Org/printmaster/commit/5235994ef6d6e31a477cce01eb62dcec0d09d4f9).
+
+The Windows-helper dispatch now selects the configured test launcher or native
+launcher once and handles its error through one path. Unsupported Unix helper
+launches still fail explicitly; the stub uses standard lowercase error text.
+This removes `SA4023`/`ST1005` without lint suppression, allowing the Linux
+updater lint gate to proceed toward the root test step.
+
+Final batch validation passed the complete Windows updater suite, the complete
+unprivileged Linux updater suite in Ubuntu WSL, and two runs of the Linux root
+intake/journal/recovery/startup selection. Vet and staticcheck are now clean for
+the updater package on both Windows and Linux. Linux tests used disposable
+state and process fixtures; they did not install packages or touch the running
+Agent. Hosted CI itself has not been pushed/run by this local batch, and
+real DEB/RPM/service transaction qualification remains open.
 
 **Remaining implementation:** wire a root-controlled policy source, restricted
 helper transport, service restart/readiness and Agent outcome reporting, and
