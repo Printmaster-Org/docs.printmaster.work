@@ -66,8 +66,22 @@ sibling checkout's locked dependencies and its configured Hugo version.
 Use `--staticcheck PATH`, `--hugo PATH`, or `--docs-dir PATH` for existing
 non-PATH tools/checkouts. These do not change machine configuration.
 
-Results continue through independent suites and Go modules, print PASS/FAIL
-and omitted-suite summaries, and return nonzero on any selected failure.
+Staticcheck must also be **built with a Go version at least as new as the
+modules it analyzes**. Updating its release alone is insufficient. If it reports
+`application built with go1.26` against Go 1.27 modules, rebuild the CI-pinned
+version with the matching toolchain, for example
+`GOTOOLCHAIN=go1.27.0 go install honnef.co/go/tools/cmd/staticcheck@v0.8.1`
+on Unix, or set `$env:GOTOOLCHAIN = 'go1.27.0'` in a PowerShell session before
+that `go install` command. `go version -m` on the installed executable shows
+its build toolchain. The runner does not silently replace tools.
+
+Execution stops at the first failed command by default, including within a
+Go/lint module. Later selected suites are marked **NOT RUN**, not passed or
+intentionally omitted. Use `--keep-going` to collect independent failures across
+checks, modules and suites. Docker log capture and scoped cleanup still run on
+failure in either mode. The runner prints PASS/FAIL and omitted-suite summaries
+and returns nonzero on any selected failure. CI uses the same fail-fast default
+within each job while independent jobs can still complete.
 Internal platform/opt-in skips remain visible in verbose test output; they
 are **not** converted into qualification evidence. Inherited
 `PRINTMASTER_LIVE_*` opt-ins are stripped from subprocess environments so a
