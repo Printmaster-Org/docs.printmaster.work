@@ -240,6 +240,48 @@ it qualifies this manual migration smoke case, not version ordering, automatic
 helper installation, MSI, or every supported 0.31.x baseline. The verified
 stopped-service backup was retained. Publisher trust remains unprovisioned.
 
+#### Opt-in live Windows raw-binary rehearsal
+
+Implementation: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/45971ec98c60684c03e08fc363cc6dea50d64a65).
+
+`agent/autoupdate/windows_live_test.go` provides an explicitly gated, destructive
+rehearsal for the owner's Windows test Agent, not a default CI test. The owner
+reported installing the versioned `0.32.0.2-dev` baseline and a running service
+on 2026-10-20. A narrowly scoped owner-managed policy exception now permits
+local scripts (`RemoteSigned`); restore the original `AllSigned` policy after
+the test window. No automated policy changes are made.
+
+The live test requires Administrator access, a stopped `PrintMasterAgent`
+LocalSystem service registered at the protected path, the exact approved
+baseline SHA-256, no pending handoff, and an independently checked candidate
+hash. It advances only this fixture's `0.32.0.2-dev` to `0.32.0.3-dev`.
+An existing stopped-service backup must be retained before opting in.
+
+The child process constructs real TUF metadata using disposable in-memory
+private keys and authorizes both the installed Dev baseline and the candidate
+with signed release ordering. It calls the production update manager, whose
+normal Windows PowerShell 5.1 helper waits for that child to exit. The helper
+then replaces the binary and starts the actual service. A supervisor verifies
+the run-bound helper result, running service, installed bytes, startup progress
+success and removal of pending state. Failure leaves evidence for operator
+review; it does not blindly kill the helper or overwrite live data.
+
+Build the Go test executable with `go test -c` in the Agent module. The live
+test skips unless `PRINTMASTER_LIVE_WINDOWS_UPDATE` is exactly
+`replace-test-agent-with-backup`. Supply the separately built candidate path
+and hash using `PRINTMASTER_LIVE_WINDOWS_CANDIDATE` and
+`PRINTMASTER_LIVE_WINDOWS_CANDIDATE_SHA256`, then invoke only
+`-test.run=^TestLiveWindowsBinaryUpdate$`. Clear those environment variables
+afterward. Do not run the whole compiled test suite elevated with the opt-in set.
+
+**Prepared, not yet live-qualified.** This uses an injected fixture artifact/
+manifest client and a real loopback TUF verifier, not the fleet Server's
+transport or embedded-root provisioning. Neither test keys nor a test root
+are installed in the Agent; normal unattended updates remain blocked by its
+unprovisioned root after restart. Passing would qualify this real manager/
+helper/service/startup handoff, not the full Server-triggered delivery path,
+MSI, failure injection on a real service, or production activation.
+
 ### Installer permissions and safe-path implementation (unreleased)
 
 Implementation: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/da0f9e2c3714bea251512f3363328f9b8d21d22a).
