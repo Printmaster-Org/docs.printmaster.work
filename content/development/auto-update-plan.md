@@ -567,8 +567,26 @@ provisioning remains an explicit owner operation; do not copy disposable test
 roots into production. Native scripts may terminate the helper despite its
 independent context, so journal/recovery limitations remain unchanged.
 
+#### Supervised fixed helper launch (unreleased, root callers only)
+
+`LaunchRepositoryPackage` validates the fixed helper's root-owned ordinary
+executable and protected ancestors, starts it with no arguments, a fixed `/`
+working directory and minimal native-command environment, then joins duplex
+exchange **and process exit**. Nonzero exit after a valid awaiting-startup reply
+is an error, not update success. Diagnostics are bounded. Start failure closes
+all pipe handles; every started child is waited/reaped.
+
+Caller cancellation stops the exchange but does not kill an in-flight native
+installer. The call continues waiting under an independent sixteen-minute outer
+budget, after the helper's own fifteen-minute budget. Outer timeout may terminate
+the helper and is always ambiguous: inspect protected state, do not retry.
+This is not a guarantee that every descendant has stopped or that the package
+database is repaired. No service-user sudo delegation is enabled; nonroot launch
+fails explicitly. Subprocess tests cover early rejection, stalls, nonzero exit
+after reply, launch failure and survival of caller cancellation.
+
 **Remaining implementation:** package the fixed helper and wire the Manager sender,
-process supervision, service restart/readiness and Agent outcome reporting, and
+service restart/readiness and Agent outcome reporting, and
 explicit failed-transaction recovery before enabling automatic installation.
 The current package service runs as `printmaster`, not root; an authorization
 receipt supplied by that user must not become arbitrary root install authority.

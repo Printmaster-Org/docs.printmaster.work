@@ -385,6 +385,22 @@ root provisioning remains explicit owner work. A fifteen-minute helper context
 does not inherit service cancellation; journal evidence still handles abrupt
 exit. No packaging/sudo permission/Manager integration is enabled by this command.
 
+### Supervised launch (unreleased, root callers only)
+
+`LaunchRepositoryPackage` starts only the protected root-owned fixed helper,
+without arguments, using a fixed working directory and minimal environment.
+It joins request/reply completion and child exit; a valid awaiting-startup
+reply followed by nonzero exit remains an error. Child diagnostics are bounded.
+All started children are waited/reaped, including after caller cancellation.
+
+Caller cancellation closes the exchange, not the installer process. Waiting
+continues under an independent sixteen-minute budget (helper budget:
+fifteen minutes). Outer timeout may terminate the helper, does not prove all
+descendants stopped, and requires protected state/package database inspection.
+Never retry automatically after cancellation or ambiguous exit. No sudo
+delegation is provided; nonroot callers are explicitly rejected. Manager/service
+integration is still disabled.
+
 Native entrypoint integration, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
