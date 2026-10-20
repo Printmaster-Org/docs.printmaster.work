@@ -431,8 +431,42 @@ disable rereads. The full unprivileged Linux updater suite, Windows package
 regressions and updater vet/staticcheck on both platforms passed.
 There is still no helper CLI, sudo permission or automatic-update activation.
 
-**Remaining implementation:** wire restricted
-helper transport, service restart/readiness and Agent outcome reporting, and
+#### Restricted native helper input stream (unreleased)
+
+Implementation: [source commit e21cfe2](https://github.com/Printmaster-Org/printmaster/commit/e21cfe29cab24e7851364319199708c7a826e3cb).
+
+`ServePrivilegedRepositoryPackage` now connects a single pipe request to the
+independent root verifier, root-owned policy and journaled native consumer.
+This remains an in-process helper API: no executable entrypoint, sudo permission,
+Agent sender or process supervision is enabled. Trust root, metadata URL, state
+directory and policy path are trusted helper configuration, never wire fields.
+
+The pipe frame is a four-byte big-endian JSON-header length (1–4096), canonical
+JSON `{"schema":1,"target":{...}}` using the exact TUF target fields, followed by
+exactly the declared package bytes (maximum 512 MiB). Canonical decoding rejects
+unknown/duplicate/null identity fields and invalid target/schema values. There
+are no request commands, filesystem paths, policy, roots or URLs. One helper
+invocation handles only one frame; suffix bytes are not interpreted as a second
+request. The helper owns/closes the pipe on success or failure.
+
+Root ownership/state locking and administrative enablement are checked before
+accepting package data. Receipt has a two-minute total deadline and parent
+cancellation interrupts blocked pipe reads. The receipt deadline ends before
+publisher verification/native installation, which retain their own bounds.
+Pipe input is spooled to a private root-state file, then independently copied/
+authenticated through the existing protected snapshot boundary. Truncated or
+cancelled input never reaches the consumer; temporary input/snapshots are removed
+and cleanup failures remain visible.
+
+Linux WSL tests exercise actual pipes, stalled writers, cancellation, truncated/
+oversized frames, forbidden fields, private spool cleanup, and real disposable
+TUF verification of authorized/substituted stream bytes. Configured-handler
+negative tests reject missing/disabled policy and unprovisioned trust without
+creating transaction intent. This is not a native package transaction or
+privileged subprocess qualification.
+
+**Remaining implementation:** wire a fixed helper executable and Agent sender,
+process supervision, service restart/readiness and Agent outcome reporting, and
 explicit failed-transaction recovery before enabling automatic installation.
 The current package service runs as `printmaster`, not root; an authorization
 receipt supplied by that user must not become arbitrary root install authority.

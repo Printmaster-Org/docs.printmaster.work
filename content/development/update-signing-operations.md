@@ -309,6 +309,27 @@ The reader never creates, adopts or repairs configuration. Linux root tests
 cover unsafe files, strict decoding and observing a subsequent disable;
 unprivileged access fails closed.
 
+### Restricted native helper input stream (unreleased)
+
+Implementation: [source commit e21cfe2](https://github.com/Printmaster-Org/printmaster/commit/e21cfe29cab24e7851364319199708c7a826e3cb).
+
+The in-process `ServePrivilegedRepositoryPackage` handler accepts only a pipe,
+owns/closes that handle, and processes a single framed package request. Trusted
+helper configuration supplies the root, metadata URL, policy/state paths; none
+can be supplied by the requester. The wire header contains only schema `1` and
+the complete exact TUF target identity. A four-byte big-endian length bounds the
+canonical JSON header to 4096 bytes; declared package data is bounded to 512 MiB.
+Unknown/duplicate/invalid fields fail closed. Suffix data is not a second command.
+
+Root state and administrative enablement are checked before receipt. A total
+two-minute receipt deadline and parent cancellation bound stalled pipe reads,
+separately from later verification/installer deadlines. Received bytes use a
+private temporary spool and the independent authenticated snapshot boundary;
+cleanup errors are surfaced. Real pipe and disposable-key TUF tests passed in
+Linux WSL, including truncation, cancellation and substituted bytes.
+
+There is no installed helper CLI, sudo permission, Agent sender or process
+supervision yet; this handler does not activate unattended installation.
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
