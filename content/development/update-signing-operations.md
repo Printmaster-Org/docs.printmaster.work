@@ -214,7 +214,8 @@ This consumer has no CLI/sudo/automatic-update wiring and must not be activated
 before explicit recovery and service reconciliation are implemented. Native
 scripts can stop/restart the service or terminate a parent, and a bounded
 command failure may require package database repair. The root-controlled policy
-source is still to be wired; service-user policy cannot become root authority.
+source is now available through the staged file-policy wrapper below;
+service-user policy cannot become root authority.
 Tests simulate commands, not real DEB/RPM transactions.
 Native consumer: [source commit cae4bb4](https://github.com/Printmaster-Org/printmaster/commit/cae4bb484c0f40eddc4c949aa613e86fc391a258).
 
@@ -280,6 +281,33 @@ both platforms. Linux execution used the existing Ubuntu WSL distribution with
 temporary state/processes, not installed Agent services or native transactions.
 No hosted CI run, production trust provisioning or activation is implied.
 Linux lint follow-up: [source commit 5235994](https://github.com/Printmaster-Org/printmaster/commit/5235994ef6d6e31a477cce01eb62dcec0d09d4f9).
+
+### Root-owned native package policy (unreleased)
+
+Implementation: [source commit 59f8086](https://github.com/Printmaster-Org/printmaster/commit/59f8086ab8022e57e86d8335b30139be64dd134c).
+
+The staged `InstallPrivilegedRepositoryPackageFromPolicyFile` wrapper now
+rereads a root-owned administrative policy at the final installation boundary.
+Its pathname must come from trusted helper configuration, not the service
+request. It adds a local ceiling; it does not replace fleet scheduling/policy
+or authorize publisher bytes. No CLI/sudo integration or policy installation
+is enabled.
+
+The flat JSON file accepts only `schema` (must be `1`), `enabled` (must explicitly
+be `true` to install), `version_pin_strategy`, `allow_major_upgrade`,
+`target_version` and `emergency_abort`. Emergency abort rejects installation.
+Pins reuse application policy, and nonempty targets must be canonical Stable
+versions. Missing/disabled policy or unknown, duplicate, null, malformed or
+invalid fields fail explicitly. See the
+[disabled example and scope](/development/auto-update-plan/#root-owned-administrative-package-policy-unreleased).
+
+The file is bounded to 4096 bytes and must be ordinary, root-owned, single-link,
+non-executable and not group/other writable, under protected root-owned parents.
+Public read permissions are allowed because this is not secret storage.
+Descriptor inspection/no-follow/nonblocking open reject redirection/FIFOs.
+The reader never creates, adopts or repairs configuration. Linux root tests
+cover unsafe files, strict decoding and observing a subsequent disable;
+unprivileged access fails closed.
 
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).

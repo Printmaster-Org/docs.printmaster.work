@@ -387,7 +387,51 @@ state and process fixtures; they did not install packages or touch the running
 Agent. Hosted CI itself has not been pushed/run by this local batch, and
 real DEB/RPM/service transaction qualification remains open.
 
-**Remaining implementation:** wire a root-controlled policy source, restricted
+#### Root-owned administrative package policy (unreleased)
+
+Implementation: [source commit 59f8086](https://github.com/Printmaster-Org/printmaster/commit/59f8086ab8022e57e86d8335b30139be64dd134c).
+
+`InstallPrivilegedRepositoryPackageFromPolicyFile` now supplies a concrete
+policy reader to the staged native installer. Trusted helper configuration
+supplies the policy pathname; it is never part of the service user's request.
+The policy is reread at the final application-policy check, not cached from
+discovery. This is an additional **local administrative ceiling**, not a
+replacement for the Agent's fleet policy/scheduling or publisher authentication.
+
+The clean absolute path must have protected root-owned ancestors, and the
+opened file must be root-owned, ordinary, single-link, non-executable and not
+group/other writable. Descriptor-bound checks and no-follow/nonblocking open
+reject symlinks and FIFOs without hanging. Read-only public `0644` policy files
+are allowed; secret values do not belong here. Files are limited to 4096 bytes.
+Missing, disabled, malformed, unknown/duplicate/null-valued fields and
+unsupported schema/pins fail closed. No file is created or permissions repaired.
+
+The flat JSON schema is:
+
+```json
+{
+  "schema": 1,
+  "enabled": false,
+  "version_pin_strategy": "major",
+  "allow_major_upgrade": false,
+  "target_version": "",
+  "emergency_abort": false
+}
+```
+
+This disabled example is documentation only; no policy is provisioned by the
+code. Installation requires explicit `enabled: true`; emergency abort rejects
+all candidates. Pin semantics reuse the existing application-policy logic.
+A nonempty target must be canonical Stable `X.Y.Z`. No root, URL, state path,
+command or scheduling controls may be supplied through this schema.
+
+Root policy file/decoder tests passed twice in Linux WSL, including unsafe
+ownership/permissions, links, FIFOs, missing/oversized input and administrative
+disable rereads. The full unprivileged Linux updater suite, Windows package
+regressions and updater vet/staticcheck on both platforms passed.
+There is still no helper CLI, sudo permission or automatic-update activation.
+
+**Remaining implementation:** wire restricted
 helper transport, service restart/readiness and Agent outcome reporting, and
 explicit failed-transaction recovery before enabling automatic installation.
 The current package service runs as `printmaster`, not root; an authorization
