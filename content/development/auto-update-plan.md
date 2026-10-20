@@ -311,6 +311,26 @@ the existing Ubuntu WSL distribution using temporary test directories, without
 running installers or touching services. This adds actual Linux file-sync,
 lock and ownership evidence, not native DEB/RPM transaction qualification.
 
+#### Read-only native recovery assessment (unreleased)
+
+Implementation: [source commit f5a19c5](https://github.com/Printmaster-Org/printmaster/commit/f5a19c56fd8e2ae3a9f2338e0437fc6d68382ae7).
+
+`AssessPrivilegedRepositoryPackage` uses the same protected state lock and
+strict journal reader, then queries only the installed `printmaster-agent`
+identity through the fixed native tools. Installation and recovery now share
+the exact native query/parser, including architecture, Debian installed status
+and supported RPM epoch/release checks. It reports `candidate-installed`,
+`previous-installed` or `owner-repair-required` for a different installed
+version. None of these is a claim about the running service or authorization
+to retry. Missing/broken/ambiguous package database results fail explicitly.
+
+Assessment does not install, restart, fetch metadata, clear records or roll
+back. All phases remain blocked for another install after assessment. Simulated
+DEB/RPM queries, error/cancellation cases and unchanged-evidence checks passed
+twice on Linux WSL, alongside the root intake/journal tests. Portable package
+regressions and Windows vet/staticcheck passed. Native installer qualification
+and actual service reconciliation are separate gates.
+
 **Remaining implementation:** wire explicit transaction reconciliation, a
 root-controlled policy source, restricted helper transport and service startup
 reconciliation before enabling the consumer.

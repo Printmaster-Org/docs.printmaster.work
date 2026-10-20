@@ -245,6 +245,16 @@ journal, ownership/lock and inspection tests passed in Ubuntu WSL with temporary
 test state; no real package installation or service was touched.
 Protected inspection: [source commit ed6d1d9](https://github.com/Printmaster-Org/printmaster/commit/ed6d1d9cb67f75fe5faa24997ace9f552a730ebd).
 
+`AssessPrivilegedRepositoryPackage` additionally performs a read-only native
+installed-package query under that lock. It shares installation's identity
+parser and reports `candidate-installed`, `previous-installed` or
+`owner-repair-required` for an unexpected version. Broken/missing/ambiguous
+native database results fail visibly. Assessment never restarts, installs,
+replays, resets or unblocks the run and cannot establish service health.
+DEB/RPM command simulations and preservation checks passed twice in Linux WSL;
+this is not a real native transaction qualification.
+Recovery assessment: [source commit f5a19c5](https://github.com/Printmaster-Org/printmaster/commit/f5a19c56fd8e2ae3a9f2338e0437fc6d68382ae7).
+
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
