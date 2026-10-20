@@ -334,8 +334,9 @@ source checks and transmitted-byte hashing. It closes its output on failure or
 completion and never substitutes sender validation for independent root trust.
 Request writer: [source commit ab8182b](https://github.com/Printmaster-Org/printmaster/commit/ab8182bb535c784dbecaae0bc980f42b703a8db9).
 Real Linux pipe tests cover blocked/closed readers and invalid/cancelled input.
-There is no installed helper CLI, sudo permission, Manager sender wiring or
-process supervision yet; these primitives do not activate unattended installation.
+The fixed CLI and root-only process supervisor are implemented below but not
+installed. Sudo permission and Manager sender wiring remain absent; these
+primitives do not activate unattended installation.
 
 The response wrapper now returns a single canonical length-prefixed outcome:
 `rejected`, `inspection-required` or `awaiting-startup`, with exact target and
@@ -368,6 +369,8 @@ Subprocess exchange: [source commit 2d31474](https://github.com/Printmaster-Org/
 
 ### Fixed Linux helper command (unreleased, not installed)
 
+Implementation: [source commit 4a638ea](https://github.com/Printmaster-Org/printmaster/commit/4a638ea).
+
 `agent/cmd/printmaster-agent-update` is now buildable for Linux, intended for
 `/usr/libexec/printmaster-agent-update`. It accepts no arguments and no
 environment-controlled configuration. It reads protected fixed files:
@@ -387,6 +390,8 @@ exit. No packaging/sudo permission/Manager integration is enabled by this comman
 
 ### Supervised launch (unreleased, root callers only)
 
+Implementation: [source commit 2f4ce1f](https://github.com/Printmaster-Org/printmaster/commit/2f4ce1f).
+
 `LaunchRepositoryPackage` starts only the protected root-owned fixed helper,
 without arguments, using a fixed working directory and minimal environment.
 It joins request/reply completion and child exit; a valid awaiting-startup
@@ -401,7 +406,25 @@ Never retry automatically after cancellation or ambiguous exit. No sudo
 delegation is provided; nonroot callers are explicitly rejected. Manager/service
 integration is still disabled.
 
-Native entrypoint integration, durable recovery and runtime qualification are still
+### Isolated real Debian rehearsal (unreleased)
+
+The opt-in root test `TestPrivilegedRepositoryPackageIsolatedDebian` uses real
+DEB builds and native installation/query commands, disposable publisher keys,
+root policy, subprocess exchange and durable journals. Only test code redirects
+dpkg's installation root, administrative database and log to a temporary tree.
+Fixtures are script-free and contain no service units; production accepts no
+request-controlled redirection. Installed packages/services are not modified.
+
+Three local repeated runs passed success and missing-dependency cases:
+successful `1.0.0` → `1.1.0` installation records `awaiting-startup`; the real
+dependency failure leaves an unpacked/unconfigured candidate and records
+`recovery-required`, not rollback or success. Both journals block replay without
+changing evidence. CI now explicitly opts into this isolated test (unpushed;
+remote execution not yet observed). This is not RPM or real service qualification.
+Reproduction and remaining boundaries are in the
+[native update plan](/development/auto-update-plan/#real-isolated-debian-transaction-qualification-unreleased).
+
+Native entrypoint integration, failed-transaction repair and installed-service qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
 ### B2 owner setup and read-only preflight

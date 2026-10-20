@@ -100,9 +100,9 @@ by the historical checklist numbering:
 2. **Implemented, pending platform qualification:** failure-safe Windows
    binary/MSI helper handoffs, bounded deadlines and durable run-bound outcomes.
    Real MSI/service behavior and failure recovery still require qualification.
-3. **Authentication and staged native consumer implemented:** finish restricted
-   Linux helper/policy wiring, failed-transaction recovery and native package
-   qualification before enabling unattended installation.
+3. **Fixed helper/supervision and isolated DEB transaction tests implemented:**
+   finish Linux packaging/Manager/service wiring, failed-transaction recovery,
+   real service and RPM qualification before enabling unattended installation.
 4. Client trust-state lifecycle, clock/expiry diagnostics and explicit repair.
 5. Truthful bounded update UX.
 6. Supported 0.31.x, mixed-version and long-offline migration qualification.
@@ -544,6 +544,8 @@ on both platforms. Docs tests, Hugo and generated link/anchor checks passed.
 
 #### Fixed native helper executable (unreleased, not installed)
 
+Implementation: [source commit 4a638ea](https://github.com/Printmaster-Org/printmaster/commit/4a638ea).
+
 The Linux-only `agent/cmd/printmaster-agent-update` executable now calls the
 production root intake, file policy and response handler with a fifteen-minute
 independent budget. It accepts **no arguments** and reads no environment-based
@@ -569,6 +571,8 @@ independent context, so journal/recovery limitations remain unchanged.
 
 #### Supervised fixed helper launch (unreleased, root callers only)
 
+Implementation: [source commit 2f4ce1f](https://github.com/Printmaster-Org/printmaster/commit/2f4ce1f).
+
 `LaunchRepositoryPackage` validates the fixed helper's root-owned ordinary
 executable and protected ancestors, starts it with no arguments, a fixed `/`
 working directory and minimal native-command environment, then joins duplex
@@ -584,6 +588,41 @@ This is not a guarantee that every descendant has stopped or that the package
 database is repaired. No service-user sudo delegation is enabled; nonroot launch
 fails explicitly. Subprocess tests cover early rejection, stalls, nonzero exit
 after reply, launch failure and survival of caller cancellation.
+
+#### Real isolated Debian transaction qualification (unreleased)
+
+The opt-in root test `TestPrivilegedRepositoryPackageIsolatedDebian` now builds
+script-free DEB fixtures and uses **real** `dpkg-deb`, `dpkg` and `dpkg-query`
+through the independently authenticated subprocess exchange. Test-only command
+redirection pins `--root`, `--admindir` and the dpkg log to a temporary filesystem;
+the host package database, installed Agent and services are not modified.
+No fixture root, command or override is accepted by the production helper.
+
+The `1.0.0` → `1.1.0` success case checks installed payload/database, exact
+target/run and `awaiting-startup` journal. An intentionally missing dependency
+produces a real nonzero installer exit, leaves the candidate **unpacked, not
+configured**, and records `recovery-required`. The shared installed-identity
+parser rejects that incomplete state. Both cases attempt a second handoff and
+verify the active journal blocks replay without changing evidence or leaking
+temporary package spools. These tests passed three times under existing Ubuntu
+WSL. CI explicitly opts in after its ordinary root tests; remote CI execution
+has not been observed for these unpushed changes.
+
+To reproduce on a disposable Linux checkout with existing dpkg tools:
+
+```sh
+cd agent
+go test -c -o /tmp/printmaster-package-intake.test ./autoupdate
+sudo env PRINTMASTER_TEST_ISOLATED_DEB=1 /tmp/printmaster-package-intake.test \
+  -test.v -test.timeout=3m \
+  '-test.run=^TestPrivilegedRepositoryPackageIsolatedDebian$'
+rm /tmp/printmaster-package-intake.test
+```
+
+This closes **isolated Debian byte-to-database and dependency-failure testing**,
+not real installed service qualification: fixtures contain no maintainer scripts
+or systemd units. RPM transactions, service restart/readiness, helper packaging
+and production authority remain open.
 
 **Remaining implementation:** package the fixed helper and wire the Manager sender,
 service restart/readiness and Agent outcome reporting, and
