@@ -542,7 +542,32 @@ Final validation passed three runs of the Linux root package selection, the
 full unprivileged Linux and Windows updater suites, and updater vet/staticcheck
 on both platforms. Docs tests, Hugo and generated link/anchor checks passed.
 
-**Remaining implementation:** wire a fixed helper executable and Manager sender,
+#### Fixed native helper executable (unreleased, not installed)
+
+The Linux-only `agent/cmd/printmaster-agent-update` executable now calls the
+production root intake, file policy and response handler with a fifteen-minute
+independent budget. It accepts **no arguments** and reads no environment-based
+configuration. Its intended installed path is
+`/usr/libexec/printmaster-agent-update`; this slice neither packages it nor grants
+sudo permission. Missing configuration fails closed before package modification.
+
+Fixed root-controlled files are `/etc/printmaster/update-helper.json` (schema
+`1` and `metadata_url` only), `/etc/printmaster/update-publisher-root.json`
+(independently provisioned public TUF root), and
+`/etc/printmaster/update-policy.json` (administrative policy above).
+The root state path is fixed at `/var/lib/printmaster-update`.
+Configuration uses the same protected descriptor reader as policy, with a
+4096-byte config limit and 1 MiB public-root limit. The metadata URL must be HTTPS
+without credentials, query or fragment. Duplicate/unknown/case-alias fields
+are rejected. No Server response, request field, flag or environment value may
+provision initial publisher authority. These files are not created by the helper.
+
+This is a buildable executable, not activated package integration. Initial root
+provisioning remains an explicit owner operation; do not copy disposable test
+roots into production. Native scripts may terminate the helper despite its
+independent context, so journal/recovery limitations remain unchanged.
+
+**Remaining implementation:** package the fixed helper and wire the Manager sender,
 process supervision, service restart/readiness and Agent outcome reporting, and
 explicit failed-transaction recovery before enabling automatic installation.
 The current package service runs as `printmaster`, not root; an authorization

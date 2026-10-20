@@ -366,7 +366,26 @@ nonzero exit after valid awaiting-startup output. No real package/service or
 production helper activation is implied.
 Subprocess exchange: [source commit 2d31474](https://github.com/Printmaster-Org/printmaster/commit/2d31474f099101ee9e58f839a0c7c1f55e3eb649).
 
-Native entrypoint wiring, durable recovery and runtime qualification are still
+### Fixed Linux helper command (unreleased, not installed)
+
+`agent/cmd/printmaster-agent-update` is now buildable for Linux, intended for
+`/usr/libexec/printmaster-agent-update`. It accepts no arguments and no
+environment-controlled configuration. It reads protected fixed files:
+
+- `/etc/printmaster/update-helper.json`: only schema `1` and an HTTPS
+  `metadata_url` without credentials/query/fragment (4096-byte maximum).
+- `/etc/printmaster/update-publisher-root.json`: independently provisioned
+  public TUF root (1 MiB maximum).
+- `/etc/printmaster/update-policy.json`: administrative enablement/pins above.
+
+Its state directory is fixed at `/var/lib/printmaster-update`. All files use
+root ownership/no-follow/regular-file checks; missing/unsafe configuration fails
+closed and is never repaired or initialized from request/Server data. Production
+root provisioning remains explicit owner work. A fifteen-minute helper context
+does not inherit service cancellation; journal evidence still handles abrupt
+exit. No packaging/sudo permission/Manager integration is enabled by this command.
+
+Native entrypoint integration, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
 ### B2 owner setup and read-only preflight
