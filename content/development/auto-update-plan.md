@@ -212,16 +212,57 @@ passed. Linux staticcheck also exposed pre-existing Unix Windows-helper stub
 warnings (`SA4023` and `ST1005`), outside this intake slice; they remain a CI
 lint follow-up rather than a claimed clean Linux lint run.
 
-**Remaining implementation:** wire a constrained native installer to consume
-the independently authenticated root-side snapshot.
+#### Native package consumer and privileged policy checks (unreleased)
+
+Implementation: [source commit cae4bb4](https://github.com/Printmaster-Org/printmaster/commit/cae4bb484c0f40eddc4c949aa613e86fc391a258).
+
+An in-process `InstallPrivilegedRepositoryPackage` consumer now builds on
+the independent root intake above. It rechecks native package fields from the
+authenticated snapshot, queries the native installed-package database and
+applies the existing application policy using a trusted helper-supplied policy
+provider. That provider must read root-controlled configuration, not the
+service user's mutable policy/cache or request. Invalid/unavailable policy,
+emergency abort, downgrades and disallowed pins fail before installation.
+Equal-version packages require owner-managed repair; there is no inferred
+reinstall authorization from a binary digest. Noncanonical installed versions,
+RPM epochs/releases outside the supported shape and partially installed Debian
+packages also require owner-managed migration/repair.
+
+The consumer invokes only the exact root-owned snapshot with
+`dpkg --refuse-downgrade --install -- <snapshot>` or
+`rpm --upgrade -- <snapshot>`. It does not run APT/DNF/YUM again, fetch
+dependencies, remove packages or bypass dependency checks. Debian's refusal
+flag also protects against a concurrent owner-managed transaction moving the
+installed version ahead after the policy check. Native command failures remain
+visible, and a successful command must be followed by an installed identity,
+architecture and version check. This is not startup validation.
+
+The privileged runner permits only fixed `/usr/bin/` package executables,
+checks their protected root ownership and starts them with a minimal explicit
+environment, rather than inheriting service-user loader/plugin/configuration
+variables. Commands retain bounded deadlines and output. Deadline termination
+can leave package-manager state needing repair; maintainer scripts may restart
+the service or terminate a parent. These are **not yet durable transactions**.
+No helper CLI, sudo permission or automatic-update entrypoint invokes this
+consumer. The existing Agent handoff still fails closed.
+
+Portable tests simulate native commands while checking exact query/install
+arguments, pre/post identity, supported policies, database/command failures,
+snapshot substitution and cancellation. Full updater tests and Windows
+vet/staticcheck pass; the Linux implementation cross-compiles and passes vet.
+No real DEB/RPM transaction or hosted Linux runtime is qualified by these tests.
+
+**Remaining implementation:** wire durable native outcomes/recovery, a
+root-controlled policy source, restricted helper transport and service startup
+reconciliation before enabling the consumer.
 The current package service runs as `printmaster`, not root; an authorization
 receipt supplied by that user must not become arbitrary root install authority.
 The shared file check is a prerequisite, not a privileged installer: callers
 must prevent modification until consumption, and may not verify one file then
 install another by version or mutable pathname. Native package identity
-checks at that privileged boundary, no-downgrade/pin enforcement, dependency
-handling, durable outcomes, startup validation
-and Linux runtime qualification remain part of that follow-up.
+checks and no-downgrade/pin enforcement now exist in the staged consumer.
+Dependency/recovery behavior, durable outcomes, startup validation and Linux
+runtime qualification remain part of that follow-up.
 
 The development Windows machine intentionally retains owner-approved
 `RemoteSigned`; reverting its policy is not a pending user action. This

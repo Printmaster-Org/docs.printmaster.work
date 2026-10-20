@@ -197,7 +197,27 @@ native installation command is enabled. Its trusted root/metadata URL/state
 directory must never be taken from an unprivileged request. Hosted root tests
 are prepared, not yet remotely executed; no production trust is provisioned.
 Root-side intake: [source commit 2a72cac](https://github.com/Printmaster-Org/printmaster/commit/2a72cac0bfb9f10a68b1c5f5acbdbfef21461b0a).
-Native installer wiring, durable recovery and runtime qualification are still
+The staged in-process `InstallPrivilegedRepositoryPackage` consumer now rechecks
+snapshot package identity and installed native-database identity, enforces the
+shared no-downgrade/pin policy from a trusted helper-supplied policy provider,
+and rejects equal-version reinstall without owner-managed repair. It consumes
+only the authenticated snapshot through fixed root-owned native tools:
+`dpkg --refuse-downgrade --install -- <snapshot>` or
+`rpm --upgrade -- <snapshot>`. It does not resolve/download dependencies or
+select a second repository artifact. A minimal explicit command environment
+excludes inherited loader/plugin configuration variables. Native success is
+checked against the installed package identity/version, not treated as service
+startup success. Emergency abort, unsafe policy, native failures and snapshot
+substitution fail visibly.
+
+This consumer has no CLI/sudo/automatic-update wiring and must not be activated
+before durable outcomes and service reconciliation are implemented. Native
+scripts can stop/restart the service or terminate a parent, and a bounded
+command failure may require package database repair. The root-controlled policy
+source is still to be wired; service-user policy cannot become root authority.
+Tests simulate commands, not real DEB/RPM transactions.
+Native consumer: [source commit cae4bb4](https://github.com/Printmaster-Org/printmaster/commit/cae4bb484c0f40eddc4c949aa613e86fc391a258).
+Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
 ### B2 owner setup and read-only preflight
