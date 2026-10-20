@@ -328,8 +328,14 @@ private temporary spool and the independent authenticated snapshot boundary;
 cleanup errors are surfaced. Real pipe and disposable-key TUF tests passed in
 Linux WSL, including truncation, cancellation and substituted bytes.
 
-There is no installed helper CLI, sudo permission, Agent sender or process
-supervision yet; this handler does not activate unattended installation.
+The matching `WriteRepositoryPackageRequest` writer now emits exact canonical
+frames to an owned pipe with bounded/cancellable writes, offset-preserving
+source checks and transmitted-byte hashing. It closes its output on failure or
+completion and never substitutes sender validation for independent root trust.
+Request writer: [source commit ab8182b](https://github.com/Printmaster-Org/printmaster/commit/ab8182bb535c784dbecaae0bc980f42b703a8db9).
+Real Linux pipe tests cover blocked/closed readers and invalid/cancelled input.
+There is no installed helper CLI, sudo permission, Manager sender wiring or
+process supervision yet; these primitives do not activate unattended installation.
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 

@@ -465,7 +465,21 @@ negative tests reject missing/disabled policy and unprovisioned trust without
 creating transaction intent. This is not a native package transaction or
 privileged subprocess qualification.
 
-**Remaining implementation:** wire a fixed helper executable and Agent sender,
+#### Bounded Agent-side native request writer (unreleased)
+
+Implementation: [source commit ab8182b](https://github.com/Printmaster-Org/printmaster/commit/ab8182bb535c784dbecaae0bc980f42b703a8db9).
+
+`WriteRepositoryPackageRequest` now writes the canonical single-frame protocol
+to an owned pipe, closing it on every outcome. It checks the open source's exact
+length/hash before sending, preserves its offset and hashes transmitted bytes
+again to detect mutation during transmission. A two-minute total send deadline
+and parent cancellation interrupt blocked writes. Source files remain owned by
+the caller. Sending never grants authority; the independent root verifier still
+authenticates received bytes. Linux pipe tests cover exact frame shape, invalid
+sources, blocked/closed readers, cancellation and offset/handle ownership.
+The writer is not yet called by the Agent update Manager.
+
+**Remaining implementation:** wire a fixed helper executable and Manager sender,
 process supervision, service restart/readiness and Agent outcome reporting, and
 explicit failed-transaction recovery before enabling automatic installation.
 The current package service runs as `printmaster`, not root; an authorization
