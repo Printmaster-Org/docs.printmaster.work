@@ -282,6 +282,21 @@ unprovisioned root after restart. Passing would qualify this real manager/
 helper/service/startup handoff, not the full Server-triggered delivery path,
 MSI, failure injection on a real service, or production activation.
 
+The first owner-run attempt on 2026-10-20 was rejected before helper launch:
+Windows PowerShell 5.1 inherited PowerShell 7 module search paths through the
+native test runner and could not load `Microsoft.PowerShell.Security`.
+The pending handoff was cleared, no helper outcome was created, and the
+owner-stopped service remained stopped. The launcher now resolves the system
+Windows PowerShell executable and seeds only its child-process module path
+with that installation's built-in modules, for both policy inspection and
+detached helper execution. Machine policy is still honored; no machine/user
+environment or policy is changed. Regression coverage exercises command and
+script-file execution with an incompatible inherited security module.
+This fixes the observed launch blocker; a successful live rerun is still
+required.
+
+Launch correction: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/e16a1682d0b25617c584c84f7c1802f263f51c25).
+
 ### Installer permissions and safe-path implementation (unreleased)
 
 Implementation: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/da0f9e2c3714bea251512f3363328f9b8d21d22a).
