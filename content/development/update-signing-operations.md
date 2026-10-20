@@ -350,6 +350,22 @@ evidence or permission to replay; preserve and inspect protected root journals.
 Linux pipe outcome/cancellation tests passed; installed helper and Manager
 outcome reporting remain unwired.
 Outcome replies: [source commit 095a65e](https://github.com/Printmaster-Org/printmaster/commit/095a65eb1500635f64e86dfc09b3abff085cbae6).
+The new `ExchangeRepositoryPackage` joins concurrent send/reply handling and
+cancels the other direction on rejection or failure, preventing pipe-capacity
+deadlocks. Callers must still supervise/wait the trusted child: a valid reply
+does not imply successful exit, readiness or retry authority. Failed partial
+exchanges require protected-state inspection.
+
+Real subprocess tests found inherited blocking standard streams were not
+deadline-capable in Go. Owned pipe descriptors are now duplicated close-on-exec
+and registered nonblocking before I/O; no requester pathname is opened. Linux
+tests use an actual disposable child with real pipes, independent disposable TUF,
+root policy and journals, but simulated native commands. Failure cases include
+early rejection/exit, malformed replies, a stalled child, native failure and
+nonzero exit after valid awaiting-startup output. No real package/service or
+production helper activation is implied.
+Subprocess exchange: [source commit 2d31474](https://github.com/Printmaster-Org/printmaster/commit/2d31474f099101ee9e58f839a0c7c1f55e3eb649).
+
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 

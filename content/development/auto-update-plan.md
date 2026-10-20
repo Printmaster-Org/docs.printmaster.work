@@ -507,6 +507,41 @@ frames, blocked reads, owned-handle cleanup and rejection after cancellation.
 The outcome wrapper is not yet connected to an installed helper process or the
 Manager's progress reporting.
 
+#### Duplex exchange and real subprocess rehearsal (unreleased)
+
+Implementation: [source commit 2d31474](https://github.com/Printmaster-Org/printmaster/commit/2d31474f099101ee9e58f839a0c7c1f55e3eb649).
+
+`ExchangeRepositoryPackage` now sends the package and reads the outcome
+concurrently. A failed send cancels a blocked reply read; a rejected/invalid
+reply cancels a blocked sender, so early helper rejection cannot deadlock behind
+pipe capacity. Both directions are joined before return and owned handles are
+closed. Partial exchanges fail as inspection-required rather than implying a
+safe retry. Valid negative outcomes also return an error. The caller still owns
+and must supervise/wait the trusted helper process; a valid awaiting-startup
+reply alone does not establish a successful process exit.
+
+Real Linux child-process tests exposed inherited blocking stdin/stdout handles
+that Go had not registered for deadline polling. The transport now duplicates
+owned FIFO descriptors with close-on-exec and nonblocking setup before
+registering them with Go's poller. Deadline cancellation therefore works for
+real inherited pipes, not only `os.Pipe` fixtures; no pathname is opened.
+
+The rehearsal runs the test executable as a disposable helper with real framed
+pipe I/O, independent disposable-key TUF verification, root-owned administrative
+policy and durable journal writes. Only native package commands are simulated.
+It covers completed native consumption, installer failure, disabled policy,
+untrusted root, early exit, malformed reply, a stalled child and nonzero exit
+after a valid reply. Parent checks both exchange and exit independently, and
+checks saved target/run/phases and temporary-input cleanup. A send-side source
+failure also proves prompt cancellation of the reply reader.
+
+This is helper transport qualification, not a native DEB/RPM transaction,
+service qualification or a production helper entrypoint. No sudo, CLI, installed
+Agent/service changes or unattended activation are added.
+Final validation passed three runs of the Linux root package selection, the
+full unprivileged Linux and Windows updater suites, and updater vet/staticcheck
+on both platforms. Docs tests, Hugo and generated link/anchor checks passed.
+
 **Remaining implementation:** wire a fixed helper executable and Manager sender,
 process supervision, service restart/readiness and Agent outcome reporting, and
 explicit failed-transaction recovery before enabling automatic installation.
