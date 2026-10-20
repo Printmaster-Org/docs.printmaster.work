@@ -10,6 +10,28 @@ End-to-end tests verify that the agent and server work together correctly. These
 
 ## Quick Start
 
+### Current qualification boundary
+
+The CI-equivalent route builds and starts **only** the `server` and `agent`
+Compose services, waits for `/health`, stops both before seeding their initialized
+SQLite databases with `server_data.sql` and `agent_data.sql`, then restarts and
+waits again. Do not seed a live database through a second SQLite implementation.
+Current data fixtures contain eight devices per database.
+
+Run the tagged tests from the host's `tests` module, with explicit
+`E2E_SERVER_URL`, `E2E_AGENT_URL` and `E2E_ADMIN_PASSWORD` environment variables,
+using `go test -tags=e2e -v -count=1 ./...`. Defaults for the HTTP-only Compose
+environment are `http://localhost:9090` and `http://localhost:8080`.
+On a shared machine, use a private Compose project, container/network names,
+loopback ports and disposable data mounts; do not adopt or delete existing test
+databases or interrupt installed services. Tear down only that test project.
+
+The optional Compose `test-runner` service is **not** this qualification route:
+its existing configuration still targets the old Server port and does not
+reliably preserve the Go runner's exit status through its shell pipeline.
+These runner-service issues remain open; do not treat that service's exit
+status as qualification evidence. The actual CI workflow runs Go on the host.
+
 ### Run E2E Tests Locally
 
 ```bash
@@ -42,7 +64,7 @@ The E2E tests use Docker Compose to create an isolated test environment:
 │                                                         │
 │  ┌─────────────┐         ┌─────────────┐              │
 │  │   Server    │◀───────▶│    Agent    │              │
-│  │  :8443      │   WS    │   :8080     │              │
+│  │  :9090      │   WS    │   :8080     │              │
 │  │             │         │             │              │
 │  │ SQLite DB   │         │ SQLite DB   │              │
 │  └─────────────┘         └─────────────┘              │
@@ -68,13 +90,13 @@ Pre-seeded SQLite databases provide predictable test data:
 **Server Database:**
 - 1 tenant: "E2E Test Tenant"
 - 1 registered agent: "e2e-test-agent"
-- 5 test devices (HP, Kyocera, Brother, Lexmark, Xerox)
+- 8 test devices in the current data-only seed
 - Sample metrics for each device
 - Admin user (password: `e2e-test-password`)
 
 **Agent Database:**
 - Fixed agent UUID: `e2e00000-0000-0000-0000-000000000001`
-- 5 test devices (matching server)
+- 8 test devices (matching server)
 - Scanner configuration (discovery disabled)
 - Server connection settings
 
@@ -91,8 +113,8 @@ Pre-seeded SQLite databases provide predictable test data:
 ## Test Categories
 
 ### 1. Health Checks
-- Server `/api/health` endpoint
-- Agent `/api/health` endpoint
+- Server `/health` endpoint
+- Agent `/health` endpoint
 
 ### 2. Agent Registration
 - Agent registers with server on startup
@@ -322,4 +344,3 @@ func TestWebSocketProxyComplete(t *testing.T) {
 - Go testing: https://go.dev/doc/tutorial/add-a-test
 - Integration testing: https://go.dev/wiki/TableDrivenTests
 - Test fixtures: https://github.com/golang/go/wiki/TestFixtures
-
