@@ -297,6 +297,20 @@ required.
 
 Launch correction: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/e16a1682d0b25617c584c84f7c1802f263f51c25).
 
+The second owner-run attempt passed policy inspection but timed out while
+awaiting helper completion. Inspection found a stopped service, no remaining
+helper process, no helper outcome, and a retained pending handoff. A harmless
+temporary-script reproduction showed Windows PowerShell exiting before script
+execution with `DETACHED_PROCESS`. The launcher now uses `CREATE_NO_WINDOW`
+with a separate process group instead. A native child-process regression
+requires the helper to write its marker only after its launching parent exits,
+covering both script execution and independent lifetime. Recovery must retain
+the failed run's pending/progress evidence and verify the unchanged baseline
+and absent helper before explicitly clearing that handoff for another attempt.
+A successful live rerun remains required.
+
+Console-free launch correction: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/6c8da8ce0d2528ca3aeb286395628cd88097f8c9).
+
 ### Installer permissions and safe-path implementation (unreleased)
 
 Implementation: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/da0f9e2c3714bea251512f3363328f9b8d21d22a).
