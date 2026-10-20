@@ -479,6 +479,34 @@ authenticates received bytes. Linux pipe tests cover exact frame shape, invalid
 sources, blocked/closed readers, cancellation and offset/handle ownership.
 The writer is not yet called by the Agent update Manager.
 
+#### Bounded native helper outcome replies (unreleased)
+
+Implementation: [source commit 095a65e](https://github.com/Printmaster-Org/printmaster/commit/095a65eb1500635f64e86dfc09b3abff085cbae6).
+
+`ServePrivilegedRepositoryPackageResponse` now emits one bounded canonical
+length-prefixed JSON outcome over an owned response pipe. Replies contain only
+schema, status, optional exact target and root-generated run identifier, never
+native command output, policy or local paths. Allowed statuses are `rejected`,
+`inspection-required` and `awaiting-startup`; there is no transport success/
+startup-confirmed status. Failure after entering the native consumer or after
+native completion/cleanup is conservatively `inspection-required`.
+
+`ReadRepositoryPackageOutcome` checks strict canonical fields, schema, status
+and run shape, and matches any returned target against the exact request.
+Actionable replies require target identity; awaiting-startup also requires the
+run identifier. Early rejection may have no identity because configuration or
+input parsing failed first. Invalid/partial replies return no actionable data.
+Reads are bounded to fifteen minutes (or the earlier parent deadline); a
+separate five-second reply budget allows a cancelled helper to report failure
+without waiting indefinitely for a reader. Missing replies remain ambiguous
+and must not cause blind installation retry. Protected journals remain the
+durable authority; transport replies do not clear blockers or authorize repair.
+
+Linux pipe tests cover valid/invalid/wrong-target outcomes, truncated/oversized
+frames, blocked reads, owned-handle cleanup and rejection after cancellation.
+The outcome wrapper is not yet connected to an installed helper process or the
+Manager's progress reporting.
+
 **Remaining implementation:** wire a fixed helper executable and Manager sender,
 process supervision, service restart/readiness and Agent outcome reporting, and
 explicit failed-transaction recovery before enabling automatic installation.

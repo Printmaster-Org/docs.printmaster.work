@@ -336,6 +336,20 @@ Request writer: [source commit ab8182b](https://github.com/Printmaster-Org/print
 Real Linux pipe tests cover blocked/closed readers and invalid/cancelled input.
 There is no installed helper CLI, sudo permission, Manager sender wiring or
 process supervision yet; these primitives do not activate unattended installation.
+
+The response wrapper now returns a single canonical length-prefixed outcome:
+`rejected`, `inspection-required` or `awaiting-startup`, with exact target and
+root-generated run identity where available. It never reports startup success
+or sends command output/configuration/paths to the Agent. Entered-consumer or
+post-completion cleanup failures require inspection; early configuration/input
+rejection may lack identity. Reader validation rejects malformed/partial,
+wrong-target or success-shaped replies and returns no actionable data on error.
+A bounded fifteen-minute read and independently bounded five-second failure
+reply handle missing readers/writers and cancellation. Transport is not durable
+evidence or permission to replay; preserve and inspect protected root journals.
+Linux pipe outcome/cancellation tests passed; installed helper and Manager
+outcome reporting remain unwired.
+Outcome replies: [source commit 095a65e](https://github.com/Printmaster-Org/printmaster/commit/095a65eb1500635f64e86dfc09b3abff085cbae6).
 Native entrypoint wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
