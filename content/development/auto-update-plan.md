@@ -274,11 +274,12 @@ and hash using `PRINTMASTER_LIVE_WINDOWS_CANDIDATE` and
 `-test.run=^TestLiveWindowsBinaryUpdate$`. Clear those environment variables
 afterward. Do not run the whole compiled test suite elevated with the opt-in set.
 
-**Prepared, not yet live-qualified.** This uses an injected fixture artifact/
+**Live raw-binary handoff qualified on the owner's Windows test Agent on
+2026-10-20.** This uses an injected fixture artifact/
 manifest client and a real loopback TUF verifier, not the fleet Server's
 transport or embedded-root provisioning. Neither test keys nor a test root
 are installed in the Agent; normal unattended updates remain blocked by its
-unprovisioned root after restart. Passing would qualify this real manager/
+unprovisioned root after restart. The passing rehearsal qualifies this real manager/
 helper/service/startup handoff, not the full Server-triggered delivery path,
 MSI, failure injection on a real service, or production activation.
 
@@ -292,8 +293,8 @@ with that installation's built-in modules, for both policy inspection and
 detached helper execution. Machine policy is still honored; no machine/user
 environment or policy is changed. Regression coverage exercises command and
 script-file execution with an incompatible inherited security module.
-This fixes the observed launch blocker; a successful live rerun is still
-required.
+This fixed the first observed launch blocker; the next attempt exposed the
+separate process-creation issue below.
 
 Launch correction: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/e16a1682d0b25617c584c84f7c1802f263f51c25).
 
@@ -307,9 +308,29 @@ requires the helper to write its marker only after its launching parent exits,
 covering both script execution and independent lifetime. Recovery must retain
 the failed run's pending/progress evidence and verify the unchanged baseline
 and absent helper before explicitly clearing that handoff for another attempt.
-A successful live rerun remains required.
+The subsequent live rerun passed as recorded below.
 
 Console-free launch correction: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/6c8da8ce0d2528ca3aeb286395628cd88097f8c9).
+
+The owner ran the explicit recovery-and-retry script from elevated PowerShell 7.
+It archived the unstarted `run-1792500622961` evidence before retrying.
+`TestLiveWindowsBinaryUpdate` passed in **15.67 seconds** for
+`run-1792501563850`, advancing the exact approved `0.32.0.2-dev` baseline to
+`0.32.0.3-dev` built from `6c8da8c`. Its success assertions verified the
+run-bound helper success, installed candidate identity, running service,
+startup progress success and pending-handoff removal. The installed version
+command reported build time `2026-10-20T12:59:01Z`; the owner also confirmed
+the Server still recognized the same Agent and supplied a screenshot showing
+it active on `0.32.0.3-dev`.
+
+The unelevated assistant independently confirmed the running protected-path
+service after this pass, but could no longer read the protected helper/progress
+files. Those result assertions are evidenced by the owner's elevated test
+output, not a second direct read. No ACL relaxation was attempted. Retain the
+backup and failed-run archive; restore the owner-managed `AllSigned` policy
+when the approved test window ends. Real-service failure/recovery injection,
+MSI, the full Server-triggered transport and production trust activation
+remain separate gates.
 
 ### Installer permissions and safe-path implementation (unreleased)
 
