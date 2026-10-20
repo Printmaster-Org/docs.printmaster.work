@@ -89,28 +89,30 @@ pre-0.32.0 release pass, per the owner's 2026-10-19 sequencing decision. They
 remain a release gate, not accepted or resolved risk; this updater slice does
 not investigate or change dependencies.
 
-### Recommended execution order: nine remaining items
+### Recommended execution order: eight remaining items
 
-Hosting and the application-policy/descriptor item are complete within their
-documented scope. The remaining work is ordered by actual prerequisites, not
-by the historical checklist numbering:
+Hosting, application policy/descriptors, and the original installation-permission
+gate are complete within their documented scopes. The permission gate closed
+on 2026-10-20 with Linux/macOS separate-identity execution and an actual Windows
+MSI/SYSTEM access-control check; see the
+[permission qualification matrix](#permission-qualification-matrix).
+The remaining work is ordered by actual prerequisites, not by the historical
+checklist numbering:
 
-1. **Implemented, pending platform qualification:** installation permissions,
-   safe paths and verification-to-use protection.
-2. **Implemented, pending platform qualification:** failure-safe Windows
+1. **Implemented, pending platform qualification:** failure-safe Windows
    binary/MSI helper handoffs, bounded deadlines and durable run-bound outcomes.
    Real MSI/service behavior and failure recovery still require qualification.
-3. **Fixed helper/supervision and isolated DEB transaction tests implemented:**
+2. **Fixed helper/supervision and isolated DEB transaction tests implemented:**
    finish Linux packaging/Manager/service wiring, failed-transaction recovery,
    real service and RPM qualification before enabling unattended installation.
-4. Client trust-state lifecycle, clock/expiry diagnostics and explicit repair.
-5. Truthful bounded update UX.
-6. Supported 0.31.x, mixed-version and long-offline migration qualification.
-7. Final-beta dependency vulnerability triage/fixes.
-8. Explicitly approved production trust provisioning, verified independent
+3. Client trust-state lifecycle, clock/expiry diagnostics and explicit repair.
+4. Truthful bounded update UX.
+5. Supported 0.31.x, mixed-version and long-offline migration qualification.
+6. Final-beta dependency vulnerability triage/fixes.
+7. Explicitly approved production trust provisioning, verified independent
    encrypted backups, public-root embedding and scoped credentials; activation
    initially remains off.
-9. Final adversarial/platform/service/package/release qualification and go/no-go.
+8. Final adversarial/platform/service/package/release qualification and go/no-go.
    Production activation requires separate explicit approval after the gates.
 
 Each item includes its own regression tests and documentation. Final
@@ -889,19 +891,25 @@ remain separate gates.
 
 ### Installer permissions and safe-path implementation (unreleased)
 
-Implementation: [Agent source commit](https://github.com/Printmaster-Org/printmaster/commit/da0f9e2c3714bea251512f3363328f9b8d21d22a).
+Implementation: [permission qualification and installer fixes eac1f11](https://github.com/Printmaster-Org/printmaster/commit/eac1f11fbd289040a567b21d825c535792a5e9bb),
+following the [initial safe-path implementation](https://github.com/Printmaster-Org/printmaster/commit/da0f9e2c3714bea251512f3363328f9b8d21d22a).
 
 Updater state creation now fails closed unless it can establish private
 permissions before metadata or update artifacts are used. Unix data directories
 are restricted to the service identity; updater state rejects symlinks, special
 files and multiply linked files. Installation targets must be ordinary files
 owned by root or the updater identity, with safe ancestors and no hard links.
+Every Unix ancestor must also be owned by root or the updater identity, even
+when its current mode is not writable: a foreign owner could grant itself
+replacement rights later.
 Same-filesystem replacement remains an atomic rename; cross-filesystem copy-over
 is now rejected rather than truncating the installed executable.
 
 Windows updater state and publisher metadata receive protected ACLs for the
 running identity, SYSTEM and local Administrators; existing updater contents
-are resecured and reparse points are rejected. Raw Windows service installs
+are resecured and reparse points and multiply linked files are rejected.
+Windows raw-service source/installed executables must also have exactly one
+hard link before protection is applied. Raw Windows service installs
 register a protected copy under `Program Files\PrintMaster\Agent`, with
 ProgramData service directories restricted to trusted principals. The manual
 PowerShell update script now writes the Agent to that location and elevates
@@ -909,22 +917,75 @@ before stopping services. A service still registered from an older writable
 location must be reinstalled with `--service update` before automatic updating
 is accepted from it.
 
-These controls are implementation and targeted regression coverage, not
-qualification of every supported installer. Windows ACL tests ran on Windows;
-Unix execution on Linux/macOS, MSI-created paths, existing-install migration,
-and service/helper failure outcomes remain to be qualified. The updater does
-not defend against local administrators, a compromised service identity, or
-arbitrary machine rollback. MSI execution and package-manager handoffs keep
-their separate qualification gates; cross-filesystem raw-binary replacement
-is unsupported.
+The unreleased MSI now owns the exact canonical
+`Program Files\PrintMaster\Agent\printmaster-agent.exe` rather than placing a
+second executable one directory above the service's registered copy. Bootstrap
+configuration is adjacent under `Agent\config`. The components whose key-file
+paths moved have new component GUIDs. This fixes fresh-install ownership/layout;
+it does **not** qualify an existing MSI's major upgrade, repair or service
+re-registration.
+
+#### Permission qualification matrix
+
+Local evidence from the 2026-10-20 permission-gate pass:
+
+| Surface | Observed evidence | Status / limit |
+| --- | --- | --- |
+| Linux private updater/trust trees | Root launches disposable processes as UID/GID 60001 (service) and 60002 (outsider), without creating accounts. The service writes private artifacts and atomically updates its own raw-binary fixture; the outsider cannot read, overwrite, delete or inject private evidence. Both can write their own positive-control directories. | Passed three consecutive root runs under WSL Linux. No installed service modified. |
+| Linux root-owned package executable | The unprivileged service can inspect the trusted executable but actual raw replacement returns OS permission denial; both processes leave package bytes unchanged. | Passed. Native package-manager integration remains gate 3. |
+| Unix unsafe ownership / links | Reject foreign-owned 0755 ancestors, writable parents/targets, hard links and linked state/trust entries. | Passed on Linux and native hosted macOS, including root-only ownership cases. |
+| Cross-filesystem raw replacement | Real `/dev/shm` versus temporary-filesystem rename is rejected; old and candidate bytes remain intact. | Passed on Linux. Copy-over remains unsupported. |
+| Windows private state | A real restricted Windows token with BUILTIN Users as its restricting SID is denied read, write, delete, ACL-change and adjacent-file creation; an explicitly Users-writable positive control succeeds. | Passed on Windows without elevation. This is OS access enforcement, not a separate account or a SYSTEM-service installation. |
+| Windows aliases / redirection / service copy | Real NTFS hard links are rejected for installed executable, state, trust, service-file protection and a separately launched source executable. A directory junction exercises reparse rejection without requiring symbolic-link privilege. Disposable raw-service copy tests verify the canonical path and protected DACL. | Passed locally and on hosted Windows. |
+| MSI ownership/layout and actual permissions | Built the actual Agent MSI with release-workflow WiX 3.11.2 and inspected its compiled File, Component and Directory tables. After explicit owner approval, unregistered the disposable test Agent, archived its executable/data, and installed the MSI with exit 0. A SYSTEM task verified the running canonical SYSTEM service, protected executable and inherited service-created candidate/backup/descriptor/trust fixtures. A restricted Users token could not write/delete/change ACLs/inject files, or read private evidence; its Users-writable positive control passed. | Actual installation and opted-in `TestLiveWindowsInstallerPermissions` passed. A locked old data directory required preserving the remainder by copy, so this was a fresh MSI executable install with retained data directories, not a clean-machine data-volume test. State was initialized by the enrolled service, not repaired by the test. Existing ICE61 same-version-upgrade warning remains; major upgrade/repair/failure recovery are separate gates. |
+| Native macOS | Hosted native permission/substitution tests pass. The separate root invocation actually launches UID/GID 60001 and 60002 and passes both positive controls, private-state denial, service-owned atomic replacement and foreign-owner cases. | Passed in [CI run 39481623764](https://github.com/Printmaster-Org/printmaster/actions/runs/39481623764), on test branch `test/installer-permissions-20261020` at `eac1f11`. Root-only cases skip in the ordinary-user invocation and pass in the explicit root step; they are not counted as covered by the skips. No claim of live launchd/service lifecycle qualification. |
+
+**The original gate 1 is closed within this permission/safe-path scope; eight
+top-level gates remain.** The original gate 2 still owns MSI/helper transaction
+failure/recovery; original gate 3 owns native package/service integration;
+original gate 6 owns supported 0.31.x migration. Clean-machine installation,
+live launchd service behavior, wider adversarial handoffs and final release
+go/no-go remain in platform/release qualification. None is waived by these
+tests. The CI Passed aggregate requires the reusable Windows/macOS permission
+job, and the Linux root job includes the ownership/identity cases.
+
+The local Windows fixture initially used an unenrolled loopback configuration;
+registration failed and the updater correctly did not initialize. Restoring
+the protected test backup's original identity, configuration and credential
+files allowed service-created updater initialization and the SYSTEM check to
+pass. This is not a new onboarding or migration guarantee. The installed test
+Agent is left running as SYSTEM at the canonical path. Its protected recovery
+backup is `C:\ProgramData\PrintMaster-PermissionQualification-20261020`;
+the temporary SYSTEM task was removed. RemoteSigned is unchanged and production
+publisher trust/unattended activation remain off.
+
+The wider Agent regression reruns also exposed failures outside this permission
+selection: WebSocket fixed-wait timing, a source-observation probe assertion,
+a Windows helper fixture outcome and a short-budget SNMP fixture connection/
+cleanup panic. Local Jest also hit a Bash subprocess timeout/cleanup failure
+in the Beta-release fixture (22 suites passed, one failed). The affected
+permission/workflow Jest selection passes. Constrained Agent reruns pass the
+complete updater package but fail the source-observation assertion. Hosted
+Linux Common/Agent/Server, JavaScript/browser tests, native Windows/macOS,
+and mock/real-Docker E2E all pass in the linked run, including the required
+**CI Passed** aggregate at `eac1f11`. That is a green hosted CI baseline, not
+proof that the earlier local failures did not occur. Those local failures
+remain visible and must be reconciled before final release.
+This slice does not alter unrelated tests or hide failures with retries/
+time-budget changes.
+
+The updater does not defend against local administrators, a compromised service
+identity, or arbitrary machine rollback. Path
+checks/rehashing are not a claim of race resistance against those identities.
 
 ### Remaining 0.32 release gates: security handoff reconciliation
 
 This checklist reconciles the security handoff with application revision
 `0d64d3d`, not the contributor fork implementation. These are required outcomes,
 not newly completed controls. **P0-06 (independent update trust) remains open.**
-**P0-07 (privileged updater hardening) remains open for installer and platform
-qualification** after the permission/safe-path implementation below.
+**P0-07 (privileged updater hardening) remains open for transaction, migration
+and final platform/service qualification**, although its permission/safe-path
+subgate is now qualified above.
 The security handoff is a code-inspection assessment, not an exploit
 demonstration.
 
@@ -948,9 +1009,10 @@ demonstration.
    updater/trust trees, rejects symlink/reparse redirection, binds final paths
    to the TUF descriptor and previous backup, and uses atomic Unix replacement
    without a copy-over fallback. Raw Windows service installation now registers
-   a protected Program Files copy. Verify these guarantees with actual Linux/
-   macOS service identities, Windows installer-created ACLs, MSI/package paths
-   and supported 0.31.x migrations. Test adversarial substitution and failures
+   a    protected Program Files copy. Separate actual Linux/macOS UIDs and the
+   Windows MSI/SYSTEM access-control boundary now pass the matrix above.
+   Continue qualification of native service lifecycles, MSI/package transaction
+   paths and supported 0.31.x migrations. Test adversarial substitution and failures
    at each platform handoff. A raw Windows service still registered outside the
    protected location must be migrated before auto-update; MSI and package
    transactions are not qualified by the raw-binary path. Do not treat path

@@ -49,6 +49,44 @@ Finish with the canonical docs site's tests, fresh Hugo build and generated-site
 link checks. Report failures and environmental skips separately from passing
 tests; local success is not proof that the unpushed remote CI workflow ran.
 
+## Installer permission qualification
+
+From `agent`, run the bounded native selection:
+
+```sh
+go test -count=1 -v -timeout=5m . ./autoupdate -run '^Test(InstallationProtection|SecureUpdaterDirectories|ValidateInstallPath|WindowsUpdater|WindowsService|InstallationDescriptor|FailedInstallRecovery|PrepareWindowsServiceExecutable|ProtectWindowsServiceFile)'
+```
+
+Run the ownership/separate-identity cases as root on a disposable Unix host:
+
+```sh
+go test -c -o /tmp/printmaster-permissions.test ./autoupdate
+sudo /tmp/printmaster-permissions.test -test.v -test.timeout=3m \
+  '-test.run=^(TestInstallationProtection|TestValidateInstallPath)'
+rm /tmp/printmaster-permissions.test
+```
+
+On macOS use physical `/private/tmp` for the temporary binary and set
+`TMPDIR=/private/tmp` for both test invocations rather than testing through a
+`/tmp` or `/var` symbolic-link ancestor. Numeric fixture UIDs do not create
+system accounts, and these tests never install or control the real Agent.
+The Linux cross-filesystem case requires `/dev/shm` on a different filesystem;
+report a skip explicitly if unavailable.
+
+On Windows, the restricted-token test uses actual OS access checks and a
+positive control, not an elevated account or simulated ACL evaluator. Junction
+tests avoid requiring symbolic-link privilege. The separate Windows/macOS CI
+job is required by CI Passed; its native Windows/macOS execution passed in
+[run 39481623764](https://github.com/Printmaster-Org/printmaster/actions/runs/39481623764).
+Adding or compiling a test alone is not execution evidence. Actual MSI
+permissions also passed an owner-approved local installation and opted-in
+SYSTEM task (`TestLiveWindowsInstallerPermissions`). That destructive test is
+skipped unless `PRINTMASTER_LIVE_INSTALLER_PERMISSIONS=qualify-test-agent-msi`
+is explicitly set and it runs as SYSTEM against the installed test Agent.
+It must not repair ACLs before checking them, and must never run on an
+unapproved installation. For observed evidence and qualification limits, see the
+[permission qualification matrix](/development/auto-update-plan/#permission-qualification-matrix).
+
 ## Running Tests
 
 ```bash
