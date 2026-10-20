@@ -187,7 +187,17 @@ checks native package fields and authenticates that file's own TUF identity.
 Acquisition implementation: [3857a3c](https://github.com/Printmaster-Org/printmaster/commit/3857a3c0a4aa831d8f19789848c3b9ba09e6f1fb).
 No sudo or install command is issued; download plugins must already be present.
 The workspace is removed afterward, including on authorization failure.
-The constrained privileged handoff and native runtime qualification are still
+Root-side intake now independently constructs its TUF client using trusted
+helper configuration and separate protected root-owned state; it never trusts
+the service user's receipt/cache. It rejects unsafe state and concurrent
+handoffs, authenticates a private read-only snapshot and limits consumption
+to that snapshot's synchronous lifetime. Source files may not exceed 512 MiB.
+The intake is an in-process boundary only: no new CLI, sudo permission or
+native installation command is enabled. Its trusted root/metadata URL/state
+directory must never be taken from an unprivileged request. Hosted root tests
+are prepared, not yet remotely executed; no production trust is provisioned.
+Root-side intake: [source commit 2a72cac](https://github.com/Printmaster-Org/printmaster/commit/2a72cac0bfb9f10a68b1c5f5acbdbfef21461b0a).
+Native installer wiring, durable recovery and runtime qualification are still
 [pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
 
 ### B2 owner setup and read-only preflight

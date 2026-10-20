@@ -167,14 +167,60 @@ handling. The full Windows updater suite, vet/staticcheck and documentation
 checks passed; Linux tests cross-compiled only. These fixtures are not proof
 that native APT/DNF/YUM behavior has been qualified on Linux.
 
-**Remaining implementation:** use a constrained privileged handoff that independently
-authenticates and protects the actual file consumed by the native installer.
+#### Root-side package intake and immutable-input isolation (unreleased)
+
+Implementation: [source commit 2a72cac](https://github.com/Printmaster-Org/printmaster/commit/2a72cac0bfb9f10a68b1c5f5acbdbfef21461b0a).
+
+Acquisition now copies the open repository input to a private, read-only
+snapshot before TUF file authentication. Hashing and copying preserve the
+input offset and honor cancellation; inputs are limited to 512 MiB. The
+consumer sees only the independently authenticated snapshot, not a repository
+pathname. Changing the original download after verification cannot change the
+snapshot. Private snapshots are removed after consumption or failure, and
+cleanup failures remain visible.
+
+The Linux-only `WithPrivilegedRepositoryPackage` intake requires root and
+accepts only `agent/stable`, canonical Stable versions, the running helper's
+Linux architecture and DEB/RPM formats. Its trusted root, metadata URL, state
+directory and consumer come from trusted helper code/configuration, **not**
+the service user's request. It creates its own TUF client/cache/integrity
+record and never imports the Agent's authorization receipt or cache.
+Existing parents must already exist and be root-owned non-linked directories;
+root-owned sticky temporary ancestors are allowed. The dedicated state tree
+must be root-owned, with private directories and only ordinary single-link
+non-executable files that are not group/other writable. Public-metadata files
+may retain the TUF library's `0644` mode inside the private root-only directory.
+Unsafe existing state is rejected, never adopted or repaired.
+An OS file lock serializes root-side verification/consumption and releases
+on process exit without deleting trusted metadata.
+
+The private snapshot remains present only for the synchronous consumer's
+lifetime. This boundary is an in-process API, not a CLI or sudo permission.
+No native install command, dependency resolution, package script, service
+restart or pending installation is enabled by it. Read-only modes are not a
+defense against a hostile root process; protected root ownership is part of
+the threat boundary. This is not a power-loss-safe installation transaction.
+
+The Agent CI job now builds a test executable and uses a narrowly selected
+root-only test set on the disposable hosted Linux runner: independent
+disposable-key TUF intake, source mutation, lock contention, trust-record loss
+and unsafe state. It does not invoke native installers or touch host services.
+This step is prepared but has not run remotely in this local-only slice.
+Locally, real TUF snapshot/acquisition tests and the full Windows updater
+suite passed with vet/staticcheck; Linux tests cross-compiled and Linux vet
+passed. Linux staticcheck also exposed pre-existing Unix Windows-helper stub
+warnings (`SA4023` and `ST1005`), outside this intake slice; they remain a CI
+lint follow-up rather than a claimed clean Linux lint run.
+
+**Remaining implementation:** wire a constrained native installer to consume
+the independently authenticated root-side snapshot.
 The current package service runs as `printmaster`, not root; an authorization
 receipt supplied by that user must not become arbitrary root install authority.
 The shared file check is a prerequisite, not a privileged installer: callers
 must prevent modification until consumption, and may not verify one file then
-install another by version or mutable pathname. Native package identity/
-checks at that privileged boundary, dependency handling, durable outcomes, startup validation
+install another by version or mutable pathname. Native package identity
+checks at that privileged boundary, no-downgrade/pin enforcement, dependency
+handling, durable outcomes, startup validation
 and Linux runtime qualification remain part of that follow-up.
 
 The development Windows machine intentionally retains owner-approved
