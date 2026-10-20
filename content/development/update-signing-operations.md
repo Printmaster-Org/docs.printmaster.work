@@ -160,6 +160,31 @@ baselines fail closed and require owner-managed migration, not a trust reset,
 Server timestamp or hash-sort exception. See
 [application policy and recovery scope](/development/auto-update-plan/#application-policy-and-installation-descriptors-unreleased).
 
+### Repository package identities (unreleased, installation still blocked)
+
+Implementation: [source commit 7f68fa1](https://github.com/Printmaster-Org/printmaster/commit/7f68fa1f5154b6c06ae13adc90d24914f955b842).
+
+Linux package delivery remains owned by APT/DNF/YUM, not fleet artifact
+delivery. The publisher must authorize the actual `.deb`/`.rpm` bytes as a
+separate `agent/stable/<version>/linux/<architecture>/deb` or `rpm` target,
+with that package's own length and SHA-256. A signed raw-binary target is only
+discovery authority; it does not authenticate a repository package or its
+maintainer scripts.
+
+`updatetrust.Client.AuthorizeFile` now verifies an already-open regular file
+against the exact authenticated target without reopening its pathname or
+moving its offset. No keys, root or credentials are provisioned by this code
+slice. Tests use disposable metadata and synthetic package bytes; they are
+not native package-manager qualification.
+
+Do not enable package auto-update based on that primitive alone. A constrained
+privileged installer must independently verify and protect the file it
+consumes; checking a writable download and then installing by version is not
+sufficient. The Agent's package handoff remains fail-closed, and the old
+version-only installation routines have been removed. Repository acquisition,
+privileged handoff and runtime qualification are still
+[pending implementation](/development/auto-update-plan/#repository-package-authentication-boundary-unreleased).
+
 ### B2 owner setup and read-only preflight
 
 The initial owner-created layout is:

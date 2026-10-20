@@ -115,6 +115,52 @@ Each item includes its own regression tests and documentation. Final
 qualification is not permission to defer testing. No production ceremony is
 needed to work on the next code gate.
 
+### Repository package authentication boundary (unreleased)
+
+Implementation: [source commit 7f68fa1](https://github.com/Printmaster-Org/printmaster/commit/7f68fa1f5154b6c06ae13adc90d24914f955b842).
+
+The owner selected repository-owned APT/DNF/YUM delivery on 2026-10-20, not
+fleet delivery of DEB/RPM assets. The first code slice adds
+`updatetrust.Client.AuthorizeFile`: refresh/authenticate the exact TUF target,
+then verify the length and SHA-256 of an already-open regular file without
+reopening its pathname or changing the caller's offset. Cancellation and
+read failures return no authorization. DEB/RPM identities are separate from
+discovery binaries, including version, channel, platform, architecture and
+format; authorizing a binary does not authorize the package containing it.
+Publisher inventory must include the actual repository package bytes.
+
+The old, unreachable version-only `apt-get install`, `dnf install` and
+`yum install` methods are removed. A second repository resolution after
+checking a download could install a different artifact, even for the same
+version. Tests keep all three package handoffs explicitly fail-closed.
+This slice does **not** enable Linux package auto-update or change repository,
+sudoers, service-account or fleet-manifest configuration.
+
+**Remaining implementation:** download the exact repository package without
+installing it, then use a constrained privileged handoff that independently
+authenticates and protects the actual file consumed by the native installer.
+The current package service runs as `printmaster`, not root; an authorization
+receipt supplied by that user must not become arbitrary root install authority.
+The shared file check is a prerequisite, not a privileged installer: callers
+must prevent modification until consumption, and may not verify one file then
+install another by version or mutable pathname. Native package identity/
+architecture checks, dependency handling, durable outcomes, startup validation
+and Linux runtime qualification remain part of that follow-up.
+
+The development Windows machine intentionally retains owner-approved
+`RemoteSigned`; reverting its policy is not a pending user action. This
+does not alter supported signing-policy checks on other installations.
+
+Validation: real disposable-key TUF package-file tests passed, including
+short/oversized/substituted bytes, binary/package identity separation, wrong
+version/architecture/format, invalid files, cancellation and offset preservation.
+The focused suite also passed two repeated runs. Shared/updater vet and
+staticcheck, the full updater suite, documentation tests and Hugo/link checks
+passed. An initial concurrent validation run hit the existing detached-helper
+smoke test's marker deadline; a subsequent full updater rerun passed.
+Its timing sensitivity remains a test-reliability follow-up, not evidence of
+a successful or failed real Linux installation.
+
 ### Application policy and installation descriptors (unreleased)
 
 Implementation:
