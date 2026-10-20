@@ -39,7 +39,7 @@ remain supported.
 | `go` | Uncached verbose `go test` with a ten-minute per-package timeout in each top-level directory containing `go.mod`. New/removed modules are picked up automatically in local runs and CI. Mock E2E is included through the `tests` module. |
 | `js` | All Jest suites through the existing locked dependency. |
 | `playwright` | Builds Agent/Server binaries, then all six configured projects with two workers by default and no retries. |
-| `integration` | Docker preflight, then actual tagged PostgreSQL storage tests. Windows sets testcontainers' process-local Docker endpoint from the active context when not explicitly configured. |
+| `integration` | Docker preflight, then actual tagged PostgreSQL storage tests. Windows passes the active context's endpoint only to the testcontainers Go subprocess when not explicitly configured; later Docker CLI suites keep their original context. |
 | `docker` | Builds an isolated unique Compose project with fresh temporary data, loopback-only dynamic ports, offline SQLite seeding and actual tagged host Go E2E tests. Saves container logs and removes only that project's containers/network/images and temporary data, including on test failure. |
 | `native` | Bounded native permission, descriptor-substitution and recovery regression selection. |
 | `docs` | Sibling `docs.printmaster.work` Node tests, fresh Hugo build and generated links/search checks. |
