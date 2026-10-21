@@ -215,6 +215,34 @@ contention, bounded timeout/no-kill handling and end-to-end Manager
 qualification boundaries. These destructive live checks remain opt-in and are
 not part of CI, normal build gates or release defaults.
 
+## Linux package helper socket checks (unreleased)
+
+The ordinary Linux updater tests exercise real Unix sockets and verify that a
+nonroot listener is rejected before receiving package bytes. Explicit root
+fixtures (`--privileged`) additionally exercise multi-megabyte duplex transfer,
+early rejection, stalled-peer cancellation bounded to one second,
+wrong-target/malformed replies, and inherited socket stdin/stdout with real
+disposable trust/policy/journal handling. Native commands are mocked in the
+authenticated socket rehearsal; an `awaiting-startup` reply is not service
+success. The existing isolated Debian fixture still uses real dpkg with a
+temporary database/root, never the host package database.
+
+`scripts/linux-package.test.js` checks fixed helper/unit paths, admission,
+removal of direct sudo grants and release artifact wiring. On Linux it also
+builds/extracts a real DEB fixture to verify helper bytes and modes; this case is
+explicitly skipped on other platforms. Linux Jest therefore requires existing
+`bash` and `dpkg-deb`; it never installs dependencies. Systemd unit syntax may be
+checked using temporary unit copies and an existing test executable in place
+of the uninstalled helper. Do not install/enable production-named units to run
+these checks.
+
+The packaged socket remains disabled and no initial root/policy/config is
+provisioned. These checks do not qualify RPM installation, replacement of
+historical active sudoers files, installed socket activation, Agent service
+restart/readiness or Manager recovery. See the
+[Linux systemd boundary](/development/auto-update-plan/#independent-systemd-package-boundary-unreleased-not-activated)
+for the remaining activation gate.
+
 ## Running Tests
 
 ```bash

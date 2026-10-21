@@ -517,6 +517,16 @@ For a manual channel install, right-click a connected Agent and choose **Update 
 
 These command/configuration writes remain outside the reviewed read-only OpenAPI subsets. User-session Agent commands retain role/tenant authorization; machine manifests/downloads use Agent credentials. `install_channel` adds a command name, not an HTTP route or a breaking machine-message envelope change; existing commands remain supported. No product, contract or protocol version is bumped solely for this additive capability.
 
+**Unreleased Linux package migration:** hardened DEB/RPM packages now ship a
+separate root systemd update helper and replace the old
+`/etc/sudoers.d/printmaster-agent` package-manager/service grants with an inert
+managed file. The helper socket remains disabled; packages do not provision
+publisher authority or policy, and Manager-driven package installation remains
+blocked pending lifecycle/recovery qualification. Older Agents that relied on
+those grants must use owner-managed package installation during migration.
+Do not restore broad sudo rules to bypass the gate. See the
+[staged systemd boundary](/development/auto-update-plan/#independent-systemd-package-boundary-unreleased-not-activated).
+
 ### Update lifecycle recovery (unreleased)
 
 Implemented at [source commit 946bf99](https://github.com/Printmaster-Org/printmaster/commit/946bf990e668d1053b71fa5eb6c1873980b37ef7).

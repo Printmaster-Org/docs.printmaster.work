@@ -546,7 +546,7 @@ Final validation passed three runs of the Linux root package selection, the
 full unprivileged Linux and Windows updater suites, and updater vet/staticcheck
 on both platforms. Docs tests, Hugo and generated link/anchor checks passed.
 
-#### Fixed native helper executable (unreleased, not installed)
+#### Fixed native helper executable (unreleased, staged)
 
 Implementation: [source commit 4a638ea](https://github.com/Printmaster-Org/printmaster/commit/4a638ea).
 
@@ -554,8 +554,9 @@ The Linux-only `agent/cmd/printmaster-agent-update` executable now calls the
 production root intake, file policy and response handler with a fifteen-minute
 independent budget. It accepts **no arguments** and reads no environment-based
 configuration. Its intended installed path is
-`/usr/libexec/printmaster-agent-update`; this slice neither packages it nor grants
-sudo permission. Missing configuration fails closed before package modification.
+`/usr/libexec/printmaster-agent-update`. The original entrypoint slice did not
+package it; the systemd packaging slice below now does, without sudo permission.
+Missing configuration fails closed before package modification.
 
 Fixed root-controlled files are `/etc/printmaster/update-helper.json` (schema
 `1` and `metadata_url` only), `/etc/printmaster/update-publisher-root.json`
@@ -625,8 +626,8 @@ rm /tmp/printmaster-package-intake.test
 
 This closes **isolated Debian byte-to-database and dependency-failure testing**,
 not real installed service qualification: fixtures contain no maintainer scripts
-or systemd units. RPM transactions, service restart/readiness, helper packaging
-and production authority remain open.
+or systemd units. RPM transactions, service restart/readiness and production
+authority remain open; helper packaging is now covered separately below.
 
 #### In-lifetime repository acquisition handoff (unreleased, staged)
 
@@ -648,7 +649,69 @@ passed three repeated runs, including replay blocking. Separate cross-platform
 tests cover consumer failure/cancellation, unauthenticated bytes, missing
 consumer, closed descriptors and deleted workspaces.
 
-**Remaining implementation:** package the fixed helper and wire the Manager sender,
+#### Independent systemd package boundary (unreleased, not activated)
+
+The owner-selected Linux privilege boundary is a separate root systemd
+socket/service, not a service-user sudo command. DEB and RPM packages now include
+the fixed `/usr/libexec/printmaster-agent-update` executable,
+`printmaster-agent-update.socket` and `printmaster-agent-update@.service`.
+Release CI builds the helper for each Linux Agent architecture before DEB
+packaging and transfers a separately named, architecture-matched helper artifact
+to RPM packaging. Both builders reject a missing helper.
+
+Packages replace `/etc/sudoers.d/printmaster-agent` with a comment-only managed
+file (root-owned, mode `0440`), removing the historical direct package-manager
+and service-control grants. The RPM file deliberately no longer uses
+`%config(noreplace)`: old grants must not remain active after upgrade. This does
+not remove grants an administrator placed in other sudoers files. Existing
+Agents relying on those old grants lose that update path; use owner-managed
+installation during the hardened updater migration.
+
+The socket listens at `/run/printmaster-agent-update.sock` as root, group
+`printmaster`, mode `0660`, with one accepted connection at a time.
+It requires all three independent root configuration/trust/policy files to exist.
+Existence is only an activation condition: the helper still validates protected
+ownership, modes, content, TUF authorization and policy independently.
+The template service runs the fixed executable as root with **no arguments**
+and the accepted Unix stream on stdin/stdout; diagnostics go to the journal.
+It has no dependency on the Agent service's lifetime. The helper keeps its
+fifteen-minute budget and the unit has a sixteen-minute outer limit.
+`KillMode=process` avoids killing a native installer descendant merely because
+the helper's outer limit expired; such a timeout is ambiguous, not a safe retry
+or proof that package modification stopped.
+
+`SubmitRepositoryPackage` is a staged sender, not a Manager activation:
+it checks the root-owned protected socket and kernel peer UID before sending
+the existing bounded package frame. Only Unix **stream** sockets and pipes are
+accepted; regular files, TCP and datagram sockets are rejected. Descriptor
+duplication preserves cancellation/deadline support for inherited systemd
+streams. Caller cancellation closes that caller's connection, not the
+independently supervised root transaction. An `awaiting-startup` response is
+neither helper-process success nor service-startup confirmation.
+
+**Activation stays off.** Packages do not enable/start the socket or supply
+helper configuration, administrative policy or an initial publisher root.
+Removal stops/disables the socket; upgrades do not intentionally stop an
+in-flight helper instance. The Manager still explicitly refuses installation
+after authenticated package acquisition. Do not manually activate this staged
+boundary as a substitute for completing lifecycle and recovery integration.
+
+Local qualification covers real multi-megabyte Unix streams, root/nonroot peer
+checks, source-offset preservation, early rejection, cancellation, stalled peers,
+wrong-target and malformed replies. An inherited-socket subprocess uses real
+disposable TUF metadata, root policy and durable journals; only native package
+commands are mocked. Repeated testing exposed a descriptor race: Go's `File.Fd`
+could switch a shared duplex socket back to blocking mode and defeat
+cancellation. Duplication now uses `RawConn.Control`, preserving nonblocking
+mode; fifty consecutive socket-selection runs passed after that fix.
+Real DEB build/extraction checks the exact helper bytes,
+root ownership, modes and units without installing anything. Systemd syntax was
+checked on temporary unit copies with only the executable path substituted for
+an existing test executable. This is **not** installed socket activation or
+service lifecycle evidence. RPM build, replacement of an installed historical
+sudoers file and actual DEB/RPM service upgrades remain unqualified here.
+
+**Remaining implementation:** wire the Manager sender,
 service restart/readiness and Agent outcome reporting, and
 explicit failed-transaction recovery before enabling automatic installation.
 The current package service runs as `printmaster`, not root; an authorization
