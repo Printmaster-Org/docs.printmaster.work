@@ -18,39 +18,40 @@ SQLite databases with `server_data.sql` and `agent_data.sql`, then restarts and
 waits again. Do not seed a live database through a second SQLite implementation.
 Current data fixtures contain eight devices per database.
 
-Run the tagged tests from the host's `tests` module, with explicit
-`E2E_SERVER_URL`, `E2E_AGENT_URL` and `E2E_ADMIN_PASSWORD` environment variables,
-using `go test -tags=e2e -v -count=1 ./...`. Defaults for the HTTP-only Compose
-environment are `http://localhost:9090` and `http://localhost:8080`.
-On a shared machine, use a private Compose project, container/network names,
-loopback ports and disposable data mounts; do not adopt or delete existing test
-databases or interrupt installed services. Tear down only that test project.
+The shared `docker` suite automates this route, then runs tagged Go tests on
+the host with explicit `E2E_SERVER_URL`, `E2E_AGENT_URL` and
+`E2E_ADMIN_PASSWORD`. It requires Docker Compose, host Go and `sqlite3`.
+Each invocation uses a unique Compose project, temporary data mounts and
+dynamic loopback-only ports. It captures logs in `test-results/` and attempts
+project-scoped teardown on normal completion or command failure. It does not
+adopt existing databases, prune Docker globally or interrupt installed services.
 
-The optional Compose `test-runner` service is **not** this qualification route:
-its existing configuration still targets the old Server port and does not
-reliably preserve the Go runner's exit status through its shell pipeline.
-These runner-service issues remain open; do not treat that service's exit
-status as qualification evidence. The actual CI workflow runs Go on the host.
+The optional Compose `test-runner` service now targets Server port 9090 and
+preserves Go's exit status when displaying its log. It is still **not** the
+shared CI qualification route, which runs Go on the host.
 
 ### Run E2E Tests Locally
 
 ```bash
 # Linux/macOS
-cd tests
-./run-e2e.sh
+./tests.sh --suite docker
 
 # Windows
-cd tests
-.\run-e2e.ps1
+.\tests.ps1 --suite docker
 ```
 
 ### Options
 
 | Option | Description |
 |--------|-------------|
-| `--build` / `-Build` | Force rebuild Docker containers |
-| `--keep-up` / `-KeepUp` | Leave containers running after tests |
-| `--verbose` / `-Verbose` | Show detailed output |
+| `--suite docker` | Build and qualify isolated real services, then tear down that project |
+| `--suite go --module tests` | Run mock E2E without Docker (also part of the default baseline) |
+| `--with-docker` | Add real Docker E2E and PostgreSQL integration to the default baseline |
+| `--dry-run` | Show selection only; does not execute or qualify anything |
+
+Run these commands from the application checkout. See [Testing](/development/testing/)
+for the full suite/skip reference. Legacy `tests/run-e2e.*` helpers are not the
+canonical CI baseline.
 
 ## Architecture
 
@@ -223,70 +224,36 @@ curl http://localhost:8080/api/health
 ## Running Tests
 
 ```bash
-# Run all E2E tests
-cd tests
-go test -v ./...
+# Mock E2E
+./tests.sh --suite go --module tests
 
-# Run specific test
-go test -v -run TestWebSocketProxy_AgentUI
+# Real Docker E2E
+./tests.sh --suite docker
 
-# Skip E2E tests (fast unit tests only)
-cd agent
-go test -short ./...
-cd ../server
-go test -short ./...
+# Focused component Go tests only (not a complete baseline)
+./tests.sh --suite go --module agent,server
 ```
 
 ## CI/CD Integration
 
 ```yaml
-# .github/workflows/test.yml
-- name: Run Unit Tests
-  run: |
-    cd agent && go test -short ./...
-    cd ../server && go test -short ./...
-
-- name: Build Binaries
-  run: |
-    ./build.ps1 both
-
-- name: Run E2E Tests
-  run: |
-    cd tests && go test -v -timeout 5m ./...
+# Excerpts from .github/workflows/ci.yml; prerequisites are installed by CI.
+- name: Go modules
+  run: bash tests.sh --suite lint,go --coverage
+- name: Real Docker E2E
+  run: bash tests.sh --suite docker
 ```
 
-## Next Steps
-
-1. **Implement process management helpers**
-   - `startServer()` - Start server on ephemeral port
-   - `startAgent()` - Start agent connected to test server
-   - `cleanup()` - Ensure processes are killed
-
-2. **Add config generation**
-   - Minimal TOML for server
-   - Minimal TOML for agent
-   - Temp database paths
-
-3. **Implement first working test**
-   - TestAgentServerRegistration
-   - Verify agent can register and connect
-
-4. **Add WebSocket proxy tests**
-   - TestWebSocketProxy_AgentUI
-   - TestWebSocketProxy_DeviceUI
-   - TestWebSocketProxy_NoConnection
-
-5. **Add to CI/CD**
-   - Run after successful build
-   - Report test results
-   - Save logs on failure
+The CI aggregate also requires JavaScript/browser, PostgreSQL and native
+installer-permission jobs. Local selection flags must not weaken those required
+jobs. Passing fixtures does not qualify live installer transactions or release
+trust provisioning.
 
 ## Performance Considerations
 
 - E2E tests are slow (2-10 seconds each)
 - Use `t.Parallel()` where possible
-- Don't run E2E tests by default (use `-short` flag)
-- Keep E2E test count reasonable (<20 tests)
+- Mock E2E is included by default; real Docker E2E is opt-in locally and required in CI
 - Focus on critical paths and new features
 
 ## Debugging Failed Tests

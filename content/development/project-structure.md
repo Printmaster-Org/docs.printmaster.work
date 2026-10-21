@@ -66,14 +66,15 @@ and [SNMP reference downloads](/development/snmp-reference/#reference-downloads)
 for the Printer-MIB resources.
 
 ### Tooling & Automation
-- `build.ps1`, `release.ps1`, `status.ps1`, `version.ps1`: primary automation entrypoints.
+- `build.ps1`/`build.sh`, `release.ps1`/`release.sh`, `tests.ps1`/`tests.sh`: build, release and shared test entrypoints.
 - `dev/launch.ps1`: developer convenience launcher (tests + run agent).
-- `package.json` + `playwright.config.js`: UI tests (Jest/Playwright).
+- `scripts/run-tests.js`: shared suite orchestration used by local wrappers and CI; discovers top-level Go modules.
+- `package.json` + `playwright.config.js`: underlying UI runners (Jest/Playwright).
 - `.vscode/tasks.json` (generated) + VS Code tasks listed in `BUILD_WORKFLOW.md`.
 
 ### Tests & Fixtures
 - Go unit tests live beside their packages.
-- `tests/` (with supporting `test-results/`) will hold cross-component or UI regression suites.
+- `tests/` contains mock and tagged Docker-backed cross-component suites; `test-results/` holds generated evidence.
 - `common/web/__tests__` contains Playwright specs invoked via `npm run test:playwright`.
 
 ## Architecture Principles (Current)
