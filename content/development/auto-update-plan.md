@@ -89,7 +89,7 @@ pre-0.32.0 release pass, per the owner's 2026-10-19 sequencing decision. They
 remain a release gate, not accepted or resolved risk; this updater slice does
 not investigate or change dependencies.
 
-### Recommended execution order: eight remaining items
+### Recommended execution order: seven remaining items
 
 Hosting, application policy/descriptors, and the original installation-permission
 gate are complete within their documented scopes. The permission gate closed
@@ -99,9 +99,11 @@ MSI/SYSTEM access-control check; see the
 The remaining work is ordered by actual prerequisites, not by the historical
 checklist numbering:
 
-1. **Implemented, pending platform qualification:** failure-safe Windows
-   binary/MSI helper handoffs, bounded deadlines and durable run-bound outcomes.
-   Real MSI/service behavior and failure recovery still require qualification.
+1. **Qualified on the disposable Windows test Agent:** failure-safe
+   Windows binary/MSI helper handoffs, bounded deadlines and durable
+   run-bound outcomes, including real transaction failure recovery and
+   Manager startup reconciliation; see
+   [Windows MSI transaction qualification](#windows-msi-transaction-qualification).
 2. **Fixed helper/supervision and isolated DEB transaction tests implemented:**
    finish Linux packaging/Manager/service wiring, failed-transaction recovery,
    real service and RPM qualification before enabling unattended installation.
@@ -958,6 +960,87 @@ Agent is left running as SYSTEM at the canonical path. Its protected recovery
 backup is `C:\ProgramData\PrintMaster-PermissionQualification-20261020`;
 the temporary SYSTEM task was removed. RemoteSigned is unchanged and production
 publisher trust/unattended activation remain off.
+
+#### Windows MSI transaction qualification
+
+The unreleased helper now requires the service to reach `Running` after MSI
+exit 0 or 3010 before writing a successful helper outcome. MSI custom actions
+can ignore a service-start error, so the installer exit alone is insufficient.
+The helper preserves 3010 and its reboot-required diagnostic. If service startup
+fails, it records a failure without raw-overwriting MSI-owned executable files.
+Startup reconciliation must still independently confirm the target version;
+a successful helper outcome alone does not complete an update.
+
+`TestWindowsHelperExecutesMSITransaction` executes the generated production
+helper under built-in Windows PowerShell 5.1. Service/process operations are
+simulated, but artifact verification, file replacement detection and durable
+outcome writes are real. It covers success, reboot-required, rejected package,
+installer contention, transaction failure, rejection plus failed restart,
+post-install startup failure, substituted staging and an active-installer
+timeout. Successful simulated installs write distinct candidate executable
+bytes, so the startup-failure case detects accidental raw rollback. The timeout
+case requires no service restart while the installer remains active. These
+tests are included in the shared `native` selection and therefore its required
+Windows CI job; configuring that job is not evidence of hosted execution.
+
+On 2026-10-21, the owner-approved disposable MSI-installed Windows Agent also
+passed `TestLiveWindowsMSIRejectedPackageRecovery` using real service control,
+the generated helper and actual Windows Installer. The deliberately invalid
+package returned **1620**. The installed executable remained byte-for-byte
+unchanged, its protected backup matched, and the previous SYSTEM service was
+`Running` afterward at the canonical Program Files path. The baseline SHA-256
+was `6715f0ec48cef103ed9a90b12df2f8be2549aada6c161a5b4c49ea940784d1d7`.
+Retained protected evidence is
+`C:\ProgramData\PrintMaster-MSI-Rejection-2650186340`, including the helper,
+invalid MSI, installer log, run-bound outcome and previous executable backup.
+Effective Windows PowerShell policy remained `RemoteSigned`; no execution
+policy was changed.
+
+The live test requires both
+`PRINTMASTER_LIVE_MSI_FAILURE=reject-invalid-msi-on-test-agent` and
+`PRINTMASTER_LIVE_MSI_BASELINE_SHA256` matching an independently recorded
+installed executable. It refuses an unreadable/existing pending update,
+unexpected service registration or a service that is not initially running.
+It deliberately creates no authorized target or live pending state. Run only
+the exact test in an explicitly approved elevated disposable installation;
+ordinary runner/CI/release runs strip every `PRINTMASTER_LIVE_*` variable.
+Unexpected outcomes require inspecting the retained evidence and actual
+installer/service state before recovery, not killing Windows Installer or
+blindly restarting the service.
+
+On 2026-10-21, the same disposable test Agent also qualified the remaining
+Windows MSI transaction behaviors with retained protected evidence under
+`C:\ProgramData\PrintMaster-MSI-Qualification-20261021`:
+
+- real helper success from an MSI upgrade (`0.32.1.0`),
+- running-service repair recovery,
+- rollback after files were already changed (with observed candidate bytes),
+- rollback on service-start failure (`Error 1920`, `1603`),
+- real installer contention (`1618`) without killing the active transaction,
+- bounded helper timeout (`124`/`MSI_TIMEOUT`) while the installer remained
+  active, preserving `timed_out` and allowing natural installer completion,
+- and end-to-end Manager `stable` MSI authorization, helper handoff, startup
+  reconciliation, pending-state clearance and final `0.32.3.0` service state.
+
+During this final sequence the Agent remained at the canonical Program Files
+service path, enrollment/identity configuration hashes remained unchanged
+(`preserved_identity_config_files=4`), and effective policy stayed
+`RemoteSigned`. No execution policy was changed.
+
+The first gate is now qualified for the documented disposable-Windows scope;
+seven top-level gates remain. Production publisher trust and unattended
+activation remain off.
+
+Local regression validation of application revision
+[`046c799`](https://github.com/Printmaster-Org/printmaster/commit/046c799f3aada3f11af137cae433cd5f3e6dc832)
+passed the full updater package, shared native selection, all 329 Jest tests,
+updater vet/staticcheck, 34 documentation tests and a fresh Hugo build with
+local link/asset/anchor checks. The live rejection test correctly skipped in
+the ordinary runner and passed in the separate explicit elevated invocation.
+This focused run did not rerun Playwright, unrelated Go packages, Docker E2E
+or non-Windows native execution.
+
+#### Historical permission-gate regression boundary
 
 The wider Agent regression reruns also exposed failures outside this permission
 selection: WebSocket fixed-wait timing, a source-observation probe assertion,
