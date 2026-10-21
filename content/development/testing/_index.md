@@ -243,6 +243,17 @@ restart/readiness or Manager recovery. See the
 [Linux systemd boundary](/development/auto-update-plan/#independent-systemd-package-boundary-unreleased-not-activated)
 for the remaining activation gate.
 
+The separate manual **Linux package lifecycle qualification** workflow opts
+into `TestLiveLinuxPackageServiceLifecycle` only on disposable GitHub-hosted
+environments. It installs actual DEB/RPM packages and starts/stops installed
+systemd services; it is deliberately not part of the shared default/`--all`
+test selection. DEB uses the ephemeral Ubuntu runner, while RPM uses a
+privileged Fedora/systemd container on another ephemeral runner. It must never
+be run against the Windows host's WSL installation or a persistent Linux host.
+Root transaction data and journals are retained as workflow artifacts.
+See the [native lifecycle gate](/development/auto-update-plan/#native-systemd-lifecycle-qualification-unreleased-gate-in-progress)
+for scenarios, explicit opt-in requirements and observed qualification status.
+
 ## Running Tests
 
 ```bash

@@ -725,6 +725,41 @@ checks and no-downgrade/pin enforcement now exist in the staged consumer.
 Dependency/recovery behavior, startup validation and Linux
 runtime qualification remain part of that follow-up.
 
+#### Native systemd lifecycle qualification (unreleased, gate in progress)
+
+The installed Linux helper now owns the post-install service restart as well
+as native consumption. After an independently authorized installer completes
+and the installed package version matches, it restarts only
+`printmaster-agent.service`, then polls under a one-minute bound for the existing
+root package/systemd/procfs reconciliation checks. Only a durable
+`startup-confirmed` archive permits that response. Restart/readiness failure
+records `recovery-required` and retains the blocker; neither installer failure
+nor service failure triggers an automatic package downgrade or journal reset.
+The root helper's independent lifetime does not depend on the Agent's connection.
+
+The manual **Linux package lifecycle qualification** GitHub Actions workflow
+uses a disposable Ubuntu hosted runner for DEB and a disposable Fedora/systemd
+container on a hosted runner for RPM. The test opt-in requires
+`PRINTMASTER_LIVE_LINUX_PACKAGES=disposable-github-runner`, root and explicit
+GitHub-hosted environment markers. Ordinary shared test/build/release runners
+strip the live opt-in. Do not reproduce it on a workstation or persistent host:
+it intentionally installs packages and changes production-named services.
+
+Fixtures build the real Agent/helper and package scripts, provision only
+disposable root authority and an HTTPS metadata fixture, and activate the
+installed socket. Scenarios cover upgrade, disconnection during an observed
+native transaction, an invalid service executable, and an actual missing native
+dependency. They inspect the real root archive/blocker and reject replay after
+failure. Between scenarios, fixture-only owner repair reinstalls the baseline
+and moves preserved transaction evidence; this is not a production reset API.
+Workflow evidence includes the root transaction data and system journals.
+
+**Execution results are pending.** The workflow and root completion fixtures
+are not by themselves proof that the native DEB/RPM service scenarios pass.
+Manager durable handoff/reporting and explicit operator recovery still need
+completion before this gate can close. Production socket/trust activation
+remains off.
+
 The development Windows machine intentionally retains owner-approved
 `RemoteSigned`; reverting its policy is not a pending user action. This
 does not alter supported signing-policy checks on other installations.
