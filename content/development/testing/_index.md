@@ -102,6 +102,24 @@ Linux/macOS root fixtures are explicit jobs. CI owns tool/dependency
 setup and caching, not a second set of test commands. The sibling docs site
 retains its own CI; use `--with-docs` locally for paired changes.
 
+Observed CI qualification on 2026-10-21:
+
+| Layout | Run | End-to-end elapsed |
+| --- | --- | --- |
+| Original grouped workflow | [39481623764](https://github.com/Printmaster-Org/printmaster/actions/runs/39481623764) | 9m26s |
+| Single browser job, sequential Go modules | [39489694968](https://github.com/Printmaster-Org/printmaster/actions/runs/39489694968) | 10m25s |
+| Three browser shards, parallel Go modules | [39602215312](https://github.com/Printmaster-Org/printmaster/actions/runs/39602215312) | 6m01s |
+| Six browser shards, parallel Go modules | [39603309582](https://github.com/Printmaster-Org/printmaster/actions/runs/39603309582) | 3m27s |
+
+The final run qualified [source e31370d](https://github.com/Printmaster-Org/printmaster/commit/e31370ddb420e6fdbe13189dc83018ba98ba5a37):
+all required jobs passed, with 327 Jest tests and six browser shards of 114
+cases each (662 passed, 22 explicitly skipped overall). No browser assertions,
+projects or retries were weakened. The real Windows default build also passed
+lint/Go/JavaScript before compilation. Bash/PowerShell fixtures verify release
+failure before version/tag mutation and one successful gate before both builds.
+These timings include setup/queue time and reflect individual runs, not a
+latency guarantee; extra runners trade setup/runner minutes for lower wall time.
+
 ### Build and release gates
 
 Basic `build.ps1`/`build.sh` builds call the wrappers once with
