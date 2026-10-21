@@ -1015,6 +1015,15 @@ Actual 1618 contention and service failure after a real package changes bytes
 also remain unqualified. The first of the eight remaining gates stays open.
 Production publisher trust and unattended activation remain off.
 
+Local regression validation of application revision
+[`046c799`](https://github.com/Printmaster-Org/printmaster/commit/046c799f3aada3f11af137cae433cd5f3e6dc832)
+passed the full updater package, shared native selection, all 329 Jest tests,
+updater vet/staticcheck, 34 documentation tests and a fresh Hugo build with
+local link/asset/anchor checks. The live rejection test correctly skipped in
+the ordinary runner and passed in the separate explicit elevated invocation.
+This focused run did not rerun Playwright, unrelated Go packages, Docker E2E
+or non-Windows native execution.
+
 #### Historical permission-gate regression boundary
 
 The wider Agent regression reruns also exposed failures outside this permission
