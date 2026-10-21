@@ -37,7 +37,7 @@ remain supported.
 | --- | --- |
 | `lint` | `go vet` and existing compatible `staticcheck` for every discovered module, including the mock E2E module. |
 | `go` | Uncached verbose `go test` with a ten-minute per-package timeout in each top-level directory containing `go.mod`. New/removed modules are picked up automatically in local runs and CI. Mock E2E is included through the `tests` module. |
-| `js` | All Jest suites through the existing locked dependency. |
+| `js` | Syntax-checks Agent/Server/common web JavaScript, then all Jest suites through the existing locked dependency. |
 | `playwright` | Builds Agent/Server binaries, then all six configured projects with two workers by default and no retries. |
 | `integration` | Docker preflight, then actual tagged PostgreSQL storage tests. Windows passes the active context's endpoint only to the testcontainers Go subprocess when not explicitly configured; later Docker CLI suites keep their original context. |
 | `docker` | Builds an isolated unique Compose project with fresh temporary data, loopback-only dynamic ports, offline SQLite seeding and actual tagged host Go E2E tests. Saves container logs and removes only that project's containers/network/images and temporary data, including on test failure. |
@@ -91,11 +91,43 @@ increases to hide unexplained failures. `--workers 1` is a local resource
 option, not evidence that a two-worker failure did not happen.
 
 CI selects these same suites, automatically discovering Go modules, while
-retaining separate Go, JavaScript/browser, PostgreSQL, Docker E2E and native
-platform jobs for useful isolation. The CI Passed aggregate requires all of
-them; Linux/macOS root fixtures are explicit jobs. CI owns tool/dependency
+running each Go module in its own matrix job. Jest, PostgreSQL, Docker E2E,
+native platform checks and **three Playwright shards** start independently;
+Playwright does not wait for Jest or Go tests. Each shard builds its own fixture
+binaries and runs two workers, avoiding the documented contention from raising
+workers on one small runner. `--shard INDEX/TOTAL` selects one shard without
+changing projects, assertions or retries; local runs remain unsharded by default.
+All shards/modules remain required by CI Passed, even if another fails.
+Linux/macOS root fixtures are explicit jobs. CI owns tool/dependency
 setup and caching, not a second set of test commands. The sibling docs site
 retains its own CI; use `--with-docs` locally for paired changes.
+
+### Build and release gates
+
+Basic `build.ps1`/`build.sh` builds call the wrappers once with
+`--skip-playwright`: lint, all discovered Go modules (including mock E2E), web
+syntax and Jest. They do not start Docker or browsers by default.
+`-AllTests` / `--all-tests` selects all nonprivileged suites. To replace the
+selection, pass `-TestArgs @('--suite','lint,go')` in PowerShell or
+`--test-arg --suite=lint,go` in Bash; repeat `--test-arg` for more arguments.
+`-SkipTests` / `--skip-tests` is an explicit logged bypass.
+
+Release calls **build validation-only -> tests --all** before version changes,
+build counters, tags, commits or pushes. A failed gate cannot start the release.
+After a successful gate, compilation uses an explicit skip flag to avoid
+repeating tests for each component. `-TestOnly` / `--test-only` exposes the
+validation-only build path without compiling. Release supports `-TestArgs` /
+repeated `--test-arg` for explicit selection/prerequisite paths, or `-SkipTests` /
+`--skip-tests` as a deliberate bypass. Overrides replace the default `--all`,
+so include `--all` in custom arguments when only supplying `--hugo PATH`.
+Dry runs preview the gate without executing it.
+
+Missing Docker, SQLite, docs checkout/dependencies or Hugo fail the full gate;
+there is no automatic installation, root elevation or silent downgrade.
+Root fixtures still require explicit Unix `--privileged`. Local validation
+does not replace the required cross-platform CI result or production trust
+qualification. Legacy `PRINTMASTER_*_PASSED` and `PRINTMASTER_SKIP_*` environment
+shortcuts no longer bypass builds; use explicit flags instead.
 
 A green core run is not a complete release baseline. Run `--all` and the
 applicable explicitly privileged/platform qualification before go/no-go.

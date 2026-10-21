@@ -9,14 +9,11 @@ sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 ### Windows PowerShell
 
 ```powershell
-# From the application repository root: lint, all Go modules, Jest and browsers
-.\tests.ps1
-
-# Build after the selected tests pass
+# From the application root: gates on lint, Go and syntax/Jest, then builds
 .\build.ps1 agent
 
 # Run the agent
-.\bin\printmaster-agent.exe
+.\agent\printmaster-agent.exe
 
 # Open UI
 Start-Process 'http://localhost:8080'
@@ -43,6 +40,13 @@ prerequisites, optional Docker/docs suites and explicit skips. The legacy
 # Build both
 .\build.ps1 both
 
+# Add browsers, Docker, docs and native fixtures
+.\build.ps1 agent -AllTests
+
+# Explicit narrower gate or complete bypass
+.\build.ps1 agent -TestArgs @('--suite','lint,go')
+.\build.ps1 agent -SkipTests
+
 # Run tests
 .\tests.ps1
 
@@ -60,6 +64,9 @@ Playwright with column pinning and horizontal scrolling; browser checks must
 not be placed under Jest's unit-test directories as standalone scripts.
 CI installs prerequisites; the runner owns suite execution. Underlying npm
 commands remain available for focused debugging.
+CI launches three Playwright shards independently from Jest and the parallel
+Go-module matrix, keeping two browser workers per runner. A normal local build
+uses `--skip-playwright`; the standalone test command still includes browsers.
 
 - **Build: Agent (Dev)** - Default build task
 - **Build: Server (Dev)** - Build server
@@ -78,6 +85,15 @@ commands remain available for focused debugging.
 - **Debug: Agent + Server Together** - Launch both simultaneously
 
 ### Making Releases
+
+Release scripts first call the build validation-only path, which invokes
+`tests.ps1`/`tests.sh` with `--all`. This happens before version files, build
+counters, tags, commits or pushes change. Docker, SQLite and sibling-docs/Hugo
+prerequisites must be available; failures stop the release. Compilation after
+the successful gate skips duplicate validation. Explicit `-TestArgs` / repeated
+`--test-arg` overrides replace the default selection, while `-SkipTests` /
+`--skip-tests` bypasses it visibly. See [Testing](/development/testing/#build-and-release-gates)
+for options and qualification limits.
 
 **Unreleased 0.32 trust safeguard:** tagged Stable/Beta Agent CI builds,
 local Agent `-Release`/`--release` builds and non-Dev Agent Docker builds now
