@@ -68,7 +68,11 @@ The current release work is tracked in tested implementation slices:
   [custody runbook](/development/update-publication-custody/) for the qualified
   boundary. Both publisher opt-ins are disabled after rehearsal; production
   credentials/root/activation remain unprovisioned.
-- Required before release: real MSI/service and cross-platform installer
+- Qualified Linux native helper/Manager handoff and explicit owner repair on
+  disposable Ubuntu DEB/Fedora RPM systemd environments. See
+  [native lifecycle evidence](#native-systemd-lifecycle-qualification-unreleased-qualified-scope).
+  Production trust/socket activation remains off.
+- Required before release: final adversarial/cross-platform installer
   qualification, supported 0.31.x migration fixtures, TUF publisher metadata
   and client verification, production root provisioning and restricted routine
   signing/refresh.
@@ -89,7 +93,7 @@ pre-0.32.0 release pass, per the owner's 2026-10-19 sequencing decision. They
 remain a release gate, not accepted or resolved risk; this updater slice does
 not investigate or change dependencies.
 
-### Recommended execution order: seven remaining items
+### Recommended execution order: six remaining items
 
 Hosting, application policy/descriptors, and the original installation-permission
 gate are complete within their documented scopes. The permission gate closed
@@ -104,9 +108,11 @@ checklist numbering:
    run-bound outcomes, including real transaction failure recovery and
    Manager startup reconciliation; see
    [Windows MSI transaction qualification](#windows-msi-transaction-qualification).
-2. **Fixed helper/supervision and isolated DEB transaction tests implemented:**
-   finish Linux packaging/Manager/service wiring, failed-transaction recovery,
-   real service and RPM qualification before enabling unattended installation.
+2. **Qualified on disposable Ubuntu/Fedora systemd environments:** Linux
+   DEB/RPM helper packaging, unprivileged Manager handoff, durable root outcomes,
+   real service/dependency failure handling, sudo revocation and explicit owner
+   repair. See [native lifecycle evidence](#native-systemd-lifecycle-qualification-unreleased-qualified-scope)
+   for the exact scope; production activation remains off.
 3. Client trust-state lifecycle, clock/expiry diagnostics and explicit repair.
 4. Truthful bounded update UX.
 5. Supported 0.31.x, mixed-version and long-offline migration qualification.
@@ -727,7 +733,7 @@ checks and no-downgrade/pin enforcement now exist in the staged consumer.
 Dependency/recovery behavior, startup validation and Linux
 runtime qualification remain part of that follow-up.
 
-#### Native systemd lifecycle qualification (unreleased, gate in progress)
+#### Native systemd lifecycle qualification (unreleased, qualified scope)
 
 The installed Linux helper now owns the post-install service restart as well
 as native consumption. After an independently authorized installer completes
@@ -752,17 +758,57 @@ disposable root authority and an HTTPS metadata fixture, and activate the
 installed socket. Scenarios cover upgrade, disconnection during an observed
 native transaction, an invalid service executable, and an actual missing native
 dependency. They inspect the real root archive/blocker and reject replay after
-failure. Between scenarios, fixture-only owner repair reinstalls the baseline
+failure. Requests originate from the actual Manager in a separate process
+running as the installed `printmaster` service identity. Native package
+discovery/metadata inspection, both publisher authorizations, durable local
+pending state, socket admission and root installation are real. Only repository
+downloading is replaced with the exact fixture package bytes. The disconnected
+case kills that unprivileged sender after observing native `installing`; it does
+not stop the independent systemd helper. The old Manager must never report
+replacement startup success, and pending state must survive every scenario.
+Root public observations must match the durable transaction and exact target.
+Between scenarios, fixture-only owner repair reinstalls the baseline
 and moves preserved transaction evidence; this is not a production reset API.
 Workflow evidence includes the root transaction data and system journals.
 
-The first CI run passed all four DEB service scenarios, but its evidence upload
-failed on root-created directory permissions. RPM reached a confirmed startup
-then hit a fixture cross-filesystem rename. Those harness issues were corrected;
-**a passing rerun of the final implementation is still required**. Neither
-partial run closes the gate. Production socket/trust activation remains off.
+**Qualified on 2026-10-21:**
+[native CI run 39652871637](https://github.com/Printmaster-Org/printmaster/actions/runs/39652871637)
+passed both jobs at
+[source 42c6da3](https://github.com/Printmaster-Org/printmaster/commit/42c6da3ec9fa5c9158c3fa36796851425e49ebf5).
+All eight actual native scenarios passed, and both transaction/journal evidence
+artifacts uploaded successfully:
+
+| Scenario | Ubuntu DEB | Fedora RPM | Observed durable outcome |
+| --- | --- | --- | --- |
+| Upgrade through unprivileged Manager | Passed | Passed | `startup-confirmed` |
+| Sender killed during native `installing` | Passed | Passed | Independent helper archived `startup-confirmed` |
+| Invalid service executable | Passed | Passed | `recovery-required`, then explicit owner repair archived `owner-repaired` |
+| Actual missing native dependency | Passed | Passed | `recovery-required`, replay blocked, then explicit owner repair archived `owner-repaired` |
+
+Both formats also revoked the owner-modified historical managed sudo grant,
+including RPM's former `%config(noreplace)` case. Exact local pending state and
+matching public root observations were checked. Earlier attempts exposed
+fixture evidence permissions/cross-filesystem moves, rapid-scenario start-rate
+state and sender staging on a no-exec temporary mount; those fixture issues
+were corrected without weakening production unit limits, container mounts or
+test assertions. This closes the Linux native lifecycle gate within this
+documented scope. Production socket/trust activation remains off.
+
+This is not an enrolled Agent-to-Server rehearsal, production trust ceremony or
+all-distributions/architectures qualification. The running packaged Agent
+service is real; its replacement Manager's PID-bound startup reconciliation is
+separately regression-tested rather than driven through an enrolled Server.
 
 #### Durable native Manager reporting and owner repair (unreleased)
+
+The implementation is recorded in
+[source d7b0fb6](https://github.com/Printmaster-Org/printmaster/commit/d7b0fb6c689fbb2e5f8526d538bda59c903301bf);
+the unprivileged native Manager rehearsal and independent fixture start-limit
+handling are in
+[source f16e634](https://github.com/Printmaster-Org/printmaster/commit/f16e6342fad1cbf673770a9a070c3517136be152).
+The Fedora container's no-exec temporary mount remains intact; its root-owned
+sender fixture is staged outside that mount in
+[source 42c6da3](https://github.com/Printmaster-Org/printmaster/commit/42c6da3ec9fa5c9158c3fa36796851425e49ebf5).
 
 The Manager now uses the authenticated snapshot's in-lifetime consumer to send
 exact package bytes to the independently provisioned systemd helper. Before

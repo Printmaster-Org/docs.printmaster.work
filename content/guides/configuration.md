@@ -523,8 +523,10 @@ separate root systemd update helper and replace the old
 managed file. The helper socket remains disabled; packages do not provision
 publisher authority or policy, and Manager-driven package installation remains
 blocked by default without independent owner provisioning; durable
-Manager/helper lifecycle integration is now implemented and its final native
-qualification is tracked in the development plan. Older Agents that relied on
+Manager/helper lifecycle integration and owner repair passed disposable
+Ubuntu DEB/Fedora RPM systemd qualification; this does not activate production
+trust or unattended updates. Exact scope and evidence are recorded in the
+development plan. Older Agents that relied on
 those grants must use owner-managed package installation during migration.
 Do not restore broad sudo rules to bypass the gate. See the
 [staged systemd boundary](/development/auto-update-plan/#independent-systemd-package-boundary-unreleased-not-activated).
