@@ -89,7 +89,7 @@ pre-0.32.0 release pass, per the owner's 2026-10-19 sequencing decision. They
 remain a release gate, not accepted or resolved risk; this updater slice does
 not investigate or change dependencies.
 
-### Recommended execution order: eight remaining items
+### Recommended execution order: seven remaining items
 
 Hosting, application policy/descriptors, and the original installation-permission
 gate are complete within their documented scopes. The permission gate closed
@@ -99,11 +99,10 @@ MSI/SYSTEM access-control check; see the
 The remaining work is ordered by actual prerequisites, not by the historical
 checklist numbering:
 
-1. **Implemented, pending platform qualification:** failure-safe Windows
-   binary/MSI helper handoffs, bounded deadlines and durable run-bound outcomes.
-   Actual invalid-MSI rejection/service recovery passed locally on 2026-10-21.
-   Successful MSI upgrade/repair, real transaction rollback and wider
-   service-failure recovery still require qualification; see
+1. **Qualified on the disposable Windows test Agent:** failure-safe
+   Windows binary/MSI helper handoffs, bounded deadlines and durable
+   run-bound outcomes, including real transaction failure recovery and
+   Manager startup reconciliation; see
    [Windows MSI transaction qualification](#windows-msi-transaction-qualification).
 2. **Fixed helper/supervision and isolated DEB transaction tests implemented:**
    finish Linux packaging/Manager/service wiring, failed-transaction recovery,
@@ -1009,11 +1008,28 @@ Unexpected outcomes require inspecting the retained evidence and actual
 installer/service state before recovery, not killing Windows Installer or
 blindly restarting the service.
 
-**This is a rejection/restart qualification, not a successful MSI update,
-repair, upgrade rollback, migration or end-to-end Manager qualification.**
-Actual 1618 contention and service failure after a real package changes bytes
-also remain unqualified. The first of the eight remaining gates stays open.
-Production publisher trust and unattended activation remain off.
+On 2026-10-21, the same disposable test Agent also qualified the remaining
+Windows MSI transaction behaviors with retained protected evidence under
+`C:\ProgramData\PrintMaster-MSI-Qualification-20261021`:
+
+- real helper success from an MSI upgrade (`0.32.1.0`),
+- running-service repair recovery,
+- rollback after files were already changed (with observed candidate bytes),
+- rollback on service-start failure (`Error 1920`, `1603`),
+- real installer contention (`1618`) without killing the active transaction,
+- bounded helper timeout (`124`/`MSI_TIMEOUT`) while the installer remained
+  active, preserving `timed_out` and allowing natural installer completion,
+- and end-to-end Manager `stable` MSI authorization, helper handoff, startup
+  reconciliation, pending-state clearance and final `0.32.3.0` service state.
+
+During this final sequence the Agent remained at the canonical Program Files
+service path, enrollment/identity configuration hashes remained unchanged
+(`preserved_identity_config_files=4`), and effective policy stayed
+`RemoteSigned`. No execution policy was changed.
+
+The first gate is now qualified for the documented disposable-Windows scope;
+seven top-level gates remain. Production publisher trust and unattended
+activation remain off.
 
 Local regression validation of application revision
 [`046c799`](https://github.com/Printmaster-Org/printmaster/commit/046c799f3aada3f11af137cae433cd5f3e6dc832)

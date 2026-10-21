@@ -210,8 +210,10 @@ the shared runner intentionally strips all `PRINTMASTER_LIVE_*` variables and
 never enables it for CI, builds or releases. Do not run it against an
 unapproved installation. See
 [Windows MSI transaction qualification](/development/auto-update-plan/#windows-msi-transaction-qualification)
-for observed local execution and the still-open successful upgrade/repair,
-transaction rollback and end-to-end Manager qualification boundaries.
+for observed local execution across successful upgrade/repair, rollback,
+contention, bounded timeout/no-kill handling and end-to-end Manager
+qualification boundaries. These destructive live checks remain opt-in and are
+not part of CI, normal build gates or release defaults.
 
 ## Running Tests
 
