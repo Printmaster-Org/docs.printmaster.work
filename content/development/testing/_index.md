@@ -41,7 +41,7 @@ remain supported.
 | `playwright` | Builds Agent/Server binaries, then all six configured projects with two workers by default and no retries. |
 | `integration` | Docker preflight, then actual tagged PostgreSQL storage tests. Windows passes the active context's endpoint only to the testcontainers Go subprocess when not explicitly configured; later Docker CLI suites keep their original context. |
 | `docker` | Builds an isolated unique Compose project with fresh temporary data, loopback-only dynamic ports, offline SQLite seeding and actual tagged host Go E2E tests. Saves container logs and removes only that project's containers/network/images and temporary data, including on test failure. |
-| `native` | Bounded native permission, descriptor-substitution and recovery regression selection. |
+| `native` | Bounded native permission, descriptor-substitution and recovery regression selection, including generated Windows helper binary/MSI transaction tests. |
 | `docs` | Sibling `docs.printmaster.work` Node tests, fresh Hugo build and generated links/search checks. |
 | `privileged` | Explicit Unix-only root permission/package fixtures via noninteractive `sudo -n`; includes isolated real Debian installation on Linux. Never modifies installed Agent services. |
 
@@ -186,6 +186,32 @@ is explicitly set and it runs as SYSTEM against the installed test Agent.
 It must not repair ACLs before checking them, and must never run on an
 unapproved installation. For observed evidence and qualification limits, see the
 [permission qualification matrix](/development/auto-update-plan/#permission-qualification-matrix).
+
+### Windows MSI helper transactions
+
+The same `native` selection executes `TestWindowsHelperExecutesMSITransaction`
+on Windows under built-in Windows PowerShell 5.1 without an execution-policy
+override. It runs the generated helper with simulated service/installer controls
+and actual fixture hashing, candidate executable bytes and outcome files.
+Cases include 0/3010 success, 1620 rejection, 1618 contention, 1603 failure,
+service-start failures, substituted staging and active-installer timeout.
+No real service is stopped or package installed by this selection.
+
+The separately opted-in `TestLiveWindowsMSIRejectedPackageRecovery` briefly
+stops the approved disposable MSI-installed Agent, submits an invalid MSI to
+actual Windows Installer, and requires a failed run-bound outcome, unchanged
+executable and matching backup, with the previous service running again.
+It requires elevation, explicit
+`PRINTMASTER_LIVE_MSI_FAILURE=reject-invalid-msi-on-test-agent` consent and
+`PRINTMASTER_LIVE_MSI_BASELINE_SHA256` matching an independently recorded
+installed baseline. It retains protected evidence and does not fabricate
+authorized updater state. Compile and run only that exact Go test directly;
+the shared runner intentionally strips all `PRINTMASTER_LIVE_*` variables and
+never enables it for CI, builds or releases. Do not run it against an
+unapproved installation. See
+[Windows MSI transaction qualification](/development/auto-update-plan/#windows-msi-transaction-qualification)
+for observed local execution and the still-open successful upgrade/repair,
+transaction rollback and end-to-end Manager qualification boundaries.
 
 ## Running Tests
 

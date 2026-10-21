@@ -101,7 +101,10 @@ checklist numbering:
 
 1. **Implemented, pending platform qualification:** failure-safe Windows
    binary/MSI helper handoffs, bounded deadlines and durable run-bound outcomes.
-   Real MSI/service behavior and failure recovery still require qualification.
+   Actual invalid-MSI rejection/service recovery passed locally on 2026-10-21.
+   Successful MSI upgrade/repair, real transaction rollback and wider
+   service-failure recovery still require qualification; see
+   [Windows MSI transaction qualification](#windows-msi-transaction-qualification).
 2. **Fixed helper/supervision and isolated DEB transaction tests implemented:**
    finish Linux packaging/Manager/service wiring, failed-transaction recovery,
    real service and RPM qualification before enabling unattended installation.
@@ -958,6 +961,61 @@ Agent is left running as SYSTEM at the canonical path. Its protected recovery
 backup is `C:\ProgramData\PrintMaster-PermissionQualification-20261020`;
 the temporary SYSTEM task was removed. RemoteSigned is unchanged and production
 publisher trust/unattended activation remain off.
+
+#### Windows MSI transaction qualification
+
+The unreleased helper now requires the service to reach `Running` after MSI
+exit 0 or 3010 before writing a successful helper outcome. MSI custom actions
+can ignore a service-start error, so the installer exit alone is insufficient.
+The helper preserves 3010 and its reboot-required diagnostic. If service startup
+fails, it records a failure without raw-overwriting MSI-owned executable files.
+Startup reconciliation must still independently confirm the target version;
+a successful helper outcome alone does not complete an update.
+
+`TestWindowsHelperExecutesMSITransaction` executes the generated production
+helper under built-in Windows PowerShell 5.1. Service/process operations are
+simulated, but artifact verification, file replacement detection and durable
+outcome writes are real. It covers success, reboot-required, rejected package,
+installer contention, transaction failure, rejection plus failed restart,
+post-install startup failure, substituted staging and an active-installer
+timeout. Successful simulated installs write distinct candidate executable
+bytes, so the startup-failure case detects accidental raw rollback. The timeout
+case requires no service restart while the installer remains active. These
+tests are included in the shared `native` selection and therefore its required
+Windows CI job; configuring that job is not evidence of hosted execution.
+
+On 2026-10-21, the owner-approved disposable MSI-installed Windows Agent also
+passed `TestLiveWindowsMSIRejectedPackageRecovery` using real service control,
+the generated helper and actual Windows Installer. The deliberately invalid
+package returned **1620**. The installed executable remained byte-for-byte
+unchanged, its protected backup matched, and the previous SYSTEM service was
+`Running` afterward at the canonical Program Files path. The baseline SHA-256
+was `6715f0ec48cef103ed9a90b12df2f8be2549aada6c161a5b4c49ea940784d1d7`.
+Retained protected evidence is
+`C:\ProgramData\PrintMaster-MSI-Rejection-2650186340`, including the helper,
+invalid MSI, installer log, run-bound outcome and previous executable backup.
+Effective Windows PowerShell policy remained `RemoteSigned`; no execution
+policy was changed.
+
+The live test requires both
+`PRINTMASTER_LIVE_MSI_FAILURE=reject-invalid-msi-on-test-agent` and
+`PRINTMASTER_LIVE_MSI_BASELINE_SHA256` matching an independently recorded
+installed executable. It refuses an unreadable/existing pending update,
+unexpected service registration or a service that is not initially running.
+It deliberately creates no authorized target or live pending state. Run only
+the exact test in an explicitly approved elevated disposable installation;
+ordinary runner/CI/release runs strip every `PRINTMASTER_LIVE_*` variable.
+Unexpected outcomes require inspecting the retained evidence and actual
+installer/service state before recovery, not killing Windows Installer or
+blindly restarting the service.
+
+**This is a rejection/restart qualification, not a successful MSI update,
+repair, upgrade rollback, migration or end-to-end Manager qualification.**
+Actual 1618 contention and service failure after a real package changes bytes
+also remain unqualified. The first of the eight remaining gates stays open.
+Production publisher trust and unattended activation remain off.
+
+#### Historical permission-gate regression boundary
 
 The wider Agent regression reruns also exposed failures outside this permission
 selection: WebSocket fixed-wait timing, a source-observation probe assertion,
