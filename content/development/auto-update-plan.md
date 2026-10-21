@@ -651,6 +651,8 @@ consumer, closed descriptors and deleted workspaces.
 
 #### Independent systemd package boundary (unreleased, not activated)
 
+Implementation: [source commit 6ba9894](https://github.com/Printmaster-Org/printmaster/commit/6ba98949fac594585dd3ca8c1b9d3ba6841cf061).
+
 The owner-selected Linux privilege boundary is a separate root systemd
 socket/service, not a service-user sudo command. DEB and RPM packages now include
 the fixed `/usr/libexec/printmaster-agent-update` executable,
