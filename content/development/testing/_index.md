@@ -92,7 +92,7 @@ option, not evidence that a two-worker failure did not happen.
 
 CI selects these same suites, automatically discovering Go modules, while
 running each Go module in its own matrix job. Jest, PostgreSQL, Docker E2E,
-native platform checks and **three Playwright shards** start independently;
+native platform checks and **six Playwright shards** start independently;
 Playwright does not wait for Jest or Go tests. Each shard builds its own fixture
 binaries and runs two workers, avoiding the documented contention from raising
 workers on one small runner. `--shard INDEX/TOTAL` selects one shard without

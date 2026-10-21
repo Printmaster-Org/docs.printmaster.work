@@ -64,7 +64,7 @@ Playwright with column pinning and horizontal scrolling; browser checks must
 not be placed under Jest's unit-test directories as standalone scripts.
 CI installs prerequisites; the runner owns suite execution. Underlying npm
 commands remain available for focused debugging.
-CI launches three Playwright shards independently from Jest and the parallel
+CI launches six Playwright shards independently from Jest and the parallel
 Go-module matrix, keeping two browser workers per runner. A normal local build
 uses `--skip-playwright`; the standalone test command still includes browsers.
 
