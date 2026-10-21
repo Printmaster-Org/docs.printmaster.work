@@ -251,6 +251,13 @@ test selection. DEB uses the ephemeral Ubuntu runner, while RPM uses a
 privileged Fedora/systemd container on another ephemeral runner. It must never
 be run against the Windows host's WSL installation or a persistent Linux host.
 Root transaction data and journals are retained as workflow artifacts.
+Failure scenarios additionally run the packaged root-only recovery command
+after explicit fixture owner repair, checking exact run/version/startup evidence
+and preserving the original failed operation. Historical managed sudo grants
+(including a modified RPM `%config(noreplace)` fixture) must be revoked by the
+candidate package. Root unit fixtures separately cover durable Manager pending
+state, malformed/untrusted observations, wrong target/version/PID and
+owner-repaired-not-success reporting.
 See the [native lifecycle gate](/development/auto-update-plan/#native-systemd-lifecycle-qualification-unreleased-gate-in-progress)
 for scenarios, explicit opt-in requirements and observed qualification status.
 

@@ -694,8 +694,9 @@ neither helper-process success nor service-startup confirmation.
 **Activation stays off.** Packages do not enable/start the socket or supply
 helper configuration, administrative policy or an initial publisher root.
 Removal stops/disables the socket; upgrades do not intentionally stop an
-in-flight helper instance. The Manager still explicitly refuses installation
-after authenticated package acquisition. Do not manually activate this staged
+in-flight helper instance. At the foundation revision, the Manager still explicitly refused installation
+after authenticated package acquisition; the durable integration below supersedes
+that staging block only for independently provisioned hosts. Do not manually activate this staged
 boundary as a substitute for completing lifecycle and recovery integration.
 
 Local qualification covers real multi-megabyte Unix streams, root/nonroot peer
@@ -713,9 +714,10 @@ an existing test executable. This is **not** installed socket activation or
 service lifecycle evidence. RPM build, replacement of an installed historical
 sudoers file and actual DEB/RPM service upgrades remain unqualified here.
 
-**Remaining implementation:** wire the Manager sender,
-service restart/readiness and Agent outcome reporting, and
-explicit failed-transaction recovery before enabling automatic installation.
+**At the foundation revision, remaining implementation included** the Manager
+sender, service restart/readiness, Agent outcome reporting and explicit
+failed-transaction recovery. The following slices implement those surfaces;
+native qualification results below determine whether this gate can close.
 The current package service runs as `printmaster`, not root; an authorization
 receipt supplied by that user must not become arbitrary root install authority.
 The shared file check is a prerequisite, not a privileged installer: callers
@@ -754,11 +756,69 @@ failure. Between scenarios, fixture-only owner repair reinstalls the baseline
 and moves preserved transaction evidence; this is not a production reset API.
 Workflow evidence includes the root transaction data and system journals.
 
-**Execution results are pending.** The workflow and root completion fixtures
-are not by themselves proof that the native DEB/RPM service scenarios pass.
-Manager durable handoff/reporting and explicit operator recovery still need
-completion before this gate can close. Production socket/trust activation
-remains off.
+The first CI run passed all four DEB service scenarios, but its evidence upload
+failed on root-created directory permissions. RPM reached a confirmed startup
+then hit a fixture cross-filesystem rename. Those harness issues were corrected;
+**a passing rerun of the final implementation is still required**. Neither
+partial run closes the gate. Production socket/trust activation remains off.
+
+#### Durable native Manager reporting and owner repair (unreleased)
+
+The Manager now uses the authenticated snapshot's in-lifetime consumer to send
+exact package bytes to the independently provisioned systemd helper. Before
+submission it persists the local operation, previous version, exact package
+target and start time. Acquisition failure creates no pending install. Any
+failed or disconnected submission after pending persistence retains the local
+blocker: absence of a reply is not proof that installation did not begin.
+The old Agent never marks itself successfully updated or invokes sudo/restart.
+
+The root helper atomically publishes non-secret observations at
+`/var/lib/printmaster-update-results/current.json` (root-owned `0644`, protected
+root-owned `0755` directory) while retaining private authority/journals under
+`/var/lib/printmaster-update`. These observations are not install/retry
+authorization. Descriptor-bound reads reject links, hardlinks, unsafe
+ownership/modes and noncanonical/oversized evidence. The replacement Manager
+requires an exact package/previous-version match, an observation no older than
+its pending start, `startup-confirmed`, its own running version and its own PID
+matching the root-confirmed service PID. A version string alone cannot finish
+the update. Missing/in-progress evidence is polled for at most sixteen minutes;
+failure, timeout or mismatch stays visible and retains the local blocker.
+Startup logging distinguishes pending reconciliation from actual success.
+
+The separate root-only `/usr/libexec/printmaster-agent-update-recovery`
+administrator command is packaged alongside the no-argument socket helper.
+It has **no** service-user sudo grant and accepts only:
+
+```sh
+sudo /usr/libexec/printmaster-agent-update-recovery inspect
+sudo /usr/libexec/printmaster-agent-update-recovery confirm-repair ROOT_RUN_ID
+```
+
+`inspect` reads the active protected run and queries native installed state;
+an incomplete/unconfigured package produces an explicit inspection error rather
+than a healthy-looking result. Read the protected `native-transaction.json`
+and native package-manager diagnostics when the database itself is incomplete.
+Preserve the journal and logs before taking owner action.
+
+`confirm-repair` does **not** install/downgrade packages, restart services or
+ignore dependencies. The owner must first resolve package-database/dependency
+problems using normal administrative tooling, restore either the recorded
+previous or exact candidate version, and start the canonical Agent service.
+Confirmation requires the exact failed root run, `recovery-required`, a fully
+configured known version, stable systemd invocation and the protected installed
+executable. It refuses `installing`/ambiguous runs, unrelated versions and
+unstable/wrong processes. It durably archives `owner-repaired` evidence before
+retiring the blocker; crashes during archival can resume the same confirmation.
+The matching replacement Manager records the original update as **failed,
+owner repaired**, then releases its local pending blocker. It never converts
+repair into original update success. If the service was restarted after repair
+confirmation, its PID no longer matches; retain evidence and investigate rather
+than deleting pending state to bypass validation.
+
+For an `installing` run left by helper/host interruption, do not use this command
+as a reset: first establish whether any native transaction remains active.
+That ambiguous case intentionally requires further owner investigation, not an
+automatic replay, descendant kill, rollback or journal deletion.
 
 The development Windows machine intentionally retains owner-approved
 `RemoteSigned`; reverting its policy is not a pending user action. This
