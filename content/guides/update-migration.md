@@ -35,7 +35,10 @@ but failed the fixture's pre-packaging-byte comparison. The corrected fixture
 compares installed bytes with the executable independently extracted from the
 finished DEB/RPM, retaining both raw-build and packaged-executable digests
 because native RPM build-root processing can transform ELF bytes.
-A successful full matrix is still required.
+The corrected exact-payload implementation is
+[source 6058750](https://github.com/Printmaster-Org/printmaster/commit/6058750caa0bf816af4ad1190a96441609b2a4db);
+[run 39814950321](https://github.com/Printmaster-Org/printmaster/actions/runs/39814950321)
+is the full-matrix retry. A successful full matrix is still required.
 
 The manual **Legacy Linux migration qualification** workflow has four
 disposable jobs: released 0.31.0 and 0.31.1 amd64 packages, each as DEB on
