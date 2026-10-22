@@ -143,7 +143,7 @@ checklist numbering:
    SCM evidence). Raw Windows service installs, macOS and additional architecture
    migration coverage remain separate gates; see the migration guide for exact
    boundaries.
-6. **Dependency remediation implemented; final CI evidence pending:** shared
+6. **Dependency remediation qualified in full CI:** shared
    crypto/signing dependencies aligned across consumers, vulnerable development
    formatter removed, and Go 1.27.3 required for patched standard-library builds.
    See [dependency triage](#dependency-security-triage-2026-10-22).
@@ -200,8 +200,15 @@ Both npm audits report zero vulnerabilities. The docs validation run
 `39827148855` passed. Source run `39827294892` passed every Go/Jest/integration
 and native-permission job, plus three browser shards; remaining runners stalled
 in Azure-mirror APT downloads before tests and the run was cancelled.
-Split, bounded browser setup is now being qualified; a full CI pass remains
-pending rather than inferred from those partial results.
+The bounded retry `39829946274` passed five browser shards but failed the sixth
+at its OS-install deadline on the same mirror. The final source
+[1c7f292](https://github.com/Printmaster-Org/printmaster/commit/1c7f292138c3bdf501640c2e2213b9938406a983)
+selects Ubuntu's upstream HTTPS mirror only in disposable browser runners.
+**Full [CI run 39831072689](https://github.com/Printmaster-Org/printmaster/actions/runs/39831072689)
+passed**, including all six browser shards, every Go module and its required
+vulnerability scan, Jest, PostgreSQL, Docker E2E, three native-permission jobs
+and the CI Passed aggregate. OS-dependency installation took 46-60 seconds
+across the six runners. Related docs CI `39831035172` also passed.
 Already deployed binaries require an approved rebuild/release and deployment;
 production signing, root provisioning and unattended activation remain off.
 

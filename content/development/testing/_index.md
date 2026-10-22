@@ -138,6 +138,13 @@ APT mirror list with Ubuntu's upstream HTTPS archive before installing
 dependencies. The step requires the expected entry and logs the resulting
 mirror list; package signatures, browser selection and test assertions remain
 unchanged. No development-machine package source is modified.
+The final
+[source 1c7f292](https://github.com/Printmaster-Org/printmaster/commit/1c7f292138c3bdf501640c2e2213b9938406a983)
+passed the complete required
+[CI run 39831072689](https://github.com/Printmaster-Org/printmaster/actions/runs/39831072689):
+all six browser shards and the aggregate were successful, with OS-dependency
+installation taking 46-60 seconds per runner. No retry or test assertion was
+added or weakened to obtain that result.
 
 Linux/macOS root fixtures are explicit jobs. CI owns tool/dependency
 setup and caching, not a second set of test commands. The sibling docs site
