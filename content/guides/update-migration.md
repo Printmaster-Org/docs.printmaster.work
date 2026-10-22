@@ -81,7 +81,7 @@ Initial hosted retry
 [run 39819600238](https://github.com/Printmaster-Org/printmaster/actions/runs/39819600238)
 then failed before executing the fixture because PowerShell split dotted native
 Go test flags. Quoting the exact arguments in
-[source 07744f9](https://github.com/Printmaster-Org/printmaster/commit/07744f9d4f194f131798fb5109d2f82f7fd74e2e)
+[source 07744f9](https://github.com/Printmaster-Org/printmaster/commit/07744f9480103b93513e307850e25f029a7e662b)
 restored native invocation.
 WiX emits its documented delayed-service configuration warning and the
 existing same-version-upgrade ICE61 warning.

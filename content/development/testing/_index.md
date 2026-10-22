@@ -122,6 +122,16 @@ binaries and runs two workers, avoiding the documented contention from raising
 workers on one small runner. `--shard INDEX/TOTAL` selects one shard without
 changing projects, assertions or retries; local runs remain unsharded by default.
 All shards/modules remain required by CI Passed, even if another fails.
+Browser setup separates OS dependencies and browser downloads, with a
+five-minute deadline for each. Browser downloads use a 60-second connection
+timeout; the shard build/test step has a ten-minute deadline and the complete
+job has a 25-minute ceiling. All failures remain required failures, not skips
+or automatic retries. Run `39827294892` reached successful non-browser checks
+and three successful browser shards, but other runners spent over ten minutes
+downloading Ubuntu packages from the Azure APT mirror before tests started.
+It was cancelled for diagnosis; it is not full passing qualification evidence.
+The deadlines bound that infrastructure failure without changing assertions.
+
 Linux/macOS root fixtures are explicit jobs. CI owns tool/dependency
 setup and caching, not a second set of test commands. The sibling docs site
 retains its own CI; use `--with-docs` locally for paired changes.
