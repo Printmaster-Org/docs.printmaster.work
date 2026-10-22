@@ -5,6 +5,9 @@ description: "Unreleased Agent and Fleet progress, bounded confirmation waits, t
 
 ## Unreleased scope
 
+Implemented at
+[source f0433bd](https://github.com/Printmaster-Org/printmaster/commit/f0433bdeba4e6337cb856809926ef6adbfc920a8).
+
 This describes the hardened 0.32 development implementation, not a released
 0.31.x guarantee. Production publisher trust and unattended activation remain
 off until the separate owner provisioning and release gates are approved.

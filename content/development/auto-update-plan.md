@@ -1866,6 +1866,9 @@ The subsequent bounded UX gate is described below.
 
 ### Truthful bounded update UX (2026-10-22, unreleased)
 
+Implemented at
+[source f0433bd](https://github.com/Printmaster-Org/printmaster/commit/f0433bdeba4e6337cb856809926ef6adbfc920a8).
+
 The Agent panel, Fleet version cells and Agent detail dialog now retain
 distinct checking, download, staging, installation, restart and confirmation
 phases. Command delivery and reconnect never manufacture installation success.
