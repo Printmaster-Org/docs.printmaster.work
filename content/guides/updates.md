@@ -80,8 +80,10 @@ Unsequenced progress remains readable until an Agent has supplied an ordered
 snapshot. Older unsequenced `complete`/`succeeded` messages are shown as
 **unconfirmed**, not proof of hardened installation validation. Unknown future
 phases also remain explicitly unresolved. Once an ordered snapshot exists,
-unsequenced messages cannot replace it. The separate 0.31.x/mixed-version
-migration gate is still required; this UI behavior is not that qualification.
+unsequenced messages cannot replace it. The
+[migration guide](/guides/update-migration/) records qualified 0.31.x wire
+compatibility and six-month trust recovery separately from still-required native
+legacy installation rehearsals; this UI behavior is not that qualification.
 
 ## Sync from GitHub
 

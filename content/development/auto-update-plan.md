@@ -76,8 +76,14 @@ The current release work is tracked in tested implementation slices:
   disposable Ubuntu DEB/Fedora RPM systemd environments. See
   [native lifecycle evidence](#native-systemd-lifecycle-qualification-unreleased-qualified-scope).
   Production trust/socket activation remains off.
+- Qualified with disposable keys and pinned source contracts: 0.31.0/0.31.1
+  manifest compatibility/fail-closed Manager entry points and a genuinely
+  historical six-calendar-month trust checkpoint across expired roots,
+  root/routine-key replacement, publisher repair and restart/replay. These are
+  protocol/trust fixtures, **not native legacy installer migration**; see the
+  [migration qualification and owner procedure](/guides/update-migration/).
 - Required before release: final adversarial/cross-platform installer
-  qualification, supported 0.31.x migration fixtures, TUF publisher metadata
+  qualification, native supported 0.31.x migration rehearsals, TUF publisher metadata
   and client verification, production root provisioning and restricted routine
   signing/refresh.
 - Deferred: independent Agent recovery service, power-loss-safe installation
@@ -126,7 +132,11 @@ checklist numbering:
    UX and explicit upstream sync replay. See
    [bounded update UX](#truthful-bounded-update-ux-2026-10-22-unreleased)
    and the [operator guide](/guides/updates/).
-5. Supported 0.31.x, mixed-version and long-offline migration qualification.
+5. **Protocol/trust fixtures qualified; native legacy migrations remain open:**
+   pinned 0.31.0/0.31.1 request/response compatibility, fail-closed mixed versions
+   and six-month-offline root history/recovery. See
+   [migration boundaries](/guides/update-migration/). Do not call the full
+   supported installer migration matrix complete.
 6. Final-beta dependency vulnerability triage/fixes.
 7. Explicitly approved production trust provisioning, verified independent
    encrypted backups, public-root embedding and scoped credentials; activation
