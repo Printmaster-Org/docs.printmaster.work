@@ -97,7 +97,7 @@ pre-0.32.0 release pass, per the owner's 2026-10-19 sequencing decision. They
 remain a release gate, not accepted or resolved risk; this updater slice does
 not investigate or change dependencies.
 
-### Recommended execution order: five remaining items
+### Recommended execution order and gate status
 
 Hosting, application policy/descriptors, and the original installation-permission
 gate are complete within their documented scopes. The permission gate closed
@@ -122,7 +122,10 @@ checklist numbering:
    exact-retained-checkpoint repair. Missing/corrupt checkpoint authority stays
    blocked rather than enabling an unsafe reset; see
    [client trust lifecycle](#client-trust-lifecycle-2026-10-22-unreleased).
-4. Truthful bounded update UX.
+4. **Implemented and regression-tested:** truthful bounded Agent/Fleet update
+   UX and explicit upstream sync replay. See
+   [bounded update UX](#truthful-bounded-update-ux-2026-10-22-unreleased)
+   and the [operator guide](/guides/updates/).
 5. Supported 0.31.x, mixed-version and long-offline migration qualification.
 6. Final-beta dependency vulnerability triage/fixes.
 7. Explicitly approved production trust provisioning, verified independent
@@ -1859,7 +1862,57 @@ off.
 
 Use the [client trust diagnostics and repair runbook](/development/update-client-trust/)
 for exact paths, commands, backup/serialization requirements and limitations.
-The next ordered gate is truthful bounded update UX.
+The subsequent bounded UX gate is described below.
+
+### Truthful bounded update UX (2026-10-22, unreleased)
+
+The Agent panel, Fleet version cells and Agent detail dialog now retain
+distinct checking, download, staging, installation, restart and confirmation
+phases. Command delivery and reconnect never manufacture installation success.
+Only a run-bound Agent `succeeded` snapshot displays Updated; legacy unsequenced
+completion and unknown phases stay unconfirmed.
+
+After two minutes without newer progress, an active observation explicitly
+shows that the outcome is unknown, retaining the run/phase and blocking
+duplicate installation. This is not a native transaction timeout or permission
+to kill/retry an installer. UI-generated progress interpolation is removed.
+Reported download percentages are used without rescaling; unknown percentages
+remain unknown. Cancellation is limited to current pre-installation phases.
+Failures, including full trust/owner-repair guidance, no longer disappear after
+a short toast. Newer ordered runs replace terminal results.
+
+Update dispatch/status requests have fifteen-second browser bounds. Late
+responses cannot overwrite live progress; lost responses remain ambiguous.
+Existing durable Agent snapshots restore results across browser reload and
+SSE reconnection. The privileged helper deadlines, protected journals and
+native package recovery boundaries from the earlier gates are unchanged.
+
+Manual upstream cache sync now exposes its latest ordered snapshot through an
+administrator-only GET on the existing `/api/v1/releases/sync` route. POST/409
+responses add the initial/current snapshot without changing their dispatch
+semantics. The task is explicitly bounded to its advertised one-hour deadline.
+Browser status polling recovers missed SSE, stops after that deadline plus a
+two-minute observation allowance and never reports stale work as completed.
+Errors remain visible. This record survives browser reload, **not a Server
+process restart**; no retained record is not evidence of success. Scheduled
+intake remains separate.
+
+The [operator guide](/guides/updates/) documents every display state, safe
+follow-up, mixed-version limits and exact Server UI API scope. The seventeen
+Server OpenAPI operations remain a separate reviewed subset, not a claim that
+the new status route is included there. No production trust, package service,
+publisher credentials or update activation is changed.
+
+Qualification covers exact observation boundaries, silent replay, terminal/
+new-run ordering, stale/unknown/legacy progress, reconnect/reload, persistent
+trust/repair errors, duplicate dispatch, late/lost responses, upstream
+authorization, real cache success/failure and HTTP deadline cancellation.
+Real embedded Agent/Fleet pages are exercised on all six configured browser
+projects, including mobile layouts. Native installer/service qualification is
+the separately recorded earlier evidence, not rerun by browser fixtures.
+
+The next ordered gate is supported 0.31.x, mixed-version and long-offline
+migration qualification.
 
 ### Resumed slice: persistent trust-state integrity (2026-10-19)
 

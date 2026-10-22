@@ -14,4 +14,10 @@ The documentation is public; protected Server operations require a user session,
 
 For local-site operations use the separate [Agent reference](/api/agent/). Machine communication is described under [Agent↔Server protocol](/api/protocol/).
 
+The unreleased administrator-only release-cache sync status read and additive
+POST snapshots are reviewed separately in the
+[update-progress guide](/guides/updates/#server-ui-status-api-scope), including
+credentials, permissions, response shapes and process-lifetime limitations.
+They are outside this seventeen-operation subset; no wider coverage is implied.
+
 **Request execution is disabled:** this page does not send credentials or requests to your fleet. Import the spec into a local API client, replace the example host with your own HTTPS server, and keep credentials private. No CORS changes or anonymous access are needed to publish a reference page.
