@@ -320,7 +320,7 @@ During `0.x.x` versions, breaking changes are acceptable in MINOR releases since
 ## CI/CD Integration
 
 This section was reviewed against PrintMaster commit
-[`f556dd3`](https://github.com/Printmaster-Org/printmaster/commit/f556dd33e1e671ad49ec6c381a834d7a6942c438).
+[`a3f3bb8`](https://github.com/Printmaster-Org/printmaster/commit/a3f3bb8223f50ff3a0e8206ffc6919444c9deb8e).
 The imported sections elsewhere on this page retain their original source metadata.
 
 The program's `ci.yml` workflow runs on pushes to `main`, pull requests targeting
