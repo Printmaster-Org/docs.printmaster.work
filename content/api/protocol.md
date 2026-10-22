@@ -79,6 +79,14 @@ running version, followed by `succeeded` at 100% or `failed` on mismatch. A
 reconnect alone cannot complete an update. This is version validation, not
 independent health supervision or automatic rollback.
 
+The unreleased [update-progress UI](/guides/updates/) keeps these installation
+phases distinct, retains failure diagnostics and marks active observations
+unknown after two minutes without newer progress. This does not change the
+snapshot schema or turn a browser timeout into a terminal Agent result.
+Legacy unsequenced completion cannot prove hardened validation. Manual
+Server cache-sync status is a separate administrator/user-session API described
+in that guide, not an Agent machine-token operation.
+
 These are additive fields on existing routes/messages, not new routes or a
 machine-protocol-version bump. The machine telemetry write and Agent-local
 update-status API remain outside the reviewed read-only OpenAPI subsets. The
