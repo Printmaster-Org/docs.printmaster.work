@@ -20,6 +20,36 @@ installation rehearsals remain required before declaring a supported migration
 matrix. Existing native helper qualification is not a substitute for those
 rehearsals.
 
+### Native Linux rehearsal (implementation awaiting hosted evidence)
+
+The manual **Legacy Linux migration qualification** workflow has four
+disposable jobs: released 0.31.0 and 0.31.1 amd64 packages, each as DEB on
+Ubuntu systemd and RPM on Fedora 44 systemd. It installs the actual released
+asset after checking a source-pinned SHA256, not a current build with an old
+version string. The candidate is built from the exact workflow checkout with
+a fixture-only `0.32.0` version; no release tag or product VERSION is changed.
+
+This is **owner-controlled native installation**, not a legacy Server-command
+update or a production signed bootstrap. The checkout and pinned baseline
+digests are the rehearsal authority; no production keys are created. The
+workflow is manual-only, refuses local/persistent runners, and is excluded
+from ordinary tests/builds. DEB changes only its disposable hosted runner;
+RPM uses a dedicated disposable Fedora systemd container.
+
+The fixture checks actual legacy and candidate HTTP versions, installed
+executable/process identity, a saved printer in the legacy-created SQLite
+database, database integrity, unchanged configuration/Agent ID/machine and join
+token bytes, stable service UID/GID, revoked legacy sudo grants, protected new
+helpers, and an inactive unprovisioned helper socket. Invalid package input
+must leave the legacy installation/data working. A deliberately broken
+post-migration service start requires explicit owner configuration repair and
+restart of the **same candidate**, not a database downgrade.
+
+Artifact evidence includes baseline/candidate digests, source SHA, test output,
+service journal and a result record. Until a successful hosted run is recorded,
+this is a test implementation, **not completed native qualification**.
+Windows raw/MSI, macOS and other architectures remain outside this fixture.
+
 ## Released baselines
 
 The Agent and Server stable tags share these exact source revisions:
