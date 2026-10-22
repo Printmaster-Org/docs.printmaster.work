@@ -131,6 +131,13 @@ and three successful browser shards, but other runners spent over ten minutes
 downloading Ubuntu packages from the Azure APT mirror before tests started.
 It was cancelled for diagnosis; it is not full passing qualification evidence.
 The deadlines bound that infrastructure failure without changing assertions.
+The first bounded rerun (`39829946274`) passed five shards; the sixth hit the
+OS-install deadline while fetching fonts from the same mirror. Browser runners
+now explicitly replace that Azure mirror entry in their disposable runner's
+APT mirror list with Ubuntu's upstream HTTPS archive before installing
+dependencies. The step requires the expected entry and logs the resulting
+mirror list; package signatures, browser selection and test assertions remain
+unchanged. No development-machine package source is modified.
 
 Linux/macOS root fixtures are explicit jobs. CI owns tool/dependency
 setup and caching, not a second set of test commands. The sibling docs site
