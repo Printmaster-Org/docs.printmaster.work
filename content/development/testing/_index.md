@@ -70,10 +70,34 @@ Staticcheck must also be **built with a Go version at least as new as the
 modules it analyzes**. Updating its release alone is insufficient. If it reports
 `application built with go1.26` against Go 1.27 modules, rebuild the CI-pinned
 version with the matching toolchain, for example
-`GOTOOLCHAIN=go1.27.0 go install honnef.co/go/tools/cmd/staticcheck@v0.8.1`
-on Unix, or set `$env:GOTOOLCHAIN = 'go1.27.0'` in a PowerShell session before
+`GOTOOLCHAIN=go1.27.3 go install honnef.co/go/tools/cmd/staticcheck@v0.8.2`
+on Unix, or set `$env:GOTOOLCHAIN = 'go1.27.3'` in a PowerShell session before
 that `go install` command. `go version -m` on the installed executable shows
 its build toolchain. The runner does not silently replace tools.
+
+### Dependency security checks
+
+The unreleased hardened build requires **Go 1.27.3 or newer**. Module minimums,
+CI/CD/native-qualification toolchains and application container builders use
+that patched version. Go 1.27.0 embeds affected HTTP/TLS/certificate code even
+when the separately versioned modules have no open dependency alerts; rebuilding
+with the patched toolchain is required. Updating source does not patch already
+deployed binaries.
+
+Each discovered Go-module CI job installs the pinned official
+`govulncheck@v1.9.0` with the selected Go toolchain and runs `govulncheck ./...`
+inside that module. Reachable findings and scan errors fail the required job.
+For a local repeat, build the scanner with the same supported toolchain before
+running it in `common`, `agent`, `server` and `tests`. This is distinct from the
+shared lint/test suites; a clean scan is not full platform/release qualification.
+
+The root JavaScript tooling explicitly depends on `js-yaml` 4.3.2 and narrowly
+overrides the old YAML dependency of `@istanbuljs/load-nyc-config`. That loader
+uses the compatible `load` API; regression tests cover YAML aliases, extended
+configuration and explicit invalid/executable-tag rejection. This removes
+`argparse` 1.x and the vulnerable `sprintf-js` dependency from the locked graph,
+rather than suppressing the advisory or pretending an unfixed formatter
+release is patched. Other YAML consumers are not globally overridden.
 
 Execution stops at the first failed command by default, including within a
 Go/lint module. Later selected suites are marked **NOT RUN**, not passed or

@@ -143,7 +143,10 @@ checklist numbering:
    SCM evidence). Raw Windows service installs, macOS and additional architecture
    migration coverage remain separate gates; see the migration guide for exact
    boundaries.
-6. Final-beta dependency vulnerability triage/fixes.
+6. **Dependency remediation implemented; final CI evidence pending:** shared
+   crypto/signing dependencies aligned across consumers, vulnerable development
+   formatter removed, and Go 1.27.3 required for patched standard-library builds.
+   See [dependency triage](#dependency-security-triage-2026-10-22).
 7. Explicitly approved production trust provisioning, verified independent
    encrypted backups, public-root embedding and scoped credentials; activation
    initially remains off.
@@ -153,6 +156,46 @@ checklist numbering:
 Each item includes its own regression tests and documentation. Final
 qualification is not permission to defer testing. No production ceremony is
 needed to work on the next code gate.
+
+### Dependency security triage (2026-10-22)
+
+The source repository had 14 open Dependabot alerts: seven critical, two high
+and five medium. Thirteen were SSH/SSH-agent advisories against the standalone
+`common` module's indirect `golang.org/x/crypto` 0.50.0 requirement. The Agent
+and Server already selected 0.58.0, and Windows/Linux/macOS package-graph
+inspection found no imports of the affected SSH packages. Advisory severity
+was not evidence of a reachable deployed exploit. The shared requirement is
+now aligned at 0.58.0; Sigstore 1.11.1 and its required dependencies are
+synchronized in all three module manifests/sums.
+
+The remaining alert affected development-only `sprintf-js` 1.0.3 through
+coverage configuration tooling. No fixed formatter release was published:
+the latest 1.1.3 was also affected. A scoped YAML-loader dependency replacement
+removes the vulnerable package; it is not an alert dismissal. Playwright's
+existing patch update is also incorporated. See the
+[testing guide](/development/testing/#dependency-security-checks) for the
+compatibility regression and required CI scanning.
+
+An official Go vulnerability scan also found nine reachable standard-library
+advisories when using Go 1.27.0, spanning HTTP/HTTP2 denial of service and
+connection handling, MIME limits, TLS and compromised intermediate-certificate
+distrust. The module minimums and all application build/qualification pins
+now require Go 1.27.3, including Docker builders and mock-E2E tooling. Local
+rescans of all four modules with 1.27.3 report zero reachable or imported-package
+findings. The scanner still reports module-only
+[GO-2026-5932](https://pkg.go.dev/vuln/GO-2026-5932) because `x/crypto` contains
+unmaintained OpenPGP code: that package is not imported, has no fixed version,
+and is not used for updater trust. The required crypto module cannot simply
+be removed. This remains an explicit non-reachable disposition, not a claim
+that the upstream package is safe.
+
+Existing source dependency PRs overlap these direct-main changes; their older
+checks include stale lint failures and an untidied consumer module. No failing
+check is bypassed and no new review PR is needed. Both existing documentation
+dependency/workflow PRs passed their checks and were merged. Final source CI
+and the resulting default-branch alert state still require confirmation.
+Already deployed binaries require an approved rebuild/release and deployment;
+production signing, root provisioning and unattended activation remain off.
 
 ### Repository package authentication boundary (unreleased)
 
