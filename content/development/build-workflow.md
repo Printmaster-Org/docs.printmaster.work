@@ -329,36 +329,56 @@ than starting another CI run. Its aggregate **CI Passed** job succeeds only when
 Server, JavaScript, mock E2E, and Docker E2E jobs succeed; Agent and Server also
 depend on the Common job.
 
-The `cd-agent.yml` and `cd-server.yml` workflows run on `main`, their respective
-component release tags, or manual dispatch. Before building binaries or
-publishing container images, each waits for **CI Passed** on the exact triggering
-commit (`github.sha`), not a moving branch ref.
+**Unreleased event-driven CD change:** `cd-agent.yml` and `cd-server.yml` now
+start development publication from a successful completed **CI** workflow on
+`main`, not from a simultaneous branch-push job that polls for CI. GitHub holds
+the dependency without allocating a waiting runner. Failed/cancelled CI and
+pull-request/foreign-repository completions cannot start publication.
+Component release tags and explicit manual CD dispatch remain supported.
 
-CI (pushes and pull requests), both CD workflows (branch pushes), and CodeQL
-(branch pushes) skip changes consisting entirely of Markdown files (`**/*.md`)
+Each CD uses a short, nonpolling read-only gate to verify the canonical
+`ci.yml` workflow, repository, exact SHA, successful completed run/attempt and
+its successful **CI Passed** aggregate. Automatic completion events must be
+from a `main` push or manual CI run on `main`; an obsolete completion whose SHA
+is no longer the current `main` tip skips development publication. For tag and
+manual CD, the newest eligible CI run on that exact SHA must already have
+completed successfully. Missing/running/failed CI fails immediately with
+instructions to run CI first and retry CD; CD never starts CI or waits for it.
+
+All binary/container/release-source checkouts, image revision labels and release
+commit references use `SOURCE_SHA`: the completed CI's `head_sha` for automatic
+CD, or the triggering commit for tag/manual CD. `workflow_run`'s default-branch
+`github.sha` is used only for the trusted gate checkout, never as an accidental
+replacement for the tested source. Both Agent and Server development release tags
+are explicitly anchored to the built SHA. No PR artifacts or untrusted
+pull-request source are consumed by the privileged publication workflow.
+
+CI (pushes and pull requests) and CodeQL (branch pushes) skip changes consisting
+entirely of Markdown files (`**/*.md`)
 or files under `docs/`. Any other changed file still triggers the applicable
 workflows, including source, tests, embedded UI assets, dependencies, build
 scripts, configuration, and workflow definitions. Mixed source/documentation
 changes run normally. The package-site workflow keeps its existing installer
 and package-site path filter.
 
-Manual dispatch bypasses these path filters, component release tags still
-trigger CD, and weekly CodeQL scans remain enabled. To publish a tag on a
+Because automatic CD follows CI, documentation-only pushes also produce no
+automatic CD publication. Manual CI dispatch bypasses these path filters; a
+successful manual CI on current `main` also triggers development CD.
+Component release tags still trigger CD, and weekly CodeQL scans remain enabled.
+To publish a tag on a
 documentation-only commit, manually run CI on that exact commit first: there
 will be no automatic **CI Passed** check to reuse. If branch protection later
 requires **CI Passed**, replace workflow-level PR filtering with job-level
 gating and an always-reported aggregate check; GitHub leaves required checks
 pending when their entire workflow is skipped by a path filter.
 
-Both gates use `matiasalbarello/wait-on-check-action-ts` v1.2.0, pinned to commit
-`8087812521cdb59ebc7751984b31b17209b30eeb`. This action runs natively on Node.js 24
-and needs only the workflow's `GITHUB_TOKEN` with `checks: read` (the gate job also
-retains `contents: read`). It polls every 15 seconds and accepts only `success`;
-skipped, cancelled, or failed checks do not unblock CD. Missing checks are not
-accepted: discovery can wait up to 900 seconds, with a 15-minute step timeout
-capping the entire discovery-and-completion wait. The action itself fails on
-disallowed conclusions or exhausted discovery; GitHub stops the step on timeout.
-No separate conclusion-output guard is needed.
+The previous 15-minute polling gates caused Agent/Server CD to time out while
+CI was still installing Playwright dependencies; CI later passed. The new
+shared `scripts/cd-ci-gate.js` uses the GitHub API via the existing `gh` CLI,
+with `contents: read` and `actions: read`, no sleep/retry loop, and a three-minute
+gate-job bound. It validates the successful aggregate in the **exact run
+attempt**, not a same-named check from another workflow or older attempt.
+There are no CD runner minutes spent waiting for CI completion.
 
 For manual CD runs, ensure CI has also run on the selected commit. Dispatching CD
 alone does not start CI, and an absent **CI Passed** check blocks publication.
