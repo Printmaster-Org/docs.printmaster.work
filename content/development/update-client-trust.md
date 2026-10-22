@@ -5,6 +5,9 @@ description: "Unreleased offline inspection and exact-checkpoint repair without 
 
 ## Scope and safety boundary
 
+Implemented and locally qualified at
+[source 8b6b5b7](https://github.com/Printmaster-Org/printmaster/commit/8b6b5b7d1c38d895900bf34f3dc64f5453e30c5e).
+
 This is **unreleased client tooling**, not a production trust ceremony or a
 publisher-state recovery command. Production updater activation remains off.
 It applies to the shared TUF verifier used by the Agent and the independent

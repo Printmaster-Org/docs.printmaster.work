@@ -1816,6 +1816,10 @@ metadata delivery without using Server-provided keys as bootstrap authority.
 
 ### Client trust lifecycle (2026-10-22, unreleased)
 
+Implemented at
+[source 8b6b5b7](https://github.com/Printmaster-Org/printmaster/commit/8b6b5b7d1c38d895900bf34f3dc64f5453e30c5e),
+paired with the [owner runbook](/development/update-client-trust/).
+
 The shared verifier now retains the greatest local UTC time of a successful
 exact-target authorization in its existing checkpoint. More than five minutes
 of backward clock movement blocks updates before network access or state writes.
