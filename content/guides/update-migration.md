@@ -22,6 +22,15 @@ rehearsals.
 
 ### Native Linux rehearsal (implementation awaiting hosted evidence)
 
+Fixture implementation:
+[source ca2e171](https://github.com/Printmaster-Org/printmaster/commit/ca2e17165b0e5fe256a07e0b8c500b5914cffb21).
+Initial hosted execution:
+[run 39813726943](https://github.com/Printmaster-Org/printmaster/actions/runs/39813726943)
+(failed in fixture setup: the production package-command allowlist correctly
+refused a fixture `chown` command). The fixture uses direct owner-controlled
+file ownership setup instead; the production allowlist is unchanged. A new
+successful run is still required.
+
 The manual **Legacy Linux migration qualification** workflow has four
 disposable jobs: released 0.31.0 and 0.31.1 amd64 packages, each as DEB on
 Ubuntu systemd and RPM on Fedora 44 systemd. It installs the actual released
