@@ -69,7 +69,7 @@ Artifact evidence includes baseline/candidate digests, source SHA, test output,
 service journal and a result record. Windows raw/MSI, macOS and other
 architectures remain outside this Linux fixture.
 
-### Native Windows MSI rehearsal (hosted evidence pending)
+### Native Windows MSI rehearsal (two released baselines passed)
 
 Initial implementation:
 [source dc21712](https://github.com/Printmaster-Org/printmaster/commit/dc21712041a9000bc886be8d6ecb7bf3fd687be6).
@@ -77,9 +77,14 @@ Initial implementation:
 stopped before any installation because the intentional-failure fixture lacked
 a WiX `SystemFolder` directory reference. The corrected fixture declares it;
 both production and failure variants compile/link without local installation.
+Initial hosted retry
+[run 39819600238](https://github.com/Printmaster-Org/printmaster/actions/runs/39819600238)
+then failed before executing the fixture because PowerShell split dotted native
+Go test flags. Quoting the exact arguments in
+[source 07744f9](https://github.com/Printmaster-Org/printmaster/commit/07744f9d4f194f131798fb5109d2f82f7fd74e2e)
+restored native invocation.
 WiX emits its documented delayed-service configuration warning and the
-existing same-version-upgrade ICE61 warning; actual service behavior still
-requires hosted evidence.
+existing same-version-upgrade ICE61 warning.
 
 The manual **Legacy Windows MSI migration qualification** workflow uses actual
 released amd64 MSIs from both stable baselines, verified against independently
@@ -117,12 +122,21 @@ the canonical executable. Restricted-Users write probes check the executable
 and retained private files without repairing their ACLs in the fixture.
 Finally, uninstall/reinstall of the candidate verifies native service removal
 and fresh registration while retaining owner data.
+The hosted baseline run
+[39820122209](https://github.com/Printmaster-Org/printmaster/actions/runs/39820122209)
+passed for both released MSIs (0.31.0 and 0.31.1). A follow-up source slice
+[51d74ac](https://github.com/Printmaster-Org/printmaster/commit/51d74ac70b23246a1770fe6a3ca1569e29542fb0)
+added explicit SCM assertions for delayed automatic start plus three five-second
+restart actions with zero-day reset, then the rerun
+[39820711088](https://github.com/Printmaster-Org/printmaster/actions/runs/39820711088)
+passed both baselines again with that service-policy evidence.
 
 Evidence includes package/executable/source digests, verbose MSI logs,
 Windows Installer events, service registration and the fixture result.
 This is owner-controlled installation and transaction qualification, **not
 legacy Server-command bootstrap or production trust provisioning**.
-Until the hosted run passes, native MSI migration remains unqualified.
+Within this bounded disposable-runner scope, native 0.31.x MSI migration is
+qualified.
 Raw Windows service installs, macOS and other architectures remain separate.
 
 ## Released baselines

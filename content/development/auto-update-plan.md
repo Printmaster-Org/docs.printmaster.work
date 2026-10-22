@@ -132,14 +132,17 @@ checklist numbering:
    UX and explicit upstream sync replay. See
    [bounded update UX](#truthful-bounded-update-ux-2026-10-22-unreleased)
    and the [operator guide](/guides/updates/).
-5. **Protocol/trust fixtures qualified; native legacy migrations remain open:**
+5. **Protocol/trust fixtures and bounded native legacy migrations qualified:**
    pinned 0.31.0/0.31.1 request/response compatibility, fail-closed mixed versions
    and six-month-offline root history/recovery. See
    [migration boundaries](/guides/update-migration/). Do not call the full
    supported installer migration matrix complete. All four actual-release
-   Linux DEB/RPM migration jobs passed in run `39814950321`. Actual legacy
-   Windows MSI migration/transaction rollback is implemented next, with hosted
-   evidence still pending; see the migration guide for exact boundaries.
+   Linux DEB/RPM migration jobs passed in run `39814950321`, and actual legacy
+   Windows MSI migration/transaction rollback passed both stable baselines in
+   runs `39820122209` and `39820711088` (including delayed-start/recovery-policy
+   SCM evidence). Raw Windows service installs, macOS and additional architecture
+   migration coverage remain separate gates; see the migration guide for exact
+   boundaries.
 6. Final-beta dependency vulnerability triage/fixes.
 7. Explicitly approved production trust provisioning, verified independent
    encrypted backups, public-root embedding and scoped credentials; activation
