@@ -275,6 +275,23 @@ for scenarios, explicit opt-in requirements and observed qualification status.
 
 ## Running Tests
 
+### Client trust lifecycle fixtures
+
+The shared `common/updatetrust` suite and `common/cmd/update-client-trust`
+command tests cover persisted successful-verification time, the exact
+five-minute rollback boundary, failure retention and legacy checkpoint
+migration. They exercise expired root/timestamp/snapshot/targets and signed
+refresh/rotation recovery, offline inspection, exact-checkpoint repair/evidence,
+rejected stale or missing authority and replay after repair. Agent
+`autoupdate` integration tests verify actionable failures without changing the
+installed binary or creating pending installation state.
+
+These tests use disposable repositories/state; they do not change host time,
+activate production trust, replace installed services or qualify the separate
+long-offline/mixed-version migration gate. See the
+[owner runbook](/development/update-client-trust/) for repair's external
+serialization requirement and deliberately unsupported resets.
+
 ```bash
 # Mock E2E only (uncached by default)
 ./tests.sh --suite go --module tests

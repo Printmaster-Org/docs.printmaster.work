@@ -45,6 +45,10 @@ The current release work is tracked in tested implementation slices:
   verifier. See the resumed trust-state slice below; updater-state permissions
   are now enforced by the Agent, with installer/platform qualification tracked
   below.
+- Implemented client clock/expiry diagnostics, persistent successful-verification
+  time and offline exact-checkpoint inspection/repair. The owner-approved scope
+  refuses missing/corrupt checkpoint replacement and never resets version/time
+  floors; see [client trust lifecycle](#client-trust-lifecycle-2026-10-22-unreleased).
 - Implemented: mandatory injected publisher authorization in Agent candidate
   selection and pre-install execution, with explicit unprovisioned-trust and
   unauthenticated-package blocking. Production root provisioning and
@@ -93,7 +97,7 @@ pre-0.32.0 release pass, per the owner's 2026-10-19 sequencing decision. They
 remain a release gate, not accepted or resolved risk; this updater slice does
 not investigate or change dependencies.
 
-### Recommended execution order: six remaining items
+### Recommended execution order: five remaining items
 
 Hosting, application policy/descriptors, and the original installation-permission
 gate are complete within their documented scopes. The permission gate closed
@@ -113,7 +117,11 @@ checklist numbering:
    real service/dependency failure handling, sudo revocation and explicit owner
    repair. See [native lifecycle evidence](#native-systemd-lifecycle-qualification-unreleased-qualified-scope)
    for the exact scope; production activation remains off.
-3. Client trust-state lifecycle, clock/expiry diagnostics and explicit repair.
+3. **Implemented and regression-tested within the approved conservative scope:**
+   client trust-state lifecycle, clock/expiry diagnostics and explicit
+   exact-retained-checkpoint repair. Missing/corrupt checkpoint authority stays
+   blocked rather than enabling an unsafe reset; see
+   [client trust lifecycle](#client-trust-lifecycle-2026-10-22-unreleased).
 4. Truthful bounded update UX.
 5. Supported 0.31.x, mixed-version and long-offline migration qualification.
 6. Final-beta dependency vulnerability triage/fixes.
@@ -1806,11 +1814,56 @@ authorization or an independent recovery path. P0-06 and P0-07 remain open.
 The next slice must provide independent root/client construction and bounded
 metadata delivery without using Server-provided keys as bootstrap authority.
 
+### Client trust lifecycle (2026-10-22, unreleased)
+
+The shared verifier now retains the greatest local UTC time of a successful
+exact-target authorization in its existing checkpoint. More than five minutes
+of backward clock movement blocks updates before network access or state writes.
+Failures never advance that time; partial authenticated TUF version advances
+are still checkpointed. An intact older schema-1 checkpoint without time history
+is upgraded on the next successful authorization without dropping metadata
+hashes. Clock/expiry/version/state diagnostics preserve their original error
+chains and provide local UTC and explicit next actions. They never trust Server
+time, bypass expiry, stop the existing Agent or authorize an installation.
+
+The new offline `common/cmd/update-client-trust` owner tool provides read-only
+`inspect` and externally serialized `repair`. Repair validates every source role
+against the retained local checkpoint before writing, preserves damaged evidence
+and restores only those exact metadata bytes. The checkpoint is never replaced,
+so version and successful-verification-time floors cannot be lowered by this
+operation. Missing/corrupt checkpoints, stale backups, unknown/ambiguous fields,
+unsafe file types and unexpected trusted roles are refused. Interrupted
+multi-file restoration can be retried from the same exact source/checkpoint.
+
+This implements the owner's approved conservative repair scope, not independent
+checkpoint replacement, whole-machine rollback detection, root compromise
+recovery or protection from an administrator rewriting both metadata and its
+checkpoint. A bad initial clock has no prior time anchor; a successful check
+under a badly advanced clock can require further owner investigation after
+correction. Older binaries may discard the new optional time field. The
+long-offline/mixed-version migration gate remains separate.
+
+Windows and isolated Linux fixtures cover clock boundaries/history, failure
+retention, legacy migration, every top-level role's expiry, valid publisher
+refresh/root rotation, exact repair/evidence, stale/missing/corrupt authority
+rejection and replay after repair. Manager fixtures verify visible failures,
+an unchanged binary, no pending installation and normal check recovery.
+Existing restart/target-cleanup rollback tests and snapshot/workspace cleanup
+tests remain in the validation selection. No host clock or installed local
+service is changed by this qualification. Production trust activation remains
+off.
+
+Use the [client trust diagnostics and repair runbook](/development/update-client-trust/)
+for exact paths, commands, backup/serialization requirements and limitations.
+The next ordered gate is truthful bounded update UX.
+
 ### Resumed slice: persistent trust-state integrity (2026-10-19)
+
+**Historical baseline:** the current diagnostics/repair scope is described above.
 
 Implemented at [source commit 2693a7d](https://github.com/Printmaster-Org/printmaster/commit/2693a7d3e7fcaaa6d36f4256f9380afadc474990).
 
-This slice completes local metadata loss/corruption detection in the shared TUF
+At that revision, this slice completed local metadata loss/corruption detection in the shared TUF
 client, a prerequisite for release gate 3. It does not complete that gate's
 Agent cleanup integration, operator recovery tooling, clock diagnostics or OS
 permission qualification, and does not activate runtime installation enforcement.

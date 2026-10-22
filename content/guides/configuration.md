@@ -533,6 +533,15 @@ Do not restore broad sudo rules to bypass the gate. See the
 
 ### Update lifecycle recovery (unreleased)
 
+Publisher metadata/checkpoint failures now have actionable trust, clock and
+expiry diagnostics. A clock more than five minutes behind the last successful
+publisher verification blocks updates; it does not stop the Agent or reset
+trust. The offline owner tool can inspect state and restore only metadata bytes
+matching an intact retained checkpoint, never replace a missing/corrupt
+checkpoint or accept an older backup. See
+[client trust diagnostics and repair](/development/update-client-trust/)
+before changing protected state.
+
 Implemented at [source commit 946bf99](https://github.com/Printmaster-Org/printmaster/commit/946bf990e668d1053b71fa5eb6c1873980b37ef7).
 Agent/client, Server/storage and shared-policy Go tests, 51 focused UI unit
 tests, and desktop/small-desktop/mobile Chromium lifecycle tests passed.

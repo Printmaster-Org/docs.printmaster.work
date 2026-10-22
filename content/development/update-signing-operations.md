@@ -45,6 +45,12 @@ not a second update-signature protocol and are never an Agent trust bypass.
 
 ## Storage and failure assumptions
 
+Client metadata/checkpoint recovery is a different boundary from publisher
+key/publication recovery. Use the
+[client trust runbook](/development/update-client-trust/) for offline inspection
+and exact retained-checkpoint restoration. Publisher backups/keys or a
+Server-supplied root must not be used to reset an Agent's version history.
+
 Use a trusted personal machine and encrypted private storage outside checkouts,
 public sync folders, application Server volumes and published metadata trees.
 Output parents must already exist and be non-shared/trusted; the tools do not
