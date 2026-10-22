@@ -71,6 +71,16 @@ architectures remain outside this Linux fixture.
 
 ### Native Windows MSI rehearsal (hosted evidence pending)
 
+Initial implementation:
+[source dc21712](https://github.com/Printmaster-Org/printmaster/commit/dc21712041a9000bc886be8d6ecb7bf3fd687be6).
+[Run 39818864195](https://github.com/Printmaster-Org/printmaster/actions/runs/39818864195)
+stopped before any installation because the intentional-failure fixture lacked
+a WiX `SystemFolder` directory reference. The corrected fixture declares it;
+both production and failure variants compile/link without local installation.
+WiX emits its documented delayed-service configuration warning and the
+existing same-version-upgrade ICE61 warning; actual service behavior still
+requires hosted evidence.
+
 The manual **Legacy Windows MSI migration qualification** workflow uses actual
 released amd64 MSIs from both stable baselines, verified against independently
 recorded SHA256 values. It builds the unreleased candidate from the exact
