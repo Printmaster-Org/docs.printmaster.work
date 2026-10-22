@@ -13,14 +13,13 @@ It is not authorization to activate production signing or unattended updates.
 Production root provisioning, independent backups and final release approval
 remain separate owner gates.
 
-The automated migration tests qualify protocol compatibility and publisher
-trust recovery. They do **not** run a released 0.31 service, replace a live
-installation or qualify every historical installer. Native legacy-to-new
-installation rehearsals remain required before declaring a supported migration
-matrix. Existing native helper qualification is not a substitute for those
-rehearsals.
+The protocol/trust fixtures qualify compatibility and publisher recovery.
+Separate native rehearsals below run released packages and actual services on
+disposable hosted systems. Neither layer qualifies every historical installer
+or permits production activation. Existing native helper qualification is not
+a substitute for legacy-to-new installation rehearsals.
 
-### Native Linux rehearsal (implementation awaiting hosted evidence)
+### Native Linux rehearsal (four native cases passed)
 
 Fixture implementation:
 [source ca2e171](https://github.com/Printmaster-Org/printmaster/commit/ca2e17165b0e5fe256a07e0b8c500b5914cffb21).
@@ -38,7 +37,10 @@ because native RPM build-root processing can transform ELF bytes.
 The corrected exact-payload implementation is
 [source 6058750](https://github.com/Printmaster-Org/printmaster/commit/6058750caa0bf816af4ad1190a96441609b2a4db);
 [run 39814950321](https://github.com/Printmaster-Org/printmaster/actions/runs/39814950321)
-is the full-matrix retry. A successful full matrix is still required.
+is the full-matrix retry. **All four native jobs passed**: 0.31.0 and 0.31.1,
+each as DEB and RPM. GitHub may retain an in-progress run wrapper after individual
+jobs have uploaded evidence; the per-job successful results are the evidence
+for this bounded scope, not a full release/CI claim.
 
 The manual **Legacy Linux migration qualification** workflow has four
 disposable jobs: released 0.31.0 and 0.31.1 amd64 packages, each as DEB on
@@ -64,9 +66,54 @@ post-migration service start requires explicit owner configuration repair and
 restart of the **same candidate**, not a database downgrade.
 
 Artifact evidence includes baseline/candidate digests, source SHA, test output,
-service journal and a result record. Until a successful hosted run is recorded,
-this is a test implementation, **not completed native qualification**.
-Windows raw/MSI, macOS and other architectures remain outside this fixture.
+service journal and a result record. Windows raw/MSI, macOS and other
+architectures remain outside this Linux fixture.
+
+### Native Windows MSI rehearsal (hosted evidence pending)
+
+The manual **Legacy Windows MSI migration qualification** workflow uses actual
+released amd64 MSIs from both stable baselines, verified against independently
+recorded SHA256 values. It builds the unreleased candidate from the exact
+checkout and runs only on disposable GitHub-hosted Windows runners. The
+PowerShell entry point and Go fixture both refuse local/persistent execution.
+No live MSI/service operations are performed on the development computer.
+
+Every MSI invocation includes `/qn /norestart REBOOT=ReallySuppress`.
+Only exact expected exit codes are accepted; a reboot-required result is a
+failure, not authorization to reboot. An observation deadline leaves an
+installer transaction intact without killing it, retrying or restarting the
+machine.
+
+Tagged 0.31 MSIs install a version-named executable directly under
+`Program Files\PrintMaster`. The hardened package owns
+`Program Files\PrintMaster\Agent\printmaster-agent.exe`. Merely preserving the
+old service registration during upgrade would leave a stale executable path.
+The candidate therefore uses native MSI `ServiceInstall`/`ServiceControl` for
+registration, canonical ImagePath migration, start/stop/removal and rollback,
+rather than non-transactional binary custom actions. It retains LocalSystem,
+automatic delayed startup and five-second restart-on-failure actions; WiX's
+failure-action reset interval is expressed as zero days rather than the direct
+service command's previous 30-second reset interval. Direct non-MSI service
+installation is unchanged. WiX UtilExtension is now required by MSI compilation.
+
+The fixture seeds a saved printer in the database created by the actual legacy
+service, and preserves configuration, Agent ID and disposable machine/join
+tokens. A deliberately failing candidate returns MSI 1603 **after
+InstallServices**, requiring native rollback to restore the exact legacy
+executable, service path/account and retained data. A subsequent normal MSI
+must install the exact candidate, start it without manual path/start repair,
+retain SQLite integrity and data, and bind one Windows Installer product to
+the canonical executable. Restricted-Users write probes check the executable
+and retained private files without repairing their ACLs in the fixture.
+Finally, uninstall/reinstall of the candidate verifies native service removal
+and fresh registration while retaining owner data.
+
+Evidence includes package/executable/source digests, verbose MSI logs,
+Windows Installer events, service registration and the fixture result.
+This is owner-controlled installation and transaction qualification, **not
+legacy Server-command bootstrap or production trust provisioning**.
+Until the hosted run passes, native MSI migration remains unqualified.
+Raw Windows service installs, macOS and other architectures remain separate.
 
 ## Released baselines
 

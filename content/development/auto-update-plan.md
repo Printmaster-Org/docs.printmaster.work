@@ -136,9 +136,10 @@ checklist numbering:
    pinned 0.31.0/0.31.1 request/response compatibility, fail-closed mixed versions
    and six-month-offline root history/recovery. See
    [migration boundaries](/guides/update-migration/). Do not call the full
-   supported installer migration matrix complete. A manual four-job
-   actual-release Linux DEB/RPM rehearsal is implemented; its hosted results
-   must be recorded before claiming that native scope qualified.
+   supported installer migration matrix complete. All four actual-release
+   Linux DEB/RPM migration jobs passed in run `39814950321`. Actual legacy
+   Windows MSI migration/transaction rollback is implemented next, with hosted
+   evidence still pending; see the migration guide for exact boundaries.
 6. Final-beta dependency vulnerability triage/fixes.
 7. Explicitly approved production trust provisioning, verified independent
    encrypted backups, public-root embedding and scoped credentials; activation
