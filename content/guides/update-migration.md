@@ -5,6 +5,9 @@ description: "Unreleased 0.32 migration boundaries, pinned 0.31 wire contracts a
 
 ## Scope and release status
 
+Qualification tests:
+[source 4b97064](https://github.com/Printmaster-Org/printmaster/commit/4b970644cde025bd4a20df9b25c2fca1d0c57329).
+
 This describes qualification of the **unreleased hardened 0.32 updater**.
 It is not authorization to activate production signing or unattended updates.
 Production root provisioning, independent backups and final release approval
