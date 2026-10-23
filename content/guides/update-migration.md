@@ -180,6 +180,15 @@ See [update progress and troubleshooting](/guides/updates/).
 
 ## Owner-controlled initial migration
 
+The Windows bootstrap console refresh changes presentation only; it does not
+qualify this installation path for 0.32 migration. The current template still
+removes an existing installation before downloading its replacement and includes
+broad Program Files cleanup. Its reported ProgramData binary path can also
+differ from the hardened Agent service installer's protected Program Files copy.
+Download verification, failure-safe replacement, installation ownership and
+accurate registration need a separate implementation and disposable-machine
+qualification. Do not use a successful-looking console summary as that evidence.
+
 An Agent that never had independent publisher authority cannot safely acquire
 that authority from a potentially compromised fleet Server. A Server-delivered
 binary and matching hash do not solve this bootstrap problem.
