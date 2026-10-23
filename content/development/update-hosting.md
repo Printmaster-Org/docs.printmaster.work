@@ -64,6 +64,17 @@ delivery. Pending authority is reported, never cleared or advanced. The existing
 `check` operation still requires a completed publication and verifies its public
 bytes and freshness; it is not a pre-bootstrap credential check.
 
+The production [read-only run 40033164511](https://github.com/Printmaster-Org/printmaster/actions/runs/40033164511)
+passed on 2026-10-23 at source `a76639abae59130f2949a87d5aa566e07ae58423`.
+It verified root SHA-256
+`201bedf94312320adc7056e0cde18deb1633c3707dbd1f978a6cdff2f25e1b14`, protected
+generation-zero authority with no latest/pending publication, and all three B2
+credential/bucket policies, including Governance/365-day recovery defaults.
+Both publisher opt-ins remained `false`. No metadata was signed or uploaded,
+and no authority was advanced. This closes credential read/configuration
+qualification only; delivery writes and the deployed Server mirror remain
+separate live checks.
+
 Every invocation uses fresh, protected runner work directories.
 
 1. Read protected independent GitHub authority. Missing, malformed or conflicting
