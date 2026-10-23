@@ -697,6 +697,112 @@ Credentials are supplied only through process environment variables:
 They are not signing keys and do not belong in the inspection environment.
 Build the tool before exposing credentials to its process.
 
+### Provisioning B2 keys directly into GitHub
+
+On 2026-10-23, the owner approved one-year credentials (`31536000` seconds).
+Three production keys were created using B2 CLI 4.1.0 and their six credential
+fields transferred to the `update-publisher-production` GitHub environment.
+GitHub secret-name read-back succeeded. B2 metadata verification was interrupted
+and has no captured result; verify the actual scopes and expiry in the B2 console
+before publication. The local B2 authorization cache is now cleared. No metadata
+publication or publisher scheduling was enabled by credential provisioning.
+
+Use a trusted PowerShell 7 terminal with transcription, shell tracing and screen
+recording disabled. Authenticate the official B2 CLI locally using its interactive
+`account authorize` prompt, never command arguments or chat. Do not regenerate an
+existing master key. Authenticate `gh` separately. Confirm the production GitHub
+environment permits only `main`, the destination secret names are absent, and
+`ENABLE_UPDATE_PUBLISHER` remains `false`. For rotation, review replacement of
+existing secret names explicitly rather than treating this as a fresh setup.
+
+Create three distinct keys, each restricted to exactly one bucket, with no file
+prefix. Use a unique dated key name and the following capability sets:
+
+| Name suffix / GitHub secret prefix | Bucket | Capabilities |
+| --- | --- | --- |
+| `metadata-delivery` / `B2_METADATA_DELIVERY` | `printmaster-update-metadata` | `listBuckets,readBucketRetentions,listFiles,readFiles,writeFiles` |
+| `recovery-delivery` / `B2_RECOVERY_DELIVERY` | `printmaster-update-recovery` | `listBuckets,readBucketRetentions,listFiles,readFiles,writeFiles,readFileRetentions` |
+| `recovery-reader` / `B2_RECOVERY_RESTORE` | `printmaster-update-recovery` | `listBuckets,readBucketRetentions,listFiles,readFiles,readFileRetentions` |
+
+The B2 CLI returns `keyId applicationKey` once. Capture that output in memory,
+split it, then send each field to a separate `gh secret set` process through
+standard input. Never use `--body` with the secret, print the captured response,
+or redirect it to an ordinary file. This helper implements that transfer; its
+arguments contain only paths, names and capabilities, not credentials:
+
+```powershell
+$b2 = Join-Path $HOME 'Downloads\b2-windows.exe'
+$gh = (Get-Command gh -ErrorAction Stop).Source
+
+function Set-PublisherSecret([string]$name, [string]$value) {
+  $start = [System.Diagnostics.ProcessStartInfo]::new()
+  $start.FileName = $gh
+  $start.UseShellExecute = $false
+  $start.RedirectStandardInput = $true
+  $start.RedirectStandardOutput = $true
+  $start.RedirectStandardError = $true
+  foreach ($argument in @('secret', 'set', $name, '--repo',
+    'Printmaster-Org/printmaster', '--env', 'update-publisher-production')) {
+    [void]$start.ArgumentList.Add($argument)
+  }
+  $process = [System.Diagnostics.Process]::new()
+  $process.StartInfo = $start
+  try {
+    if (-not $process.Start()) { throw 'Could not start gh' }
+    $stdout = $process.StandardOutput.ReadToEndAsync()
+    $stderr = $process.StandardError.ReadToEndAsync()
+    $process.StandardInput.Write($value)
+    $process.StandardInput.Close()
+    $process.WaitForExit()
+    $null = $stdout.GetAwaiter().GetResult()
+    $null = $stderr.GetAwaiter().GetResult()
+    if ($process.ExitCode -ne 0) { throw "Secret transfer failed: $name" }
+  } finally {
+    $process.Dispose()
+  }
+}
+
+function New-PublisherKey($name, $bucket, $capabilities, $secretPrefix) {
+  $raw = $null
+  $fields = $null
+  try {
+    $raw = @(& $b2 key create --bucket $bucket --duration 31536000 `
+      $name $capabilities)
+    if ($LASTEXITCODE -ne 0) { throw 'B2 creation failed; reconcile before retry' }
+    $fields = @((($raw -join "`n").Trim()) -split '\s+')
+    if ($fields.Count -ne 2) { throw 'Unexpected B2 output; do not recreate blindly' }
+    Set-PublisherSecret "${secretPrefix}_KEY_ID" $fields[0]
+    Set-PublisherSecret "${secretPrefix}_APPLICATION_KEY" $fields[1]
+    Write-Output "Configured $secretPrefix"
+  } finally {
+    $raw = $null
+    $fields = $null
+  }
+}
+```
+
+Call `New-PublisherKey` once per table row with a unique name such as
+`pm-prod-metadata-delivery-YYYYMMDD`. Check `b2 key list --long` privately for
+name collisions first. After transfer, verify each key's bucket, exact capability
+set, empty prefix and actual expiry using that command or the B2 console. Verify
+only secret **names** using `gh secret list --repo Printmaster-Org/printmaster
+--env update-publisher-production`. Name read-back does not prove the stored
+values work; authenticated publisher/storage checks remain necessary.
+
+If creation or either transfer fails, stop. A key may already exist and one of
+the two GitHub secrets may already be set. Preserve the state and inspect by the
+unique key name; never silently create duplicates or delete a working key.
+Application-key values cannot be retrieved from B2 listings or GitHub secrets.
+Replacement/revocation after a lost one-time response requires explicit review.
+
+Finally run `b2 account clear` (using the same executable/cache as authorization)
+and confirm subsequent unauthenticated listing fails. This clears cached master
+authorization; it does not revoke the master key or guarantee secure erasure.
+Clearing variables likewise is not memory wiping. Record the actual expiry and
+arrange credential-rotation reminders separately from the root reminder; the
+root reminder does not monitor B2 credential expiry. Never grant `writeKeys` to
+the publisher to let it renew its own credentials.
+
 ### Remaining remote guarantees
 
 The retained `records/` object and the snapshot's record live in the same B2
