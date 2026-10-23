@@ -177,6 +177,22 @@ Download the server binary from [GitHub Releases](https://github.com/printmaster
 
 ### Windows
 
+#### Server-Generated Bootstrap
+
+The Server's **Add Agent** flow provides a PowerShell one-liner for enrollment
+and installation. Run it only from a trusted Server in an elevated PowerShell
+session. Treat the generated installation link as a credential; do not share it
+in screenshots or logs. This initial installation is not a TUF-verified
+self-update; see [legacy migration and initial trust](/guides/update-migration/).
+
+In the updated bootstrap, supported interactive consoles use one transient
+progress display rather than accumulating progress bars. Completion removes
+the progress display and leaves a short result with the configured executable,
+configuration, Agent logs folder and Web UI locations. Warnings and errors remain
+visible. Redirected output and consoles without native progress support retain
+scrolling status lines. The installer does not clear preexisting console output.
+This display change does not alter installation or migration behavior.
+
 #### MSI Installer (Recommended)
 
 1. Download the latest MSI from [GitHub Releases](https://github.com/printmaster-org/printmaster/releases)
