@@ -185,13 +185,27 @@ session. Treat the generated installation link as a credential; do not share it
 in screenshots or logs. This initial installation is not a TUF-verified
 self-update; see [legacy migration and initial trust](/guides/update-migration/).
 
+The updated Windows bootstrap installs **new Agents only**. Before creating
+directories, writing configuration, downloading or installing anything, it
+refuses an existing running/stopped Agent service, running Agent process,
+Agent uninstall/MSI registration, retained Agent data/binary directory, or a
+known protected/legacy Agent executable. Inspection failures also stop it.
+It exits nonzero without stopping services, uninstalling packages, deleting old
+files or overwriting existing configuration. A Server-only installation does
+not itself block enrollment of a new Agent on that machine.
+
+For an existing Agent, use its supported update path or the original installation
+owner's repair/uninstall procedure. Review residual files or a partial bootstrap
+manually; rerunning the bootstrap is not automatic repair and it will not clean
+them up for you. Do not delete retained identity/data just to bypass the guard.
+
 In the updated bootstrap, supported interactive consoles use one transient
 progress display rather than accumulating progress bars. Completion removes
 the progress display and leaves a short result with the configured executable,
 configuration, Agent logs folder and Web UI locations. Warnings and errors remain
 visible. Redirected output and consoles without native progress support retain
 scrolling status lines. The installer does not clear preexisting console output.
-This display change does not alter installation or migration behavior.
+The console display does not establish successful migration or artifact trust.
 
 #### MSI Installer (Recommended)
 

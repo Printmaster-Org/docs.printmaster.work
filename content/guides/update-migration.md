@@ -180,14 +180,19 @@ See [update progress and troubleshooting](/guides/updates/).
 
 ## Owner-controlled initial migration
 
-The Windows bootstrap console refresh changes presentation only; it does not
-qualify this installation path for 0.32 migration. The current template still
-removes an existing installation before downloading its replacement and includes
-broad Program Files cleanup. Its reported ProgramData binary path can also
-differ from the hardened Agent service installer's protected Program Files copy.
-Download verification, failure-safe replacement, installation ownership and
-accurate registration need a separate implementation and disposable-machine
-qualification. Do not use a successful-looking console summary as that evidence.
+The Windows bootstrap is now fresh-install-only, not a 0.32 migration or repair
+tool. Existing Agent services/processes, package registrations or known Agent
+files/data cause refusal before installation writes or downloads. Inspection
+errors fail closed. The former service/package removal and broad Program Files
+cleanup have been removed. Guard tests exercise PowerShell 7 and Windows
+PowerShell 5.1 with mocked inspection and prohibited mutations; they are not
+native installation or legacy migration qualification. Existing deployments
+must use their supported update path or an owner-controlled migration.
+
+Initial download verification and accurate registration still require separate
+work: the bootstrap's reported ProgramData binary path can differ from the
+hardened Agent service installer's protected Program Files copy. A successful
+bootstrap summary does not establish independent artifact trust.
 
 An Agent that never had independent publisher authority cannot safely acquire
 that authority from a potentially compromised fleet Server. A Server-delivered
