@@ -702,8 +702,12 @@ Build the tool before exposing credentials to its process.
 On 2026-10-23, the owner approved one-year credentials (`31536000` seconds).
 Three production keys were created using B2 CLI 4.1.0 and their six credential
 fields transferred to the `update-publisher-production` GitHub environment.
-GitHub secret-name read-back succeeded. B2 metadata verification was interrupted
-and has no captured result; verify the actual scopes and expiry in the B2 console
+GitHub secret-name read-back succeeded. The owner subsequently supplied the B2
+console listing: all three exact bucket/capability scopes and empty prefixes
+match, with expiry `2027-10-23T22:03:00Z`. The GitHub state token is restricted to
+the state repository, Contents read/write and Administration/Metadata read, with
+expiry on 2027-10-24. These are configuration checks, not successful credential
+use; run the [read-only publisher preflight](/development/update-hosting/#read-only-credential-preflight)
 before publication. The local B2 authorization cache is now cleared. No metadata
 publication or publisher scheduling was enabled by credential provisioning.
 

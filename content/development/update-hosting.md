@@ -44,6 +44,26 @@ An Actions/Pages outage does not justify trusting stale metadata.
 
 ## Publication state machine
 
+### Read-only credential preflight
+
+Before a first production publication, run **Actions -> Update Publisher
+Preflight -> Run workflow**, using `main` and lane `production`. This manual-only
+workflow shares the publisher concurrency group but does not require or change
+`ENABLE_UPDATE_PUBLISHER`. It builds/tests before supplying credentials and
+passes no routine PEM signing keys. The `update-publisher -mode preflight` CLI
+validates the supplied public root, protected GitHub authority (including valid
+generation-zero state), and all three B2 delivery/recovery-reader credentials.
+Existing authority pins must match the supplied root. Bucket visibility,
+keep-all-versions lifecycle, endpoint, restricted capabilities, and recovery
+Governance/365-day defaults are checked by the existing B2 adapters.
+
+It does not sign, write remote objects, modify authority, create a mirror, or
+enable schedules. Success proves authenticated read/configuration access, not
+successful writes, artifact authorization, retained-object recovery or public
+delivery. Pending authority is reported, never cleared or advanced. The existing
+`check` operation still requires a completed publication and verifies its public
+bytes and freshness; it is not a pre-bootstrap credential check.
+
 Every invocation uses fresh, protected runner work directories.
 
 1. Read protected independent GitHub authority. Missing, malformed or conflicting
