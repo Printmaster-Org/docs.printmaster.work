@@ -62,6 +62,10 @@ The current release work is tracked in tested implementation slices:
   verification and public-root release guards. Production root v1 was generated
   and verified; root-bearing artifact qualification, routine signer/credential
   provisioning and publication remain pending.
+- Added a scheduled, reminder-only workflow that derives the owner root
+  maintenance date from the embedded public root and creates one assigned
+  GitHub issue six calendar months before expiry. It has no secret access or
+  signing/publishing authority; GitHub schedule delivery is not guaranteed.
 - Implemented: offline replacement of all routine role keys and explicitly
   pinned recovery/transition of publisher state, retaining targets and metadata
   versions. See [signing operations](/development/update-signing-operations/);

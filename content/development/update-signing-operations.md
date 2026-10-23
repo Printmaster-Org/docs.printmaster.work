@@ -83,6 +83,15 @@ application's `common` directory, initialize three new children of a trusted
 encrypted parent. Choose an explicit expiry; this example chooses three years,
 not a built-in default. Schedule root maintenance well before expiry.
 
+The source repository's `Root maintenance reminder` workflow checks the public
+embedded-root expiry daily and opens one owner-assigned GitHub issue six calendar
+months beforehand. For root v1 (expiry `2029-10-22T22:17:21Z`), the issue is due
+on `2029-04-22` UTC. The issue is public and contains no secrets. The workflow
+has no signing or publisher credentials and cannot rotate keys, sign metadata,
+publish artifacts or enable schedules. GitHub may delay or disable scheduled
+workflows, so this is a notification aid, not a guarantee; keep a private backup
+reminder if missing root maintenance would be unacceptable.
+
 ```powershell
 $ceremony = 'D:\PrintMasterSigning'
 $expires = (Get-Date).ToUniversalTime().AddYears(3).ToString('yyyy-MM-ddTHH:mm:ssZ')
