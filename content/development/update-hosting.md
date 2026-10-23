@@ -13,9 +13,12 @@ Final qualified workflow/regression revision:
 
 This is the end-to-end hosting implementation for the
 [0.32 update work](/development/auto-update-plan/), not production key activation.
-TUF remains the sole publisher signature protocol. Production root/key ceremony,
-real release inventory authorization and explicit activation remain separate
-release gates. The Agent's embedded root is still deliberately `null`.
+TUF remains the sole publisher signature protocol. Owner-generated root v1 is
+now embedded in the local source checkout (SHA-256
+`201bedf94312320adc7056e0cde18deb1633c3707dbd1f978a6cdff2f25e1b14`, expiry
+`2029-10-22T22:17:21Z`), but no beta containing it has been released. Routine
+signer/credential provisioning, real release inventory authorization and
+explicit publication/activation remain separate gates.
 
 The workflow is `.github/workflows/update-publisher.yml`; the entry point is
 `common/cmd/update-publisher`. It builds/tests before exposing credentials and

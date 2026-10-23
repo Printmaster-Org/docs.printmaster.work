@@ -10,8 +10,12 @@ Qualification tests:
 
 This describes qualification of the **unreleased hardened 0.32 updater**.
 It is not authorization to activate production signing or unattended updates.
-Production root provisioning, independent backups and final release approval
-remain separate owner gates.
+Root v1 is generated and embedded in the current local source checkout, but it
+has not shipped in a beta. Routine signer provisioning, independent backup
+final release approval remains a separate owner gate. The owner confirmed on
+2026-10-23 that the required encrypted Google Drive and home USB copies were
+independently restore-tested; placement of the optional family-safe copy remains
+unconfirmed.
 
 The protocol/trust fixtures qualify compatibility and publisher recovery.
 Separate native rehearsals below run released packages and actual services on
@@ -186,7 +190,9 @@ binary and matching hash do not solve this bootstrap problem.
 2. Obtain the approved migration installer/build and its initial public root
    through an independent, owner-controlled verification process. Do not take
    bootstrap trust from a manifest, fleet command, Server time or Server UI.
-   No production root is provisioned by the current qualification work.
+  The owner-generated root is not delivered by this qualification evidence;
+  obtain the exact approved root through an independent owner-controlled
+  verification process.
 3. Use the platform's existing installation owner: MSI/package-managed installs
    must not be migrated by swapping their raw executable. Helper provisioning,
    protected state and service permissions must follow the approved platform

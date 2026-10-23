@@ -51,15 +51,17 @@ The current release work is tracked in tested implementation slices:
   floors; see [client trust lifecycle](#client-trust-lifecycle-2026-10-22-unreleased).
 - Implemented: mandatory injected publisher authorization in Agent candidate
   selection and pre-install execution, with explicit unprovisioned-trust and
-  unauthenticated-package blocking. Production root provisioning and
-  signed metadata activation are still pending, so current default builds cannot perform
-  unattended updates.
+  unauthenticated-package blocking. Owner-generated root v1 is now embedded in
+  the local source checkout, but no root-bearing beta has been released and no
+  production metadata has been published; unattended updates remain unavailable.
 - Implemented: embedded-root verifier construction and machine-authenticated
-  unchanged public metadata delivery. The embedded root intentionally remains
-  unprovisioned until owner key setup; no signing/hosting activation is implied.
+  unchanged public metadata delivery. The current local source embeds root v1
+  (SHA-256 `201bedf94312320adc7056e0cde18deb1633c3707dbd1f978a6cdff2f25e1b14`,
+  expiry `2029-10-22T22:17:21Z`); embedding alone does not activate publishing.
 - Implemented: offline owner initialization/root-rotation CLI, restored-key
-  verification and public-root release guards. These have only been exercised
-  with disposable keys; production provisioning and activation remain pending.
+  verification and public-root release guards. Production root v1 was generated
+  and verified; root-bearing artifact qualification, routine signer/credential
+  provisioning and publication remain pending.
 - Implemented: offline replacement of all routine role keys and explicitly
   pinned recovery/transition of publisher state, retaining targets and metadata
   versions. See [signing operations](/development/update-signing-operations/);
@@ -70,8 +72,9 @@ The current release work is tracked in tested implementation slices:
   primitive-specific limitations below are historical; use the
   [current hosting runbook](/development/update-hosting/) and
   [custody runbook](/development/update-publication-custody/) for the qualified
-  boundary. Both publisher opt-ins are disabled after rehearsal; production
-  credentials/root/activation remain unprovisioned.
+  boundary. Both publisher opt-ins remain disabled; production routine
+  credentials and publication/activation remain unprovisioned. Root v1 is
+  embedded only in the current local source checkout.
 - Qualified Linux native helper/Manager handoff and explicit owner repair on
   disposable Ubuntu DEB/Fedora RPM systemd environments. See
   [native lifecycle evidence](#native-systemd-lifecycle-qualification-unreleased-qualified-scope).
@@ -84,8 +87,8 @@ The current release work is tracked in tested implementation slices:
   [migration qualification and owner procedure](/guides/update-migration/).
 - Required before release: final adversarial/cross-platform installer
   qualification, native supported 0.31.x migration rehearsals, TUF publisher metadata
-  and client verification, production root provisioning and restricted routine
-  signing/refresh.
+  and client verification, root-bearing artifact qualification, and separately
+  approved restricted routine signing/refresh.
 - Deferred: independent Agent recovery service, power-loss-safe installation
   transactions, health-gated rollback and a secondary website mirror.
 
@@ -210,7 +213,7 @@ vulnerability scan, Jest, PostgreSQL, Docker E2E, three native-permission jobs
 and the CI Passed aggregate. OS-dependency installation took 46-60 seconds
 across the six runners. Related docs CI `39831035172` also passed.
 Already deployed binaries require an approved rebuild/release and deployment;
-production signing, root provisioning and unattended activation remain off.
+production signing and unattended activation remain off.
 
 ### Repository package authentication boundary (unreleased)
 
@@ -1437,8 +1440,11 @@ demonstration.
    distinguish that initial migration risk from protection after upgrade.
    Any exception must name the affected versions/path, risk, removal condition
    and recovery procedure. No post-migration trust bypass is permitted.
-   Production roots, secrets, permissions and activation remain explicit owner
-   setup steps.
+  Root v1 is generated and embedded in the local source checkout. The owner
+  confirmed on 2026-10-23 that the required encrypted Google Drive and home USB
+  copies were independently restore-tested; placement of the optional family-
+  safe copy remains unconfirmed. Routine signer secrets, permissions,
+  publication and activation remain explicit owner-approved steps.
 
 #### Release evidence required
 
@@ -1755,10 +1761,10 @@ Tagged Stable/Beta Agent CI builds now run `check-root` before building or
 packaging. Local Agent `-Release`/`--release` builds run it before optional
 version increments. Non-Dev Agent Docker builds run it in the builder before
 compilation. An unprovisioned, expired, malformed or policy-incompatible root
-stops these builds. Dev builds remain possible with the deliberately `null`
-root, but cannot authorize updates. Direct `go build` is not a release guard;
-the runtime still rejects unprovisioned trust. A valid root alone does not
-prove the remaining release gates or authorize a rollout.
+stops these builds. Current Dev builds embed root v1, but still cannot authorize
+updates without matching publisher-signed metadata. Direct `go build` is not a
+release guard. A valid root alone does not prove the remaining release gates or
+authorize a rollout.
 
 Tests use disposable keys for generation, role separation, Windows ACL/file
 inheritance, junction rejection, restored-key matches/mismatches, invalid
@@ -1795,14 +1801,13 @@ there is still no automatic Agent-checkpoint reset or root-compromise recovery.
 
 Implemented at [source commit ec0735c](https://github.com/Printmaster-Org/printmaster/commit/ec0735c457a84cdb0b865a494086c7276f9eee83).
 
-The Agent worker now constructs the real shared TUF verifier through its
-authenticated Server client. Bootstrap bytes come only from the build-embedded
-`agent/update_publisher_root.json`; the committed value is deliberately `null`,
-meaning unprovisioned, not a disposable test root. Null/empty or malformed roots
-produce an explicit setup error and leave the manager without authorization
-capability. There is no network bootstrap or permissive fallback. To activate
-trust later, the owner must provision public root metadata through the source/
-build process and rebuild; private signing keys must never be committed.
+The Agent worker constructs the shared TUF verifier through its authenticated
+Server client. At the original implementation revision, the build-embedded
+`agent/update_publisher_root.json` was deliberately `null`; on 2026-10-23, owner-
+generated production root v1 was embedded in the local source checkout. Null,
+empty or malformed roots still fail closed; there is no network bootstrap or
+permissive fallback. The current root has not yet shipped in a beta, and no
+private signing keys are committed.
 
 The verifier uses `{datadir}/update-trust/metadata` and its sibling integrity
 checkpoint, separate from the updater's download/staging directories. Its
@@ -1826,14 +1831,13 @@ redirect rejection, caller cancellation, null/malformed roots, exact Server byte
 delivery, machine/user-token separation, absent/unconfigured mirror behavior,
 file/name bounds and TOML/environment configuration.
 
-**Still blocked:** this is wiring, not production activation. Current default
-builds remain unable to authorize updates until a real public root is
-provisioned and matching signed metadata is distributed. Restricted release/
-freshness automation, routine-key rotation/recovery tooling and owner ceremony
-are not complete. Package updates remain explicitly blocked; protected
-privileged handoff, application downgrade policy and real OS qualification are
-still required. P0-06/P0-07 remain open. No production keys, secrets, permissions
-or hosting changes were made.
+**Still blocked:** the local root embedding is not production activation. No
+root-bearing beta or matching signed metadata has been released/distributed.
+Restricted release/freshness automation credentials, routine-key provisioning
+and package updates remain blocked; protected privileged handoff, application
+downgrade policy and real OS qualification are still required. P0-06/P0-07
+remain open. No production secrets, permissions or hosting configuration changes
+were made.
 
 **Next recommended slice:** prepare tested owner key/root provisioning and
 rotation/recovery tooling before asking the owner to generate production keys,

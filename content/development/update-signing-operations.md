@@ -18,9 +18,13 @@ Independent publication-record custody:
 [source 67567b2](https://github.com/Printmaster-Org/printmaster/commit/67567b26ca121e8a18e6bedf28c9183d9774e49a),
 with its [dedicated custody runbook](/development/update-publication-custody/).
 
-**Unreleased; rehearse with disposable keys only.** The embedded Agent root is
-still `null`. These local tools do not activate production signing, distribution
-or unattended updates. See the [release gates](/development/auto-update-plan/#remaining-032-release-gates-security-handoff-reconciliation).
+**Unreleased; production publishing and unattended updates remain off.** The
+owner-generated root v1 is now embedded in the local source checkout, with
+SHA-256 `201bedf94312320adc7056e0cde18deb1633c3707dbd1f978a6cdff2f25e1b14`
+and expiry `2029-10-22T22:17:21Z`. It has not been released or used to publish
+metadata. Routine signer/credential provisioning and the remaining root-bearing
+artifact qualification are separate gates. See the
+[release gates](/development/auto-update-plan/#remaining-032-release-gates-security-handoff-reconciliation).
 
 For the end-to-end serialized workflow, exact pending recovery, freshness
 notifications and B2-to-Server pulls, use the
@@ -112,9 +116,9 @@ maintenance after root expiry. It does not prove encryption, independent
 custody or correct restore permissions. Manage disposable restores using the
 encrypted storage's lifecycle; no secure-erase guarantee is made.
 
-After explicit activation approval and remaining release qualification, copy
-only the exact public root into `agent/update_publisher_root.json`, confirm its
-fingerprint again, commit and rebuild. The release guard:
+For a future root rotation, copy only the exact approved public root into
+`agent/update_publisher_root.json`, confirm its fingerprint again, commit and
+rebuild. The release guard:
 
 ```powershell
 go run .\cmd\update-keys check-root -root ..\agent\update_publisher_root.json
@@ -124,7 +128,8 @@ requires a self-authorized, unexpired positive-version consistent-snapshot root
 with the initial four-distinct-key policy. It does not verify provenance or the
 rest of the release gates. Tagged Stable/Beta CI, local release builds and
 non-Dev container builds enforce it; direct `go build` is not a guarded release.
-Dev builds remain possible with `null` but cannot authorize updates.
+Current Dev builds embed root v1 but cannot authorize updates without matching
+publisher-signed metadata.
 
 ## Routine publication and independent recovery records
 
