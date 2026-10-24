@@ -207,6 +207,16 @@ visible. Redirected output and consoles without native progress support retain
 scrolling status lines. The installer does not clear preexisting console output.
 The console display does not establish successful migration or artifact trust.
 
+When installation instructions are emailed, the primary link opens a browser
+page with the command, a copy control, and the full script in an expandable
+section. The page uses the same expiring enrollment link but does not consume a
+one-time download. **View instructions** in the Add Agent dialog opens the same
+page. The page uses the existing expiring link without consuming a one-time script
+download. Its separate **Download script** link and the one-liner still return
+the raw script and consume a one-time link when configured. Email clients may
+not support copy buttons or `<details>`; the message includes selectable command
+text and a plain-text fallback. Treat every enrollment link as a credential.
+
 #### MSI Installer (Recommended)
 
 1. Download the latest MSI from [GitHub Releases](https://github.com/printmaster-org/printmaster/releases)
