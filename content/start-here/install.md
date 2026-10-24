@@ -210,11 +210,17 @@ The console display does not establish successful migration or artifact trust.
 When installation instructions are emailed, the primary link opens a browser
 page with the command, a copy control, and the full script in an expandable
 section. The page uses the same expiring enrollment link but does not consume a
-one-time download. **View instructions** in the Add Agent dialog opens the same
+one-time download. **Open instructions** in the Add Agent dialog opens the same
 page. Its separate **Download script** link and the one-liner still return
 the raw script and consume a one-time link when configured. Email clients may
 not support copy buttons or `<details>`; the message includes selectable command
 text and a plain-text fallback. Treat every enrollment link as a credential.
+
+The Add Agent dialog defaults to a generated bootstrap script; email is an
+alternative delivery method. The result screen prioritizes copying the install
+command and also lets the administrator copy or open the browser instructions
+link. The connection review summarizes the tenant, platform, delivery method,
+expiry, and fresh-install/replacement policy before generating the credential.
 
 Script and email onboarding include a separate connection-security review.
 Agent-to-Server TLS certificate validation is on by default. Disable it only
