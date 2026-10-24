@@ -223,6 +223,19 @@ on the network could impersonate that Server. This setting controls future
 Agent-to-Server requests; it does not make the initial bootstrap download secure.
 Use a trusted HTTPS Server URL for that download.
 
+One-time onboarding tokens create a pending-install row in the Agents list.
+After the Agent registers, that row disappears and the real Agent record appears.
+**Replace Agent** enrolls a new Agent identity; it is for a new installation, not
+an in-place upgrade or repair of the existing Agent. Use the existing Agent's
+supported update or repair path when keeping the same installation. For a
+replacement installation, the old Agent remains active until the replacement
+successfully registers. The Server then deactivates the old credential, closes
+its live connection, transfers device and site ownership to the new Agent, and
+retains the old record and history. The Agents list can filter Pending setup and
+Deactivated separately from Active, Degraded, and Offline. Deactivated Agents can
+be reactivated from their context menu; reactivation makes their existing
+credential valid again and does not transfer ownership back automatically.
+
 #### MSI Installer (Recommended)
 
 1. Download the latest MSI from [GitHub Releases](https://github.com/printmaster-org/printmaster/releases)
