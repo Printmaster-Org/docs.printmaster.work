@@ -26,3 +26,4 @@ Co-authored-by: ...                                     (trailers last)
 - Docs changes normally use `docs(scope): …`, where the scope is the area touched, such as `devices`, `api`, `protocol`, `epson`, or `vendor`. Use `fix`, `ci`, `build`, `test`, or `chore` for site tooling, workflow, and script changes.
 - Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `build`, `ci`, `chore`, `style`, `revert`, `ux`. Add `!` after the type or scope for breaking changes.
 - Keep the subject at 100 characters or fewer, with a blank line before the body.
+- Use a one-way commit link: the docs commit references the implementation commit below. Do not require a docs SHA in the program commit; this avoids circular references.

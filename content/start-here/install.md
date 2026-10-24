@@ -211,11 +211,17 @@ When installation instructions are emailed, the primary link opens a browser
 page with the command, a copy control, and the full script in an expandable
 section. The page uses the same expiring enrollment link but does not consume a
 one-time download. **View instructions** in the Add Agent dialog opens the same
-page. The page uses the existing expiring link without consuming a one-time script
-download. Its separate **Download script** link and the one-liner still return
+page. Its separate **Download script** link and the one-liner still return
 the raw script and consume a one-time link when configured. Email clients may
 not support copy buttons or `<details>`; the message includes selectable command
 text and a plain-text fallback. Treat every enrollment link as a credential.
+
+Script and email onboarding include a separate connection-security review.
+Agent-to-Server TLS certificate validation is on by default. Disable it only
+when connecting to a self-signed Server and after understanding that an attacker
+on the network could impersonate that Server. This setting controls future
+Agent-to-Server requests; it does not make the initial bootstrap download secure.
+Use a trusted HTTPS Server URL for that download.
 
 #### MSI Installer (Recommended)
 
@@ -259,6 +265,16 @@ Get-Service PrintMasterAgent
 ```
 
 ### Linux (Debian/Ubuntu)
+
+#### Server-Generated Bootstrap
+
+The Linux script generated from **Add Agent** installs the package from the
+configured repository or falls back to a direct binary. For systemd installs it
+creates or reuses the locked-down `printmaster` system account, stores the
+enrollment token in `/var/lib/printmaster/agent/server_join_token` with mode
+`600`, and runs the service as that account. The script option to skip TLS
+certificate validation is off by default; use it only for a self-signed Server
+and only with explicit understanding of the interception risk.
 
 #### APT Repository (Recommended)
 
