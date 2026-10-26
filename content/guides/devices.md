@@ -9,7 +9,7 @@ weight: 35
 
 The Server Devices tab first reads the complete **authorized lightweight index**. Identity previews show serial, make/model, network address, location and last-seen information immediately. The latest indexed page count is available without loading supply metrics. Agent names and tenant labels enrich later; slow or failed directory requests do not hold up device rows.
 
-The index is authorized and scoped in backend SQL. The browser does not download every tenant's full device records and then hide unauthorized devices. See [inventory API semantics](/api/inventory/) and [tenant isolation](/guides/tenant-isolation/).
+The Server returns an index limited to devices you are allowed to view; the browser does not download another tenant's records and hide them locally. See [inventory API semantics](/api/inventory/) and [tenant access](/guides/tenant-isolation/).
 
 ## Scrolling and switching views
 
@@ -74,15 +74,7 @@ When a reported description ends in vendor part numbers (for example Epson
 details view shows the clean supply label with the part numbers on a separate
 line. Compact cards and toner bars show the label and keep the part numbers
 in the tooltip. Only trailing upper-case letter/digit tokens are treated as
-part numbers; nothing is looked up or inferred. See
-[source commit 26ddb7f](https://github.com/Printmaster-Org/printmaster/commit/26ddb7f97677bf805c62b02f9a439d260e279a87).
-
-Reviewed at [source commit 21609b2](https://github.com/Printmaster-Org/printmaster/commit/21609b272f4b41c4417ad7278108d8dbe5a271e5),
-limited to shared supply rendering, SNMP supply parsing, and description
-preservation. Validation used an identity/network-redacted SC-P9500 diagnostic
-fixture, synthetic supply-table PDUs, Go tests/vet, and desktop/mobile browser
-tests; the printer was unavailable for a fresh scan. This is not a live-device
-verification or an audit of saved/discovered state transfer.
+part numbers; nothing is looked up or inferred.
 
 ### Current inventory and printer status
 
@@ -103,10 +95,6 @@ Current vendor/status details are inventory metadata. Historical metrics retain
 counters and distinct cartridge/maintenance-box levels, not a complete
 historical vendor-status series. Older collapsed supply history cannot be repaired
 without fresh device readings.
-
-Synchronization and hydration reviewed at [source commit f22f20d](https://github.com/Printmaster-Org/printmaster/commit/f22f20da2c8226376bae6929a8fafa09ee325e6f),
-using synthetic Epson status frames, local SQLite/HTTP tests and desktop/mobile
-browser tests. A live Epson printer was not queried during this verification.
 
 ### Editing and pinning device metadata
 
@@ -133,13 +121,8 @@ historical locks are not automatically converted into Server pins.
 Manual metadata edits and lock changes do not make a printer appear freshly
 observed and do not change metrics/status, saved state or visibility. Editing
 display/network metadata does not reconfigure the printer itself or bypass its
-serial-identity checks. For the complete managed workflow, update both Agent
-and Server; an older Server cannot accept the new machine edit requests.
-See [metadata synchronization and API boundaries](/api/protocol/#server-owned-device-metadata).
-
-Implemented and regression-tested at
-[source commit 049f9ce](https://github.com/Printmaster-Org/printmaster/commit/049f9cec1e9e89f5938286bbde8298492ca5f795);
-this is a source revision, not a deployed release.
+serial-identity checks. For managed editing, keep the Agent and Server on
+compatible releases.
 
 ### Saved versus discovered state
 
@@ -206,12 +189,8 @@ The modal offers two initially unchecked options:
 
 Bulk deletion sends one `POST /api/v1/devices/delete` JSON request per serial, with `agent_id`, `delete_metrics`, and `delete_from_agent`. It continues after individual failures, clears selection, refreshes inventory, and reports deleted/failed counts. This is not an atomic bulk or cross-process operation. Server authorization uses each device's stored owner, not the browser's claimed `agent_id`; unowned Server records require a global administrator.
 
-Server-initiated Agent deletion suppresses the redundant Agent-to-Server deletion notification, avoiding a double-delete race that could incorrectly report `409 Device ownership changed`. A real disappearance/ownership replacement between lookup and the owner-qualified Server delete still returns `409`; refresh inventory before retrying. See [deletion ownership and ordering](/api/machine-ownership/#http-integration-requirement). This write route remains outside the reviewed read-only OpenAPI subset; no HTTP/protocol/product version changes are introduced.
+If a delete reports that device ownership changed, reload the inventory before trying again. When **Also delete from agent** is selected, the Agent-side request and Server-side delete are separate operations; one can succeed even if the other fails.
 
-## Compatibility and implementation
+## Compatibility
 
-The liveness follow-up is reviewed at [source commit 090483d](https://github.com/Printmaster-Org/printmaster/commit/090483d79ed57c20019126ac4a6d0df1c245cb3f): Agent monitor/startup, context-bound SNMP client, pure serial-identity parsing, guarded timestamp storage and save/unsave semantics, Server dashboard classification, and Devices status aging/filtering. Full Agent and Server Go suites passed; focused monitor/deadline tests passed under the race detector. Browser validation passed 66 progressive inventory/context-menu tests across all six configured projects (six mobile context-menu cases intentionally skipped), including Offline aging without events and recovery. JavaScript unit tests passed 47 tests. This is source validation, not a released/deployed build or real-printer field certification.
-
-Deletion marker forwarding and the shared single/bulk delete flow were reviewed at [source commit e52340a](https://github.com/Printmaster-Org/printmaster/commit/e52340a6bc52561d94cdd5ad521f733632d99cfb). Validation passed the full Server Go suite, authenticated WebSocket deletion and ownership-race regressions, 47 JavaScript tests, and 12 desktop context-menu tests across Chromium (two viewport sizes), Firefox and WebKit; six mobile context-menu cases were intentionally skipped. These are source validation results, not a deployed-release claim.
-
-Requires the Server inventory routes introduced by backend [`bdf1f8f`](https://github.com/Printmaster-Org/printmaster/commit/bdf1f8fea22e91d490238d9ab266f2690070c82d): `GET /api/v1/devices/index`, `POST /api/v1/devices/rows`, `POST /api/v1/devices/metrics/query`. The shared Server UI/controller implementation was reviewed at [`11f502c`](https://github.com/Printmaster-Org/printmaster/commit/11f502c). There is no fallback to legacy all-device list loading. Other tabs and Agent-local inventory are outside this frontend slice. See [shared controller reuse](/development/shared-progressive-loading/).
+The progressive inventory view requires a Server release that supports the index, row, and metrics-query routes. It does not fall back to loading the full legacy device list. If the Devices view reports an unavailable inventory service, upgrade the Server using the supported deployment procedure.

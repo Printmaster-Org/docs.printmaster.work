@@ -2,13 +2,17 @@
 
 This is the canonical documentation site for PrintMaster, including the application, product website, and standalone Scans utility. Their repositories are normally checked out alongside this one at `../printmaster`, `../printmaster.work`, and `../scans`. The main application's [AGENTS.md](../printmaster/AGENTS.md) describes how program and docs changes are paired.
 
-## Keep documentation current (required)
+## Documentation impact (required check)
 
-- Review documentation impact for every feature, fix, removal, and deprecation across these repositories. Update affected guides under `content/`, API contracts under `static/openapi/` when applicable, and source-local READMEs/examples in the same task as implementation changes.
-- Maintain documentation structure as work progresses: add new canonical pages where useful, reorganize or consolidate existing material, and remove obsolete legacy plans/docs when appropriate rather than only appending to them. Keep current plans aligned with agreed scope and implemented reality; clearly distinguish pending, completed, deferred, and historical work. Preserve still-relevant decisions and recovery guidance, and update affected links, navigation, redirects and documentation tests when moving or removing pages.
-- Verify documented behavior against the implementation, preserve imported `source`/`sourceCommit` provenance, and distinguish unreleased changes from published behavior. Do not recreate removed legacy documentation trees or duplicate canonical guides in source repositories.
-- Follow the [README](README.md) for editing and validation and [API_MAINTENANCE.md](API_MAINTENANCE.md) for contract changes. Link implementation and documentation commits or PRs, and report the pages changed and validation run.
-- If no documentation change is needed, explicitly explain why. If a required checkout is unavailable, report the blocker and exact pages needing updates rather than silently leaving docs stale or reporting completion.
+This repository publishes user/operator documentation and selected technical references. Assess documentation impact for every implementation change across the sibling repositories; **the assessment is required, but a documentation edit is conditional**.
+
+- Update public pages when an implementation change alters user/operator-visible behavior, task steps or outcomes, supported platforms, configuration/defaults, permissions/security expectations, API/protocol contracts, compatibility, releases, deployment, upgrades, or recovery guidance. Keep the page focused on what its reader needs to know or do. Source-local READMEs/examples also need changes when their own instructions become inaccurate.
+- Internal refactors, test-only changes, and build/CI maintenance normally require no site edit when public behavior and reader instructions are unchanged. In the completion summary, state pages/contracts updated or give a concise reason no public-doc change was needed.
+- Organize public content around reader tasks: installation, setup, use, troubleshooting, deployment/operations, and deliberately maintained API/protocol or contributor references. Developer content is appropriate when it helps a defined developer/contributor task; it is not a general home for implementation diaries, commit-by-commit audit evidence, internal backlogs, or routine engineering progress. Keep those in source repositories, PRs, issues, or maintainer records. Do not add a public page merely to record that a code change occurred.
+- Keep existing public instructions accurate as they are touched; consolidate or retire obsolete reader guidance rather than appending competing versions. Do not recreate removed legacy documentation trees or duplicate canonical guides in source repositories.
+- Verify published behavior against implementation and distinguish unreleased changes from behavior available in a published release. Preserve imported `source`/`sourceCommit` provenance. For API contracts, follow [API_MAINTENANCE.md](API_MAINTENANCE.md); do not imply that a reviewed subset covers the entire API.
+- Follow the [README](README.md) for editing and validation. When a docs change is paired with an implementation change, link them one-way: the docs commit may reference the implementation commit; do not require a docs SHA in the program commit. Report pages changed and validation run.
+- If a required source checkout is unavailable, report the blocker and exact pages that need verification or updating; do not silently claim affected documentation is current.
 
 ## Commit messages (required)
 

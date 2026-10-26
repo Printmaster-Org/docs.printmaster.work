@@ -182,8 +182,8 @@ Download the server binary from [GitHub Releases](https://github.com/printmaster
 The Server's **Add Agent** flow provides a PowerShell one-liner for enrollment
 and installation. Run it only from a trusted Server in an elevated PowerShell
 session. Treat the generated installation link as a credential; do not share it
-in screenshots or logs. This initial installation is not a TUF-verified
-self-update; see [legacy migration and initial trust](/guides/update-migration/).
+in screenshots or logs. Use the existing Agent's supported update or repair
+path for an installation that is already present.
 
 The updated Windows bootstrap installs **new Agents only**. Before creating
 directories, writing configuration, downloading or installing anything, it
@@ -267,8 +267,8 @@ The raw-binary service installer copies the Agent to
 protected copy. Service data remains under
 `C:\ProgramData\PrintMaster\agent\`. Existing raw-binary services installed
 from a different path must be migrated by running `--service update` from an
-elevated PowerShell prompt before automatic updates can be applied. MSI-created
-installation paths still require separate qualification.
+elevated PowerShell prompt before automatic updates can be applied. Use the MSI
+installer to update an MSI-owned installation; do not manually replace its files.
 
 #### Service Management
 
@@ -471,6 +471,6 @@ sudo dnf upgrade printmaster-agent
 
 Run the new MSI installer - it will upgrade the existing installation.
 
-### Auto-Updates
-
-Agents support automatic updates. See [Configuration Guide](/guides/configuration/#auto-update-settings) for setup instructions.
+For a release update, use the same installation method you selected above and
+review the release notes for platform-specific requirements. Automatic update
+options depend on the Agent version and installation method.

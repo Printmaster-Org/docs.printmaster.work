@@ -132,15 +132,15 @@ test('progressive inventory separates lightweight index, row data and lazy metri
   assert.equal(legacy.responses['200'].content['application/json'].schema.oneOf[0].nullable, undefined);
   assert.deepEqual(legacy.responses['200'].content['application/json'].schema.oneOf[1].allOf[0].required, ['total_count', 'has_more', 'limit', 'offset']);
 });
-test('Server editorial coverage and revision match the inventory contract', async () => {
+test('Server API reference matches the contract and keeps source revision in maintenance metadata', async () => {
   const spec = await SwaggerParser.validate(path.join(root, 'static/openapi/server.yaml'));
   const methods = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options']);
   const count = Object.values(spec.paths).reduce((total, item) => total + Object.keys(item).filter(method => methods.has(method)).length, 0);
   assert.equal(count, 17);
-  for (const file of ['README.md', 'API_MAINTENANCE.md', 'content/api/_index.md', 'content/api/openapi.md', 'content/api/inventory.md', 'content/guides/tenant-isolation.md']) {
+  for (const file of ['API_MAINTENANCE.md', 'content/api/inventory.md']) {
     const text = fs.readFileSync(path.join(root, file), 'utf8');
     assert.match(text, /17(?:-operation| operations)|Seventeen operations/, file);
-    assert.ok(text.includes(spec['x-reviewed-commit']), `${file}: missing newly reviewed revision`);
+    if (file === 'API_MAINTENANCE.md') assert.ok(text.includes(spec['x-reviewed-commit']), `${file}: missing reviewed revision`);
     assert.ok(text.includes(spec.info.version), `${file}: stale contract version`);
   }
 });
@@ -157,11 +157,11 @@ test('shared telemetry follow-up pins source and keeps management scope separate
   }
   assert.match(spec['x-review-notes'], /Metric agent_id is source attribution/);
   assert.match(spec.paths['/api/v1/devices/metrics/query'].post.description, /reporter agent_id ascending/);
+  const inventory = fs.readFileSync(path.join(root, 'content/api/inventory.md'), 'utf8');
   const protocol = fs.readFileSync(path.join(root, 'content/api/protocol.md'), 'utf8');
-  assert.ok(protocol.includes(revision));
-  assert.match(protocol, /Site membership does not authorize or prohibit/);
-  assert.match(protocol, /Retain the original Agent record/);
-  assert.match(protocol, /per-counter high-water mark/);
+  assert.match(inventory, /same nonempty tenant/);
+  assert.match(protocol, /route and credential overview/);
+  assert.doesNotMatch(protocol, /73ab7263263e53a04715b48dcb635ff2cafe1a37/);
 });
 test('both contracts retain per-operation source provenance and unique IDs', async () => {
   for (const name of ['server', 'agent']) {

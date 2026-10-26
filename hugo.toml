@@ -5,7 +5,7 @@ enableRobotsTXT = true
 disableKinds = ['taxonomy', 'term']
 
 [params]
-  description = 'PrintMaster guides and an independent printer and copier knowledge base: installation, scanning, brand setup, and development.'
+  description = 'PrintMaster installation, operations, printer and copier setup, and API references.'
   repository = 'https://github.com/Printmaster-Org/docs.printmaster.work'
   programRepository = 'https://github.com/Printmaster-Org/printmaster'
 
@@ -53,6 +53,6 @@ disableKinds = ['taxonomy', 'term']
   pageRef = '/api'
   weight = 60
 [[menus.main]]
-  name = 'Developers'
-  pageRef = '/development'
+  name = 'Security'
+  pageRef = '/guides/security'
   weight = 70

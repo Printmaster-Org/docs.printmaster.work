@@ -6,6 +6,5 @@ resources
 scripts/*
 !scripts/vendor-api.mjs
 README.md
-MIGRATION.md
 migration-manifest.json
 .hugo_build.lock

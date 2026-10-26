@@ -4,21 +4,19 @@ Hugo documentation for [PrintMaster](https://github.com/Printmaster-Org/printmas
 
 The local theme uses PrintMaster's Solarized dark/light palette, icon, panels, and borders. It includes responsive navigation, a table of contents, keyboard-accessible controls, and client-side full-text search. No external theme, fonts, CDN, or JavaScript framework is required.
 
-## Choose hosting
+## Hosting
 
-Docker is optional: Hugo produces ordinary static HTML/CSS/JS. See [DEPLOYMENT.md](DEPLOYMENT.md) for all activation steps.
+The public site is served at **[docs.printmaster.work](https://docs.printmaster.work/)** by GitHub Pages. The repository is public, the custom-domain certificate is approved, and HTTPS is enforced. The `Documentation CI and container` workflow validates changes before deploying `main`; pull requests are not deployed.
 
-**Planned production host: GitHub Pages**, once this repository becomes public. No paid organization plan or Docker server is needed for that public-repository deployment. Keep the Docker image as an optional self-hosting fallback.
+Hugo produces static HTML/CSS/JS. Docker is an optional self-hosting alternative; Cloudflare Pages is another static-host option. See [DEPLOYMENT.md](DEPLOYMENT.md) for the live Pages setup and alternatives.
 
-| Option | Private repository | Server required | Activation |
-| --- | --- | --- | --- |
-| GitHub Pages | Organization needs Team/Enterprise; public repos work on Free | No | Enable Pages and opt-in workflow variable |
-| Cloudflare Pages | Supported on Free via GitHub integration | No | Connect the repo and configure a Hugo build |
-| Docker | Supported; authenticate to private GHCR package | Yes | Deploy the existing image and reverse proxy |
+| Option | Current use | Server required |
+| --- | --- | --- |
+| GitHub Pages | Production site at `docs.printmaster.work` | No |
+| Docker | Optional self-hosting fallback | Yes |
+| Cloudflare Pages | Optional alternative host | No |
 
-During preparation this repository remains private. GitHub Pages is not enabled yet; make the repository public at launch, configure its Pages custom domain, then set `ENABLE_GITHUB_PAGES=true`. No automation changes repository visibility or hosting settings. The workflow only deploys after successful validation on `main`.
-
-**A private source repository does not make the published website private.** Review documentation before enabling public hosting.
+The published site is public. Review documentation for confidential or customer-specific material before merging; source and site visibility are separate concerns.
 
 ## Run locally
 
@@ -64,11 +62,10 @@ The container listens on **8080**, runs as UID **101**, needs no data volume, an
 
 Point DNS for `docs.printmaster.work` at your host, terminate HTTPS at your reverse proxy, and proxy requests to **[127.0.0.1:8088](http://127.0.0.1:8088)**. `/healthz` is the health endpoint. Unknown pages return HTTP 404, not a single-page-app fallback.
 
-### One-time GitHub setup
+### Optional self-hosting setup
 
-- Allow GitHub Actions in this repository and grant workflow package publication if organization policy restricts it.
-- After the first successful publication, set the GHCR package visibility to **public** for anonymous pulls; otherwise authenticate Docker to GHCR.
-- Configure DNS, TLS, and the deployment host separately. CI builds/publishes the image; it does not access or automatically update your server.
+- The GHCR package is public for anonymous pulls. CI publishes the image after successful validation; it does not update a self-hosted server.
+- Configure DNS, TLS, and the deployment host separately. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Edit documentation
 
@@ -83,20 +80,18 @@ The primary entry points follow reader tasks:
 - `content/scanning/`: receiving destinations, copier-side SMB setup, and document-delivery troubleshooting. Independent of PrintMaster.
 - `content/printers/<brand>/`: each brand's scanning, networking, email, printing, security, and maintenance knowledge base. Independent of PrintMaster.
 - `content/deployment/`: hosting, services, upgrades, backups, and recovery.
-- `content/api/`: API and machine-protocol reference.
-- `content/development/`: build/test instructions, architecture, research, and historical plans. Links to the existing component and project sections.
+- `content/api/`: API, machine-protocol, and SNMP references for integrators and administrators.
+- `content/guides/security.md`: deployment security and private vulnerability reporting.
 
 Use section front-matter `groups` (`title` plus `pages` content references) to curate task groups shared by landing cards and sidebar navigation. Unlisted children remain visible automatically; invalid references fail the build. The moved installation, first-setup, Scans, and manual Windows guides retain their published routes through explicit `url` values, so existing bookmarks and fragment links still work. Migration manifest destinations track the relocated imported source files; the one-time migration tool still records the original import layout and must not be rerun over editorial content.
 
 `npm run check` validates generated local links/assets/anchors and also requires every searchable page to appear in the documentation navigation, preventing orphaned guides.
 
-Use `status: planned` for published coverage placeholders, not guessed instructions. Planned status is visible on pages, cards, navigation, and search; `legacy: true` distinguishes historical notes. The `image-placeholder` shortcode renders a visible capture brief without a broken image request. Brand hubs use `data/brand-topics.toml` for their shared backlog; set `coveredTopics` to completed topic titles as tested guides are added.
+Use `status: planned` for a reader-visible placeholder when a useful procedure is not yet verified. Planned status appears on the page, in navigation, and search. Use `status: needs-validation` when some model-specific steps have been inspected but the end-to-end result is not yet verified. The `image-placeholder` shortcode renders a visible capture brief without a broken image request.
 
 Scanning walkthroughs with an inspected device interface but no verified save-and-delivery run use `status: needs-validation` (**Delivery test pending**) across the same surfaces. They must distinguish observed UI, manual-sourced instructions, and untested actions, and identify whether screenshot values are synthetic/unsaved.
 
-See [Contribute documentation](content/project/documentation.md) for the full editorial conventions, examples, and verification checklist.
-
-Imported pages retain `source` and `sourceCommit` metadata. Source-code references point to the exact original PrintMaster commit; update them when revising implementation documentation.
+Imported pages retain `source` and `sourceCommit` as import provenance. Verify current product behavior against the supported release before changing user instructions; do not treat historical source revisions as release claims.
 
 All HTML layouts inherit `layouts/_default/baseof.html`, which includes `layouts/partials/footer.html`. The shared footer adds the **Site stats** link to <https://stats.docs.printmaster.work/> and loads the async GoatCounter script from `//gc.zgo.at/count.js`, reporting page views to `https://stats.docs.printmaster.work/count`. This includes the homepage, guides, API references, and 404 page, but not search JSON, feeds, downloadable files, or `/healthz`. Analytics requires JavaScript and may be blocked by browser privacy settings; documentation remains usable without it. The custom stats hostname needs its GoatCounter CNAME and HTTPS configuration; dashboard visibility is controlled in GoatCounter. This analytics integration applies to the hosted docs, not self-hosted Agent/Server UIs.
 
@@ -112,20 +107,10 @@ bash scripts/smoke.sh printmaster-docs:local
 
 Node.js 24 is build/test tooling only, not a runtime dependency. Development dependencies validate OpenAPI and provide Swagger UI assets. `npm run vendor:api` copies the viewer and its licensing locally; the API viewer uses no CDN or external validator, and request execution is disabled. GoatCounter is the separate external analytics script described above. No Node runtime or `node_modules` is shipped, only static assets. Repeat vendoring after dependency updates and before each Hugo server/build invocation. Docker performs dependency installation and vendoring in its build stage, installs the pinned Hugo release, and verifies its archive checksum. Update `.hugo-version` and the Dockerfile default together when upgrading Hugo.
 
-The [server API overview](https://docs.printmaster.work/api/) links to the 17-operation [OpenAPI reference](https://docs.printmaster.work/api/openapi/) and [downloadable YAML](https://docs.printmaster.work/openapi/server.yaml). The [targeted accuracy audit](https://docs.printmaster.work/project/docs-audit/) records operational corrections, evidence, and remaining unaudited scope; it is not certification of all documentation.
+The [server API overview](https://docs.printmaster.work/api/) links to the 17-operation [OpenAPI reference](https://docs.printmaster.work/api/openapi/) and [downloadable YAML](https://docs.printmaster.work/openapi/server.yaml).
 
-## API documentation and accuracy
+## API References
 
-Public [Server OpenAPI](https://docs.printmaster.work/api/openapi/) covers 17 operations; [Agent OpenAPI](https://docs.printmaster.work/api/agent/) covers 7 local reads. A [machine-protocol guide](https://docs.printmaster.work/api/protocol/) separates enrollment/upload tokens from user credentials. See [API_MAINTENANCE.md](API_MAINTENANCE.md) for contract maintenance and the [product API roadmap](content/development/public-api-roadmap.md) for concrete program changes. Request execution remains disabled; fleet credentials stay off the hosted page.
+The public [API section](https://docs.printmaster.work/api/) includes separate Server, Agent, and machine-protocol references, plus the [Printer SNMP reference](https://docs.printmaster.work/api/snmp-reference/). These are scoped technical references, not a guarantee that every endpoint is covered or that all existing UI routes are stable public APIs. Request execution is disabled in the hosted viewer; keep fleet credentials private.
 
-Server contract 0.3.0 adds `GET /api/v1/devices/index`, `POST /api/v1/devices/rows`, and `POST /api/v1/devices/metrics/query`, and revises legacy `GET /api/v1/devices/list` semantics against backend commit `bdf1f8fea22e91d490238d9ab266f2690070c82d`. See [progressive inventory](content/api/inventory.md) for exact fields, SQL scope, owner-matched latest metrics, key/body limits and compatibility. These four operations carry that `x-source.commit`; other operations retain the `864fc3ee040bbb28f25d779c69512c5b6999d421` hardening review. Neither SHA is a released binary identifier; this is not a whole-API audit, route-version change or machine-protocol bump. [Tenant isolation](content/guides/tenant-isolation.md) records implementation, stricter-access compatibility, remaining limitations and required runtime tests. Agent contract coverage is unchanged.
-
-See [DOCS_AUDIT.md](DOCS_AUDIT.md) for the targeted accuracy pass, implementation evidence, and remaining unaudited content. A passing static build does not establish product accuracy for every imported document.
-
-Final committed-source reconciliation covers [authentication boundaries](content/guides/authentication-boundaries.md) (OIDC role normalization, target-bound password/OIDC redirects, serialized device-code approval and transactional pending-registration approval) and [machine ownership](content/api/machine-ownership.md) (user-session delete ownership conflicts return `409`). Report-run lists omit `result_data`; authorized detail/download preserves the body. Delete/report-run/auth additions remain outside the reviewed OpenAPI subsets. The containing hardening source SHA is `864fc3ee040bbb28f25d779c69512c5b6999d421`; the newer inventory review does not re-audit these operations. No released build or runtime-security certification is claimed. Docs tests and Docker smoke validate the documentation only.
-
-## Migration record
-
-The initial import includes **47 authored Markdown documents**, screenshots, banner source/image, Printer-MIB, application icons, and the original MIT license. See [MIGRATION.md](MIGRATION.md) and [migration-manifest.json](migration-manifest.json) for scope, repaired links, source hashes, and cutover steps.
-
-Original documentation remains in the program repository during staged cutover. Do not run the importer again over edited content: it deliberately refuses overwrites. Repository automation instructions, third-party license files, and test-fixture documentation are not public-site content.
+Server OpenAPI covers 17 operations; Agent OpenAPI covers seven local reads. For contract changes, follow [API_MAINTENANCE.md](API_MAINTENANCE.md) and verify affected handlers and authorization in the program repository. Record implementation and validation details in the associated PR, not in a public audit log.

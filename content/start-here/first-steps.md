@@ -142,6 +142,8 @@ PrintMaster uses SNMP (Simple Network Management Protocol) to discover and query
 
 You can specify which networks to scan:
 
+See [IP ranges for discovery](/guides/ip-ranges/) for supported IPv4 formats and limits.
+
 1. **Single IP**: `192.168.1.100`
 2. **IP Range**: `192.168.1.1-254`
 3. **CIDR Notation**: `192.168.1.0/24`
@@ -239,15 +241,13 @@ interpreting an empty result as an empty inventory.
 
 Now that you have PrintMaster running:
 
-1. **[Configure SNMP settings](/guides/configuration/#snmp-settings)** if your printers don't use the default community string
+1. **[Configure SNMP settings](/guides/configuration/#agent-discovery-and-snmp)** if your printers don't use the default community string
 
 2. **[Set up scheduled scans](/guides/features/#scheduled-scans)** to keep device data current
 
 3. **[Enable alerts](/guides/features/#alerts--notifications)** for low toner or offline devices
 
 4. **[Explore the API](/api/)** for integrations with your existing tools
-
-5. **[Configure auto-updates](/guides/configuration/#auto-update-settings)** to keep agents current
 
 ---
 

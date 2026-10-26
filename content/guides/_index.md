@@ -8,9 +8,9 @@ groups:
   - title: "Manage your fleet"
     pages: ["/guides/features", "/guides/devices", "/guides/alerts-reports"]
   - title: "Settings & access"
-    pages: ["/guides/configuration", "/guides/authentication-boundaries", "/guides/tenant-isolation"]
-  - title: "Help & release channels"
-    pages: ["/guides/troubleshooting", "/guides/faq", "/guides/beta-program"]
+    pages: ["/guides/configuration", "/guides/ip-ranges", "/guides/authentication-boundaries", "/guides/tenant-access", "/guides/security"]
+  - title: "Help"
+    pages: ["/guides/troubleshooting", "/guides/faq"]
 ---
 
 Already installed? Find the task you need below. For installation and first discovery, [start here](/start-here/).

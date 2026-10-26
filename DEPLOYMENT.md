@@ -6,25 +6,13 @@ Hugo builds a static site. Docker is one hosting option, not a requirement. The 
 
 Direct Hugo builds require Node.js 24 for build/test tooling and the pinned Hugo version in `.hugo-version`. Before `hugo server` or a production build, run `npm ci --ignore-scripts`, then `npm run vendor:api`. The latter copies Swagger UI and its licensing into local static assets; no CDN, external validator, or Node runtime is needed by the deployed site. The public API viewer has request execution disabled. Docker already performs installation and vendoring in its build stage; the opt-in GitHub Pages job reuses that generated output.
 
-## Planned launch: public repository + GitHub Pages
+## Current production: GitHub Pages
 
-The repository is temporarily private during preparation and will become public at launch. **GitHub Pages is the preferred production host:** free for the public repository, with no Docker server or paid organization plan required. Docker remains a fallback; Cloudflare is an optional alternative, not a requirement.
+The public repository publishes the production site at **https://docs.printmaster.work/**. GitHub Pages uses the custom domain, its certificate is approved, and HTTPS enforcement is enabled. The `Documentation CI and container` workflow deploys `main` only after validation; pull requests are never deployed. `ENABLE_GITHUB_PAGES=true` is the deployment gate.
 
-Follow **Option A** when ready to change visibility. The workflow is prepared now but gated off until explicitly enabled.
+The website is public. Do not publish customer data, credentials, or maintainer-only operational records. Repository and website visibility are separate concerns; removing a page from the current site does not remove it from Git history or old caches.
 
-### Current preparation state
-
-Checked on **2026-10-02**:
-
-- Repository: `Printmaster-Org/docs.printmaster.work`, **private**.
-- Organization plan: **Free**.
-- GitHub Pages: **not enabled**.
-
-GitHub Pages works with public repositories on GitHub Free. A private organization repository requires **GitHub Team or Enterprise**. GitHub Pro applies to personally owned repositories, not this organization-owned repository.
-
-References: [GitHub Pages availability](https://docs.github.com/en/pages/getting-started-with-github-pages/about-github-pages) and [Cloudflare Pages Git integration](https://developers.cloudflare.com/pages/configuration/git-integration/).
-
-**Privacy warning:** Private GitHub source does not mean a private website. Standard Pages sites are publicly accessible, including sites built from private repositories. Do not publish confidential material. Restricting a Pages site to an organization is a separate Enterprise Cloud capability. Cloudflare Pages is also public by default; use Cloudflare Access when authentication is needed.
+References: [GitHub Pages with custom workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages) and [custom domains](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site).
 
 ## Alternative: Cloudflare Pages — free hosting, optional private source
 
@@ -51,44 +39,26 @@ Use this alternative only if you later prefer Cloudflare hosting. It also suppor
 
 Subsequent pushes to `main` deploy automatically through Cloudflare. GitHub's Docker CI continues independently; it is not the Cloudflare deployment gate. The Cloudflare build explicitly installs locked dependencies without lifecycle scripts, vendors the local API viewer **before Hugo**, and runs the same unit tests and generated-link checks before publishing. Provider dependency installation alone does not replace `npm run vendor:api`. If previews should not expose unpublished changes, disable preview deployments or protect them with Access.
 
-## Option A: GitHub Pages — preferred public launch
+## Maintain GitHub Pages
 
-Make the repository public when ready, as planned. Review files and Git history before the visibility change; public source exposes both. No automation in this repository changes visibility.
+The custom domain is configured in repository **Settings → Pages**; GitHub Pages DNS and the HTTPS certificate are already active. Do not change repository visibility or DNS as part of a routine content update.
 
-The optional `deploy-pages` job reuses the static output from the validated Docker build. Docker runs only in CI; GitHub serves the generated files. There is no GHCR dependency for hosting and no custom deployment token to store.
+After a change reaches `main`, inspect the **Documentation CI and container** workflow. It must pass **Build and validate docs** before **Deploy to GitHub Pages (opt-in)** runs. Verify the custom domain over HTTPS and check a representative page and 404 response after deployment.
 
-1. In repository **Settings → Pages**, choose **Build and deployment → Source → GitHub Actions**.
-2. Verify the custom domain belongs to you using GitHub's organization Pages domain verification flow. This protects against domain takeover.
-3. Add **docs.printmaster.work** under the repository's Pages **Custom domain** setting.
-4. At your DNS provider, point the **docs** CNAME to **printmaster-org.github.io** — not the repository name and not a URL/path. Remove conflicting A/AAAA records on that same subdomain only after checking existing use.
-5. In **Settings → Secrets and variables → Actions → Variables**, add:
-
-   | Variable | Value |
-   | --- | --- |
-   | `ENABLE_GITHUB_PAGES` | `true` |
-
-6. Push `main`, or run **Documentation CI and container** from the Actions tab against `main`.
-7. Confirm **Build and validate docs** passes, followed by **Deploy to GitHub Pages (opt-in)**. The deployed environment exposes the site URL.
-8. After GitHub provisions the certificate, enable **Enforce HTTPS** and verify the custom domain.
-
-The current site intentionally uses **[docs.printmaster.work](https://docs.printmaster.work/)** at the domain root. The default project URL (`https://printmaster-org.github.io/docs.printmaster.work/`) is not a supported fallback: imported content has root-relative links. Configure the custom domain before enabling deployment. This also avoids serving incorrect asset/search paths at the project subpath.
-
-For Actions deployments, set the custom domain in Pages settings; GitHub does not use an artifact's CNAME file to configure it. The workflow is gated to `main`, never deploys pull requests, uses short-lived OIDC permissions, and serializes Pages deployments. Set `ENABLE_GITHUB_PAGES=false` to stop future deployments; that does not remove an already-published site. Disable Pages in repository settings to unpublish it.
-
-References: [Publishing with Actions](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [custom subdomains](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site#configuring-a-subdomain), and [domain verification](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/verifying-your-custom-domain-for-github-pages).
+To stop future deployments, set `ENABLE_GITHUB_PAGES=false`. This does not remove an already-published site; disable Pages separately if the site must be taken offline.
 
 ## Alternative: keep the existing Docker deployment
 
-Use the [Docker instructions](README.md#deploy-the-ci-image). Deploy the image on your host, point DNS there, and terminate HTTPS at your reverse proxy. A private GHCR package requires Docker authentication on the deployment host; never commit registry credentials.
+Use the [Docker instructions](README.md#deploy-the-ci-image). The GHCR image is public, so anonymous pulls work. Deploy it on your host, point DNS there, and terminate HTTPS at your reverse proxy.
 
 The CI image publication job still builds amd64/arm64 images. Enabling GitHub Pages does not remove this self-hosting alternative.
 
 ## Before declaring the site live
 
 - Public domain loads over HTTPS without a certificate warning.
-- Installation, configuration, API, and developer pages load.
+- Installation, configuration, API, and printer-setup pages load.
 - The OpenAPI viewer at `/api/openapi/`, YAML at `/openapi/server.yaml`, and local Swagger UI assets load without CDN requests.
 - Search, screenshots, theme toggle, and mobile navigation work.
 - Unknown routes return a real 404.
 - Source links point at the expected code repository; private-source edit links require GitHub authorization.
-- Only after public verification, change program-repository documentation pointers and retire old guides as described in [MIGRATION.md](MIGRATION.md).
+- The site links to the current application and Scans repositories; retired developer records are not published.

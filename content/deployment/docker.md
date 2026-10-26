@@ -190,7 +190,7 @@ Direct Let's Encrypt mode also needs public HTTP challenge access on port `80`; 
 | `PM_DISABLE_SELFUPDATE` | Disable self-update (recommended for Docker) |
 | `CONTAINER=docker` | Auto-detected, disables self-update |
 
-See [Environment Variables Reference](/guides/configuration/#environment-variables) for selected configuration variables, including `SERVER_DB_DRIVER`/`DB_DRIVER` and `SERVER_DB_DSN`/`DB_DSN` for PostgreSQL. SQLite TOML uses `[database].driver` and `path`; PostgreSQL uses `driver = "postgres"` and `dsn`, not `type`/`postgres_url`.
+See [Environment Variables](/deployment/docker/#environment-variables) for selected variables, including the PostgreSQL driver and DSN. SQLite TOML uses `[database].driver` and `path`; PostgreSQL uses `driver = "postgres"` and `dsn`.
 
 ---
 

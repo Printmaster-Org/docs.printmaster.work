@@ -123,7 +123,7 @@ Yes. PrintMaster can alert you when:
 
 ### Does PrintMaster support SNMP v3?
 
-Currently, PrintMaster supports SNMP v1/v2c. SNMP v3 support is planned for a future release.
+Supported Agent versions can configure SNMPv3 credentials and security options in the SNMP settings. Availability and device compatibility depend on the Agent release and printer model. Prefer SNMPv3 with authentication and privacy when supported; see [SNMP configuration](/guides/configuration/#agent-discovery-and-snmp).
 
 ### Can I access printers remotely?
 
@@ -186,25 +186,7 @@ See [Connection Issues](/guides/troubleshooting/#connection-issues) for more hel
 
 ## Updates
 
-### How do I update PrintMaster?
-
-**Docker:**
-```bash
-docker pull ghcr.io/printmaster-org/printmaster-server:latest
-docker compose down && docker compose up -d
-```
-
-**Linux (APT):**
-```bash
-sudo apt update && sudo apt upgrade printmaster-agent
-```
-
-**Windows:**
-Run the new MSI installer.
-
-### Does PrintMaster auto-update?
-
-Agents can be configured to auto-update. See [Auto-Updates](/guides/features/#auto-updates) for configuration options.
+Update using the same installation method you chose: pull the new Docker image, use the configured Linux package repository, or run the Windows installer. Review the [deployment guides](/deployment/) and release notes before upgrading a production Server. Automatic Agent updates and available channels depend on the installed release and installation method; do not assume every channel or updater feature is available.
 
 ---
 
@@ -235,12 +217,9 @@ The web UI supports CSV export for device lists and reports.
 
 ## Contributing
 
-### How can I contribute?
+### How can I report an issue?
 
-We welcome contributions! See [CONTRIBUTING.md](/project/contributing/) for guidelines on:
-- Reporting bugs
-- Suggesting features
-- Submitting pull requests
+Open an issue in the [PrintMaster repository](https://github.com/Printmaster-Org/printmaster/issues). Include the product version, installation method, and a concise reproduction. Review and redact logs before attaching them; they can contain network and device identifiers. Report security vulnerabilities privately using [Security and privacy](/guides/security/#report-a-vulnerability).
 
 ### Where do I report bugs?
 

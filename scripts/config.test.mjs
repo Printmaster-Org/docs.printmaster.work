@@ -35,6 +35,16 @@ test('every imported page has its own route and retains source metadata', () => 
   assert.equal(manifest.pages.length, 47);
   assert.equal(new Set(manifest.pages.map(page => page.url)).size, 47);
   for (const page of manifest.pages) {
+    if (page.publication === 'retired' || page.publication === 'moved') {
+      assert.equal(fs.existsSync(path.join(root, page.destination)), false, page.source);
+      if (page.publication === 'moved') {
+        assert.ok(page.replacementDestination, page.source);
+        const replacement = read(page.replacementDestination);
+        assert.ok(replacement.includes(`source: ${JSON.stringify(page.source)}`), page.source);
+        assert.ok(replacement.includes(`sourceCommit: ${JSON.stringify(manifest.sourceCommit)}`), page.source);
+      }
+      continue;
+    }
     const content = read(page.destination);
     assert.ok(content.includes(`source: ${JSON.stringify(page.source)}`), page.source);
     assert.ok(content.includes(`sourceCommit: ${JSON.stringify(manifest.sourceCommit)}`), page.source);
@@ -43,7 +53,7 @@ test('every imported page has its own route and retains source metadata', () => 
 });
 
 test('SNMP reference exposes preserved MIB and JSON downloads', () => {
-  const guide = read('content/development/snmp-reference.md');
+  const guide = read('content/api/snmp-reference.md');
   const mibPath = 'media/docs/dev/Printer-MIB.mib';
   const jsonPath = 'media/agent/docs/printer-mib-complete.json';
   assert.ok(guide.includes(`](/${mibPath})`));

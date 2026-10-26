@@ -19,7 +19,7 @@ The [scan-to-SMB guide](/printers/epson/scan-to-smb/) now covers **ST-C8090 Seri
 | Model | Current evidence | Limit |
 | --- | --- | --- |
 | ST-C8090 Series | SMB contact editor, scan defaults, and redacted/example screenshots | Delivery test pending; no settings applied |
-| WF-C878R Series | [Separate configuration research](/development/vendor/configuration/epson/) on firmware 04.27.QO23Q1 | SMTP/time research, not an SMB walkthrough |
+| WF-C878R Series | No verified SMB walkthrough yet | Use the shared setup checklist while model-specific steps are researched |
 | Other Epson models | Not yet inspected for this workflow | Do not assume identical fields or capabilities |
 
-For shared receiving-PC setup, use [Scanning & SMB](/scanning/). [Epson configuration research](/development/vendor/configuration/epson/) is separate developer evidence, not a verified setup recipe.
+For shared receiving-PC setup, use [Scanning & SMB](/scanning/). Model-specific procedures are listed only when their model and verification status are clear.

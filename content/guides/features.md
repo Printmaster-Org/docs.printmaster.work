@@ -16,9 +16,8 @@ Complete guide to PrintMaster's features and capabilities.
 - [Alerts & Notifications](#alerts--notifications)
 - [Scheduled Reports](#scheduled-reports)
 - [Scheduled Scans](#scheduled-scans)
-- [Auto-Updates](#auto-updates)
 - [Security Features](#security-features)
-- [API Access](#api-access)
+- [API integrations](#api-integrations)
 
 ---
 
@@ -396,55 +395,7 @@ Run any schedule immediately:
 
 ---
 
-## Auto-Updates
-
-Keep agents automatically updated to the latest version.
-
-### Update Modes
-
-| Mode | Description |
-|------|-------------|
-| **Inherit** | Follow fleet policy from server (default) |
-| **Local** | Use agent's local update settings |
-| **Disabled** | No automatic updates |
-
-### Fleet Policies (Server)
-
-Administrators can set update policies for all agents:
-
-1. Go to server **Settings** → **Update Policies**
-2. Configure:
-   - **Version Strategy**: Minor only, or allow major upgrades
-   - **Maintenance Window**: When updates can occur
-   - **Rollout Control**: Staged rollout settings
-
-### Local Agent Override
-
-Agents can override fleet policy if needed:
-
-```toml
-[auto_update]
-mode = "local"
-
-[auto_update.local_policy]
-update_check_days = 7
-version_pin_strategy = "minor"
-allow_major_upgrade = false
-```
-
-### Maintenance Windows
-
-Prevent updates during critical hours:
-
-```toml
-[auto_update.local_policy.maintenance_window]
-enabled = true
 timezone = "America/New_York"
-start_hour = 2
-end_hour = 5
-days_of_week = ["Saturday", "Sunday"]
-```
-
 ---
 
 ## Security Features
@@ -497,42 +448,6 @@ For a reverse proxy terminating server TLS:
 
 ---
 
-## API Access
+## API integrations
 
-PrintMaster provides a REST API for integrations and automation.
-
-### Authentication
-
-```bash
-# Get auth token
-curl -X POST http://server:9090/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "your-password"}'
-```
-
-### Common Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/devices` | GET | List all devices |
-| `/api/v1/devices/{id}` | GET | Get device details |
-| `/api/v1/agents` | GET | List connected agents |
-| `/api/v1/agents/{id}/devices` | GET | Get devices for an agent |
-
-### Webhooks
-
-Configure webhooks to receive real-time notifications:
-
-1. Go to **Settings** → **Integrations**
-2. Add a webhook URL
-3. Select events to receive
-4. Test the webhook
-
-### Integration Examples
-
-- **Monitoring Systems**: Send alerts to PagerDuty, OpsGenie
-- **Ticketing**: Create tickets in ConnectWise, Autotask
-- **Reporting**: Export data to BI tools
-- **Custom Dashboards**: Build your own UI
-
-See the [API Reference](/api/) for complete documentation.
+PrintMaster exposes selected Server and Agent operations for integrations. Use the [API reference](/api/) to choose the correct host, credential type, request shape, and documented scope. The public reference is read-only and does not send requests to your fleet.

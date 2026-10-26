@@ -6,79 +6,98 @@
       "source": "CONTRIBUTING.md",
       "destination": "content/project/contributing.md",
       "url": "/project/contributing/",
-      "sha256": "c655ed2bf141817de697237558b38f66cff4d706f49ef9229468f9daa7343144"
+      "sha256": "c655ed2bf141817de697237558b38f66cff4d706f49ef9229468f9daa7343144",
+      "publication": "retired",
+      "replacement": "Printmaster-Org/printmaster/CONTRIBUTING.md"
     },
     {
       "source": "GIT_INTEGRATION_SUMMARY.md",
       "destination": "content/development/git-integration-summary.md",
       "url": "/development/git-integration-summary/",
-      "sha256": "b3bd5801a0e2cd0ab7b2384ded18c4465e7dd81b6b556912c04da17398386cec"
+      "sha256": "b3bd5801a0e2cd0ab7b2384ded18c4465e7dd81b6b556912c04da17398386cec",
+        "publication": "retired"
     },
     {
       "source": "README.md",
       "destination": "content/project/overview.md",
       "url": "/project/overview/",
-      "sha256": "8f6febacff82b6fef0457d98963e6dcece9f9a50d34c35b6104a08e7a26b1e9d"
+      "sha256": "8f6febacff82b6fef0457d98963e6dcece9f9a50d34c35b6104a08e7a26b1e9d",
+      "publication": "retired",
+      "replacement": "Printmaster-Org/printmaster/README.md"
     },
     {
       "source": "SECURITY.md",
       "destination": "content/project/security.md",
       "url": "/project/security/",
-      "sha256": "4ae3e2ed721d32667b0749aee780689f4c20261679abe02d0933122b52e4e079"
+      "sha256": "4ae3e2ed721d32667b0749aee780689f4c20261679abe02d0933122b52e4e079",
+      "publication": "moved",
+      "replacementUrl": "/guides/security/",
+      "replacementDestination": "content/guides/security.md"
     },
     {
       "source": "agent/README.md",
       "destination": "content/components/agent/_index.md",
       "url": "/components/agent/",
-      "sha256": "0730d6657e53104154b34c07ae7a2f6e01598e2527cf5abb4c136f0bfbf0e063"
+      "sha256": "0730d6657e53104154b34c07ae7a2f6e01598e2527cf5abb4c136f0bfbf0e063",
+        "publication": "retired"
     },
     {
       "source": "agent/SERVICE.md",
       "destination": "content/components/agent/service.md",
       "url": "/components/agent/service/",
-      "sha256": "6eee1341cc56f28ca8d1cd80dd5db5e6776b038957338974b129af65b4e4cd9e"
+      "sha256": "6eee1341cc56f28ca8d1cd80dd5db5e6776b038957338974b129af65b4e4cd9e",
+      "publication": "moved",
+      "replacementUrl": "/deployment/agent-service/",
+      "replacementDestination": "content/deployment/agent-service.md"
     },
     {
       "source": "agent/agent/README.md",
       "destination": "content/components/agent/historical-overview.md",
       "url": "/components/agent/historical-overview/",
-      "sha256": "5c25343cd3128be982d4806641a37060dc5a70d9b1d74647d808ca43ac99831d"
+      "sha256": "5c25343cd3128be982d4806641a37060dc5a70d9b1d74647d808ca43ac99831d",
+        "publication": "retired"
     },
     {
       "source": "agent/docs/MIB_PROFILES.md",
       "destination": "content/components/agent/docs/mib-profiles.md",
       "url": "/components/agent/docs/mib-profiles/",
-      "sha256": "890ac9348320b772e96fb5b43e94ed72b3bf0784717c5d6ba55e67f7fe9e3177"
+      "sha256": "890ac9348320b772e96fb5b43e94ed72b3bf0784717c5d6ba55e67f7fe9e3177",
+        "publication": "retired"
     },
     {
       "source": "agent/docs/REMAINING_TASKS.md",
       "destination": "content/components/agent/docs/remaining-tasks.md",
       "url": "/components/agent/docs/remaining-tasks/",
-      "sha256": "b9e8ae5bdae251e6f5a94f4daac4c5a752488494d9710a80a924e69e9c40f97a"
+      "sha256": "b9e8ae5bdae251e6f5a94f4daac4c5a752488494d9710a80a924e69e9c40f97a",
+        "publication": "retired"
     },
     {
       "source": "agent/scanner/README.md",
       "destination": "content/components/agent/scanner/_index.md",
       "url": "/components/agent/scanner/",
-      "sha256": "980755fe5c7def969a46d42ff4dad32906f4831b58fc7fb35b256b9bf6226701"
+      "sha256": "980755fe5c7def969a46d42ff4dad32906f4831b58fc7fb35b256b9bf6226701",
+        "publication": "retired"
     },
     {
       "source": "agent/scanner/capabilities/README.md",
       "destination": "content/components/agent/scanner/capabilities/_index.md",
       "url": "/components/agent/scanner/capabilities/",
-      "sha256": "ce12e6ecab6a03435d91bd17d19754937382323e965fb69b50e2dcb1fc9954ad"
+      "sha256": "ce12e6ecab6a03435d91bd17d19754937382323e965fb69b50e2dcb1fc9954ad",
+        "publication": "retired"
     },
     {
       "source": "agent/storage/README.md",
       "destination": "content/components/agent/storage/_index.md",
       "url": "/components/agent/storage/",
-      "sha256": "9c46dd9eeea9ae032e0aee21492ac7932b0817b12ac6c9bfff325e24fb3fac5c"
+      "sha256": "9c46dd9eeea9ae032e0aee21492ac7932b0817b12ac6c9bfff325e24fb3fac5c",
+        "publication": "retired"
     },
     {
       "source": "common/logger/README.md",
       "destination": "content/components/logger/_index.md",
       "url": "/components/logger/",
-      "sha256": "dc0702426b2c1a7c1d3469eb0d7a5c32e79ee5c665a1de05c16a369a581238f2"
+      "sha256": "dc0702426b2c1a7c1d3469eb0d7a5c32e79ee5c665a1de05c16a369a581238f2",
+        "publication": "retired"
     },
     {
       "source": "docs/CONFIGURATION.md",
@@ -150,139 +169,166 @@
       "source": "docs/dev/AUTO_UPDATE_PLAN.md",
       "destination": "content/development/auto-update-plan.md",
       "url": "/development/auto-update-plan/",
-      "sha256": "d061bec3942c684cc845e94abb853fd8cbe253b843f3ba270fac54472a6596d6"
+      "sha256": "d061bec3942c684cc845e94abb853fd8cbe253b843f3ba270fac54472a6596d6",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/BUILD_WORKFLOW.md",
       "destination": "content/development/build-workflow.md",
       "url": "/development/build-workflow/",
-      "sha256": "990fc6ba80a821307f54fa35a78a34d69a308d0bdbb7487501d1608ce733e192"
+      "sha256": "990fc6ba80a821307f54fa35a78a34d69a308d0bdbb7487501d1608ce733e192",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/CLOUDFLARE_PROXY_WORKER.md",
       "destination": "content/development/cloudflare-proxy-worker.md",
       "url": "/development/cloudflare-proxy-worker/",
-      "sha256": "1334a8dc38b584e0623a0562b111909027aae2d76da820f12f8112b49356f6a3"
+      "sha256": "1334a8dc38b584e0623a0562b111909027aae2d76da820f12f8112b49356f6a3",
+      "publication": "retired"
     },
     {
       "source": "docs/dev/DEPRECATIONS.md",
       "destination": "content/development/deprecations.md",
       "url": "/development/deprecations/",
-      "sha256": "ea53d15c88f1dfb6992b5ac3c15054b01d3ba54a75a7a90c9081b414818ceb98"
+      "sha256": "ea53d15c88f1dfb6992b5ac3c15054b01d3ba54a75a7a90c9081b414818ceb98",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/EPSON_REMOTE_MODE_PLAN.md",
       "destination": "content/development/epson-remote-mode-plan.md",
       "url": "/development/epson-remote-mode-plan/",
-      "sha256": "208e622ea5a4c80e1729b0b338ff5db9462c6c0eedd72401c7b68e5e741f24e3"
+      "sha256": "208e622ea5a4c80e1729b0b338ff5db9462c6c0eedd72401c7b68e5e741f24e3",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/PROJECT_STRUCTURE.md",
       "destination": "content/development/project-structure.md",
       "url": "/development/project-structure/",
-      "sha256": "8f1f8fb5edb1d344d460fa01ef3f18c8846e9fda8e68c4de7e78d0d05510deb1"
+      "sha256": "8f1f8fb5edb1d344d460fa01ef3f18c8846e9fda8e68c4de7e78d0d05510deb1",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/RANGE_SYNTAX.md",
       "destination": "content/development/range-syntax.md",
       "url": "/development/range-syntax/",
-      "sha256": "399f67cdd4052bddca222c4fbf2c58086c1468ec9c166d8c4603c9a7fbaf666a"
+      "sha256": "399f67cdd4052bddca222c4fbf2c58086c1468ec9c166d8c4603c9a7fbaf666a",
+      "publication": "moved",
+      "replacementUrl": "/guides/ip-ranges/",
+      "replacementDestination": "content/guides/ip-ranges.md"
     },
     {
       "source": "docs/dev/README.md",
       "destination": "content/development/_index.md",
       "url": "/development/",
-      "sha256": "8fcef2fd394264f66044f8005e94d7772118354f55ecb70fd3a1e3b597524735"
+      "sha256": "8fcef2fd394264f66044f8005e94d7772118354f55ecb70fd3a1e3b597524735",
+      "publication": "retired"
     },
     {
       "source": "docs/dev/SECURITY_ARCHITECTURE.md",
       "destination": "content/development/security-architecture.md",
       "url": "/development/security-architecture/",
-      "sha256": "f02467e59b32321cdcdcdebca92d4685566f3c8d673c43e428de6317d7b2c097"
+      "sha256": "f02467e59b32321cdcdcdebca92d4685566f3c8d673c43e428de6317d7b2c097",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/SNMP_REFERENCE.md",
       "destination": "content/development/snmp-reference.md",
       "url": "/development/snmp-reference/",
-      "sha256": "8ce1c61ca77bfee4f01b9766b8f8bfff3ed244002a363c4063134a78a12b7a76"
+      "sha256": "8ce1c61ca77bfee4f01b9766b8f8bfff3ed244002a363c4063134a78a12b7a76",
+      "publication": "moved",
+      "replacementUrl": "/api/snmp-reference/",
+      "replacementDestination": "content/api/snmp-reference.md"
     },
     {
       "source": "docs/dev/SNMP_RESEARCH_NOTES.md",
       "destination": "content/development/snmp-research-notes.md",
       "url": "/development/snmp-research-notes/",
-      "sha256": "8e9721f0860baf08b21ca10d61e3a5ebeda2813f229f15ed2fe831ca992e981d"
+      "sha256": "8e9721f0860baf08b21ca10d61e3a5ebeda2813f229f15ed2fe831ca992e981d",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/TESTING.md",
       "destination": "content/development/testing-ci.md",
       "url": "/development/testing-ci/",
-      "sha256": "f3b4c4e78280d891f111ef48e7f1e001235df065bf5c7df8928f562b16272cc5"
+      "sha256": "f3b4c4e78280d891f111ef48e7f1e001235df065bf5c7df8928f562b16272cc5",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/TEST_COVERAGE_ANALYSIS.md",
       "destination": "content/development/test-coverage-analysis.md",
       "url": "/development/test-coverage-analysis/",
-      "sha256": "732f50af3258a842e34f44334466557038239ea824d16bd9ad03196037b646ca"
+      "sha256": "732f50af3258a842e34f44334466557038239ea824d16bd9ad03196037b646ca",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/TODO.md",
       "destination": "content/development/todo.md",
       "url": "/development/todo/",
-      "sha256": "6b8adbc083693e0501e2355c89548f4102ad4613709352f9d7798bc3c32f36eb"
+      "sha256": "6b8adbc083693e0501e2355c89548f4102ad4613709352f9d7798bc3c32f36eb",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/USB_IMPLEMENTATION.md",
       "destination": "content/development/usb-implementation.md",
       "url": "/development/usb-implementation/",
-      "sha256": "854589b9292e3b132c7d2f99890977c21947c2f36dd9d13c36fba17606c8a612"
+      "sha256": "854589b9292e3b132c7d2f99890977c21947c2f36dd9d13c36fba17606c8a612",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/WEBSOCKET_PROXY.md",
       "destination": "content/development/websocket-proxy.md",
       "url": "/development/websocket-proxy/",
-      "sha256": "a5658b7c3ad27a57f07b493757cadaf4ef5fe75b7fd03d0679753dd3a4637d65"
+      "sha256": "a5658b7c3ad27a57f07b493757cadaf4ef5fe75b7fd03d0679753dd3a4637d65",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/vendor/EPSON_OID_MAPPING.md",
       "destination": "content/development/vendor/epson-oid-mapping.md",
       "url": "/development/vendor/epson-oid-mapping/",
-      "sha256": "d32cd1a96637b99d2b6a0496cd77ad081d8a0646f67375560621a5ba86da0ec9"
+      "sha256": "d32cd1a96637b99d2b6a0496cd77ad081d8a0646f67375560621a5ba86da0ec9",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/vendor/KYOCERA_OID_MAPPING.md",
       "destination": "content/development/vendor/kyocera-oid-mapping.md",
       "url": "/development/vendor/kyocera-oid-mapping/",
-      "sha256": "998e851c068edec1942f407566722d1aaac5a388199ae8a5c76971f47c127089"
+      "sha256": "998e851c068edec1942f407566722d1aaac5a388199ae8a5c76971f47c127089",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/vendor/README.md",
       "destination": "content/development/vendor/_index.md",
       "url": "/development/vendor/",
-      "sha256": "73fcadaaccbe0e68cd0b5c47ce7498d1c6aa154ca9131f47496eb02ad316a580"
+      "sha256": "73fcadaaccbe0e68cd0b5c47ce7498d1c6aa154ca9131f47496eb02ad316a580",
+        "publication": "retired"
     },
     {
       "source": "docs/dev/vendor/VENDOR_METER_ANALYSIS.md",
       "destination": "content/development/vendor/vendor-meter-analysis.md",
       "url": "/development/vendor/vendor-meter-analysis/",
-      "sha256": "2136ede691c44b3a7fc9e8f71156ee7816e236d753f06e45be676fbe218f88f4"
+      "sha256": "2136ede691c44b3a7fc9e8f71156ee7816e236d753f06e45be676fbe218f88f4",
+      "publication": "retired"
     },
     {
       "source": "server/README.md",
       "destination": "content/components/server/_index.md",
       "url": "/components/server/",
-      "sha256": "6819dd61bd3a73601eacbdd4d31dc8512f75a48211af6ddd99baa2a76781838f"
+      "sha256": "6819dd61bd3a73601eacbdd4d31dc8512f75a48211af6ddd99baa2a76781838f",
+        "publication": "retired"
     },
     {
       "source": "tests/E2E_TESTING.md",
       "destination": "content/development/testing/e2e-testing.md",
       "url": "/development/testing/e2e-testing/",
-      "sha256": "00c00cba1c487b43324f81d3c851e1922b6ed59f714731293172c5e3147d7958"
+      "sha256": "00c00cba1c487b43324f81d3c851e1922b6ed59f714731293172c5e3147d7958",
+        "publication": "retired"
     },
     {
       "source": "tests/README.md",
       "destination": "content/development/testing/_index.md",
       "url": "/development/testing/",
-      "sha256": "627f79f9629a4a93174fc3c2c5b681ea158a982bfd27888138071a425fb4f815"
+      "sha256": "627f79f9629a4a93174fc3c2c5b681ea158a982bfd27888138071a425fb4f815",
+        "publication": "retired"
     }
   ],
   "assets": [

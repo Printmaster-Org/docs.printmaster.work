@@ -10,6 +10,5 @@
       <div class="card-grid">{{ range .pages }}{{ partial "doc-card.html" . }}{{ end }}</div>
     </section>
   {{ end }}
-  {{ if .Params.brand }}{{ partial "brand-roadmap.html" . }}{{ end }}
 </article>
 {{ end }}

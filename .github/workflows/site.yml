@@ -57,8 +57,7 @@ jobs:
   deploy-pages:
     name: Deploy to GitHub Pages (opt-in)
     needs: validate
-    # Private organization repositories require Team/Enterprise. Never publish
-    # merely because a commit was pushed; enable after reviewing Pages settings.
+    # Deploy the public site only from main after validation; do not deploy PRs.
     if: vars.ENABLE_GITHUB_PAGES == 'true' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10

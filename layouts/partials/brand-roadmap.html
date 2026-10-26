@@ -1,6 +1,0 @@
-<section class="prose" aria-labelledby="brand-roadmap">
-  <h2 id="brand-roadmap">More {{ .Params.brand }} documentation to add</h2>
-  <p>These are planned coverage areas, not verified procedures or promises of device support. Add model-specific pages beneath this brand as they are written and tested.</p>
-  <ul class="roadmap-list">{{ range (index site.Data "brand-topics").topics }}{{ if not (in ($.Params.coveredTopics | default slice) .title) }}<li><strong>{{ .title }}</strong> <span class="status-badge">Documentation planned</span><br>{{ .description }}</li>{{ end }}{{ end }}</ul>
-  <p>For a new guide, record the exact model, firmware, prerequisites, tested steps, expected result, and recovery notes. Use synthetic values in screenshots. See the <a href="{{ "project/documentation/" | relURL }}">documentation contribution guide</a>.</p>
-</section>

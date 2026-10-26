@@ -21,4 +21,4 @@ Start with [Scanning & SMB](/scanning/): prepare the receiving PC, configure the
 
 The same brand can have several unrelated interfaces. A future guide for one family will not imply support for all models.
 
-Developer OID mappings and configuration investigations remain under [vendor research](/development/vendor/); they are not end-user setup procedures.
+Device-specific setup coverage is published only after the model, firmware, procedure, and intended result are identified. The status on each brand page shows whether instructions are planned or still need a delivery test.

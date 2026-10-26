@@ -11,14 +11,13 @@ const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 test('primary navigation follows reader tasks rather than implementation modules', () => {
   const config = read('hugo.toml');
   const refs = [...config.matchAll(/pageRef = '([^']+)'/g)].map(match => match[1]);
-  assert.deepEqual(refs, ['/start-here', '/guides', '/scanning', '/printers', '/deployment', '/api', '/development']);
-  for (const ref of refs) assert.ok(fs.existsSync(path.join(root, 'content', ref, '_index.md')), ref);
-  for (const section of ['components', 'project']) {
-    const content = read(`content/${section}/_index.md`);
-    assert.ok(content.includes('navigationHidden: true'));
-    assert.ok(content.includes('navigationParent: "/development/"'));
-    assert.ok(read('content/development/_index.md').includes(`"/${section}"`));
+  assert.deepEqual(refs, ['/start-here', '/guides', '/scanning', '/printers', '/deployment', '/api', '/guides/security']);
+  for (const ref of refs) {
+    const contentPath = path.join(root, 'content', ref);
+    assert.ok(fs.existsSync(path.join(contentPath, '_index.md')) || fs.existsSync(`${contentPath}.md`), ref);
   }
+  assert.equal(fs.existsSync(path.join(root, 'content/development/_index.md')), false);
+  assert.equal(fs.existsSync(path.join(root, 'content/components/_index.md')), false);
 });
 
 test('relocated guides preserve published routes and imported provenance', () => {
