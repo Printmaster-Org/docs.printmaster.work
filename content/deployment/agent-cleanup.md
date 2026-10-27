@@ -7,7 +7,7 @@ weight: 60
 
 **PrintMaster Agent Cleanup** is a standalone recovery utility. Use it when you need to remove an old or incomplete Agent installation before reinstalling, or deliberately reset an Agent's local state. It is not an updater, an unattended fleet-removal tool, or a way to remove the PrintMaster Server.
 
-> **Version note:** This guide covers **v0.1.0-rc.6**, including Windows leftover-directory recovery, the simplified Done page, and the welcome-screen guide link. The screenshots were captured from the UI source included in RC.6. RC.5 has the same scan/select/review workflow and automatic three-second hold confirmation, but its final page and leftover handling differ. Check the [release notes](https://github.com/Printmaster-Org/printmaster-agent-cleanup/releases) for your version. The improved Server bootstrap refusal messages described below remain unreleased and are not part of the cleanup utility.
+> **Version note:** The latest published candidate is **v0.1.0-rc.6**, which includes Windows leftover-directory recovery, the simplified Done page, and the welcome-screen guide link. The screenshots and layout instructions below show an **unreleased development build** with a simpler Start page, centered headings, two-column installation cards, and an always-visible selection data policy. RC.6 still calls the first step Scan and stacks installation cards vertically. The Windows process-exit race fix described below also remains unreleased. Check the [release notes](https://github.com/Printmaster-Org/printmaster-agent-cleanup/releases) for your version. The improved Server bootstrap refusal messages described below remain unreleased and are not part of the cleanup utility.
 
 All screenshots were rendered from the actual desktop UI using **synthetic Windows installation data and a mock cleanup backend**. No real services or files were removed to capture them. Paths and outcomes are examples, not evidence that your device has been cleaned. Linux and macOS use the same wizard, with platform-specific inventory.
 
@@ -49,9 +49,9 @@ chmod +x ./agent-cleanup-linux-amd64
 
 Launch with no arguments to open the GUI. `gui` and `--gui` also select the GUI. Only Windows automatically requests elevation. On Linux and macOS, a non-root session can scan but removal requires relaunching with root privileges in an environment that permits graphical applications. Do not weaken display-server permissions just to run an elevated GUI; use the CLI when an elevated graphical session is unavailable.
 
-## 1. Scan: start with a read-only inventory
+## 1. Start: launch a read-only scan
 
-The welcome screen does **not** scan automatically. Select **Scan this device** when ready. The utility checks known installation paths, service/package ownership, running Agent processes, and associated data locations. Scanning does not mutate the device.
+The Start screen presents a vertically centered, splash-style introduction and **Scan this device** button. The heading reads **PrintMaster Agent Cleanup Tool**. The current wizard step has a tinted highlight and a blue underline spanning its section, in addition to the emphasized label. It does **not** scan automatically. Select the button when ready; scanning happens between Start and Select. The utility checks known installation paths, service/package ownership, running Agent processes, and associated data locations. Scanning does not mutate the device.
 
 ![Agent Cleanup welcome screen with the Scan this device button and cleanup guide link.](/images/agent-cleanup/scan.png)
 
@@ -61,11 +61,11 @@ In RC.6, a clean scan goes directly to [Done](#4-done-check-the-outcome-and-retu
 
 ## 2. Select: choose installations and the data policy
 
-Recognized installations appear as selectable cards. Expand **Paths and identification evidence** to inspect exact paths, ownership evidence, and discovered processes. **Advanced diagnostics** contains the technical inventory JSON and a copyable CLI scan command.
+Recognized installations appear as selectable cards, in two columns when there are multiple findings. Expand **Paths and identification evidence** to inspect exact paths, ownership evidence, and discovered processes. **Advanced diagnostics** contains the technical inventory JSON and a copyable CLI scan command.
 
-![Select screen showing a recognized Agent installation, collapsed evidence, and the opt-in data purge checkbox.](/images/agent-cleanup/select.png)
+![Select screen showing two Agent installation cards side by side, collapsed evidence, and the always-visible opt-in data purge card.](/images/agent-cleanup/select.png)
 
-Leave **Permanently purge Agent data** unchecked to preserve state for later reuse. Select it only for a deliberate reset after backing up anything you need.
+The amber **Agent data - use caution** panel stays visible beneath the scrolling installation list, with a warning icon, highlighted border, and explicit irreversible-deletion warning. Leave **Permanently purge Agent data** unchecked to preserve state for later reuse. Select it only for a deliberate reset after backing up anything you need.
 
 If entries are unrecognized, removal is blocked. Resolve them with the installation owner or collect diagnostics for support; do not broaden paths or delete shared directories to make the warning disappear.
 
@@ -102,11 +102,11 @@ The page provides **Copy result**, collapsed **Scan / result details**, and link
 
 ![Done screen with the cleanup result, PrintMaster resource links, Copy result, and Return to start.](/images/agent-cleanup/done.png)
 
-Choose **Return to start** to return to the **step 1 welcome screen**. This does not start another scan. Select **Scan this device** when ready to verify what remains before reinstalling, or close the utility when finished.
+Choose **Return to start** to return to the **step 1 Start screen**. This does not start another scan. Select **Scan this device** when ready to verify what remains before reinstalling, or close the utility when finished.
 
 RC.5's final Results page instead offers **Scan again**, which immediately starts scanning and then returns to selection.
 
-A typical single-installation flow fits without scrolling at a window size of 900 by 760 or larger with standard text scaling and details collapsed. Expanded details, several installations, smaller windows, larger text, or long errors may need scrolling; the action controls remain visible.
+A typical flow with one or two installation cards fits without scrolling at a window size of 900 by 760 or larger with standard text scaling and details collapsed. Expanded details, additional installations, smaller windows, larger text, or long errors may need scrolling; the selection data policy and action controls remain visible.
 
 ## Bootstrap still refuses a fresh install
 
@@ -135,7 +135,7 @@ Preserved Agent data may intentionally continue to block a fresh bootstrap. That
 | No recognized installations, but bootstrap refuses existing paths | Compare the exact refused path with inventory. Check the version caveat above; retain diagnostics and do not manually delete a shared root. |
 | Unrecognized service, process, uninstall entry, or bootstrap remnant | Stop and review the named item with its owner. Use **Advanced diagnostics** and the CLI scan output for support. |
 | Read-only scan / privileges required | On Windows, relaunch and accept UAC. On Linux/macOS, use an appropriate elevated session or CLI. |
-| Removal stopped | Copy the error, then return to start and rescan. Do not assume the previous plan is still current or that nothing changed. |
+| Removal stopped, including access denied while elevated | Use **Copy result** to retain the exact failed action, target, and OS error, then return to start and rescan. Administrator rights do not guarantee access to every protected or locked resource. The development build handles a known race where service shutdown has already ended an inventoried process before its stop action; a missing error report is not enough to conclude that this caused a particular failure. Do not assume that nothing changed or repeatedly retry the old plan. |
 | The removal button does not activate on a click | It requires a continuous three-second hold. Focus loss and leaving the button cancel the hold. |
 | GUI unavailable on a headless host | Use the CLI below; do not enable an insecure graphical session. |
 

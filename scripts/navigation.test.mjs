@@ -16,7 +16,10 @@ test('Agent cleanup guide is discoverable and includes illustrated recovery and 
     'Release before three seconds', 'Removal starts automatically when the button fills',
     'Return to start', 'non-recursive', '--purge-data', 'preserved by default',
     'Nothing to clean up', 'All cleaned up', 'without a green check',
-    'Program Files (x86)', 'exact blocking directory']) {
+    'Program Files (x86)', 'exact blocking directory', '## 1. Start',
+    'two-column installation cards', 'stays visible beneath the scrolling installation list', 'Agent data - use caution',
+    'already ended an inventoried process', 'vertically centered, splash-style',
+    'PrintMaster Agent Cleanup Tool', 'blue underline spanning its section']) {
     assert.ok(guide.includes(text), text);
   }
   for (const name of ['scan', 'select', 'review', 'hold', 'clean', 'done']) {
