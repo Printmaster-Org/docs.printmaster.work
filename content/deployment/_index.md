@@ -8,7 +8,7 @@ groups:
   - title: "Deploy & run"
     pages: ["/deployment/reverse-proxy", "/deployment/docker", "/deployment/unraid", "/deployment/agent-service"]
   - title: "Maintain & recover"
-    pages: ["/deployment/database-upgrade", "/deployment/backup-restore"]
+    pages: ["/deployment/database-upgrade", "/deployment/backup-restore", "/deployment/agent-cleanup"]
 ---
 
 For your first installation, [start here](/start-here/). This section covers hosting and ongoing operation rather than daily fleet use.

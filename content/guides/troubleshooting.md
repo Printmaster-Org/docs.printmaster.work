@@ -7,6 +7,8 @@ sourceCommit: "565f4c0762e467f083f54a9e0e7f6bc23ada56c3"
 
 Solutions for common PrintMaster issues.
 
+For an old or incomplete Agent installation that blocks a fresh bootstrap, see the [illustrated Agent Cleanup utility guide](/deployment/agent-cleanup/). Review its data-preservation and purge precautions before removing anything.
+
 ## Table of Contents
 
 - [Discovery Issues](#discovery-issues)

@@ -8,6 +8,24 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 
+test('Agent cleanup guide is discoverable and includes illustrated recovery and release guidance', () => {
+  const guide = read('content/deployment/agent-cleanup.md');
+  assert.ok(read('content/deployment/_index.md').includes('"/deployment/agent-cleanup"'));
+  assert.ok(read('content/guides/troubleshooting.md').includes('/deployment/agent-cleanup/'));
+  for (const text of ['unreleased development build', 'synthetic Windows installation data',
+    'Release before three seconds', 'Removal starts automatically when the button fills',
+    'Return to start', 'non-recursive', '--purge-data', 'preserved by default']) {
+    assert.ok(guide.includes(text), text);
+  }
+  for (const name of ['scan', 'select', 'review', 'hold', 'done']) {
+    const asset = `images/agent-cleanup/${name}.png`;
+    assert.ok(guide.includes(`](/${asset})`), asset);
+    const bytes = fs.readFileSync(path.join(root, 'static', asset));
+    assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', asset);
+    assert.ok(bytes.readUInt32BE(16) >= 900 && bytes.readUInt32BE(20) >= 760, asset);
+  }
+});
+
 test('primary navigation follows reader tasks rather than implementation modules', () => {
   const config = read('hugo.toml');
   const refs = [...config.matchAll(/pageRef = '([^']+)'/g)].map(match => match[1]);
