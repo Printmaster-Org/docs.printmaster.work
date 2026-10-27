@@ -31,6 +31,20 @@ test('reverse proxy guidance is curated near the top of deployment navigation', 
   assert.ok(guide.includes('TRUSTED_PROXIES'));
 });
 
+test('backup and restore guidance is scoped and contains actionable database steps', () => {
+  const guide = read('content/deployment/backup-restore.md');
+  assert.ok(!/^status: (planned|needs-validation)$/m.test(guide));
+  assert.ok(guide.includes('have not yet been rehearsed against a real deployment'));
+  assert.ok(guide.includes('Docker Server'));
+  assert.ok(guide.includes('.backup'));
+  assert.ok(guide.includes('PRAGMA integrity_check'));
+  assert.ok(guide.includes('pg_dump'));
+  assert.ok(guide.includes('isolated environment'));
+  for (const file of ['content/deployment/docker.md', 'content/deployment/unraid.md']) {
+    assert.ok(read(file).includes('SERVER_DB_PATH=/var/lib/printmaster/server/server.db'), file);
+  }
+});
+
 test('relocated guides preserve published routes and imported provenance', () => {
   for (const [file, url] of [
     ['start-here/install.md', '/guides/install/'],

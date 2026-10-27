@@ -30,6 +30,7 @@ Deploy PrintMaster Server on Unraid using the Docker container.
 | Repository | `ghcr.io/printmaster-org/printmaster-server:latest` |
 | Network Type | `Bridge` |
 | Port | `9443` → `9443` (TCP) for direct HTTPS; keep `9090` private for proxy mode |
+| Optional proxy port | `9090` → `9090` (TCP), only if the proxy needs a host-published backend; restrict access |
 | Volume | `/mnt/user/appdata/printmaster-server/data` → `/var/lib/printmaster/server` |
 | Volume | `/mnt/user/appdata/printmaster-server/logs` → `/var/log/printmaster/server` |
 
@@ -41,7 +42,8 @@ Deploy PrintMaster Server on Unraid using the Docker container.
 
 | Setting | Value | Description |
 |---------|-------|-------------|
-| **HTTP Port** | `9090` | Web interface and API |
+| **Direct HTTPS Port** | `9443` | Default web interface and API |
+| **Proxy HTTP Port** | `9090` | Private backend only when reverse-proxy mode is enabled |
 | **Data Directory** | `/mnt/user/appdata/printmaster-server/data` | Database storage |
 | **Logs Directory** | `/mnt/user/appdata/printmaster-server/logs` | Application logs |
 | **Timezone** | Your timezone (e.g., `America/New_York`) | For correct timestamps |
@@ -51,6 +53,8 @@ Deploy PrintMaster Server on Unraid using the Docker container.
 | Variable | Value | Description |
 |----------|-------|-------------|
 | `BIND_ADDRESS` | `0.0.0.0` | Allow external access |
+| `SERVER_DB_DRIVER` | `sqlite` | Use SQLite for the local Server database |
+| `SERVER_DB_PATH` | `/var/lib/printmaster/server/server.db` | Store SQLite inside the mounted data directory |
 | `BEHIND_PROXY` | `false` by default | Set `true` only when using a reverse proxy |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `TZ` | `America/New_York` | Your timezone |
@@ -64,7 +68,9 @@ For Nginx Proxy Manager or another proxy, follow the complete
 [Reverse proxy setup](/deployment/reverse-proxy/) guide. In the common TLS-at-
 proxy configuration, set `BEHIND_PROXY=true` and `PROXY_USE_HTTPS=false`, then
 forward privately to the Server's HTTP listener on port `9090`. Enable WebSocket
-support and do not expose that backend port to the internet.
+support and do not expose that backend port to the internet. In Unraid's Docker
+template, add the `9090` mapping only if the proxy needs a host-published port;
+on a shared container network, route to the Server container directly instead.
 
 ## Direct HTTPS (no reverse proxy)
 
@@ -135,30 +141,12 @@ Use **CA Auto Update Applications** plugin for automatic updates.
 
 ## Backup
 
-### What to Backup
-
-```
-/mnt/user/appdata/printmaster-server/data/server.db
-/mnt/user/appdata/printmaster-server/data/config.toml (if customized)
-```
-
-### Using Appdata Backup Plugin
-
-- Includes `/mnt/user/appdata/printmaster-server/` automatically
-
-### Manual Backup
-
-```bash
-# Stop container first
-docker stop PrintMaster-Server
-
-# Backup
-cp /mnt/user/appdata/printmaster-server/data/server.db \
-   /mnt/user/backups/printmaster-$(date +%Y%m%d).db
-
-# Restart
-docker start PrintMaster-Server
-```
+Back up the full appdata directory, including the configured database, custom
+`config.toml`, and any mounted TLS files. A backup plugin must quiesce the
+container or use a database-aware snapshot; copying a running SQLite file is
+not a verified backup. Follow [Backup & restore](/deployment/backup-restore/)
+for consistent copies and isolated recovery tests. Keep at least one encrypted
+copy outside the Unraid host.
 
 ---
 
@@ -168,13 +156,13 @@ docker start PrintMaster-Server
 
 1. Check logs: Docker tab → Click container → **Logs**
 2. Verify appdata folder permissions
-3. Ensure port 9090 isn't in use
+3. Ensure the selected listener is available: `9443` for direct HTTPS or `9090` for proxy mode
 
 ### Can't Access Web UI
 
 ```bash
 # From Unraid terminal
-curl http://localhost:9090/api/v1/health
+docker exec PrintMaster-Server /printmaster-server --health
 ```
 
 ### Permission Errors
@@ -224,7 +212,8 @@ Repository: ghcr.io/printmaster-org/printmaster-server:latest
 Network Type: bridge
 
 Ports:
-  9090/tcp → 9090
+   9443/tcp → 9443 (direct HTTPS, optional when using only a proxy)
+   9090/tcp → 9090 (proxy backend only; restrict access to the proxy)
 
 Volumes:
   /mnt/user/appdata/printmaster-server/data → /var/lib/printmaster/server
@@ -232,7 +221,10 @@ Volumes:
 
 Environment Variables:
   BIND_ADDRESS=0.0.0.0
+   SERVER_DB_DRIVER=sqlite
+   SERVER_DB_PATH=/var/lib/printmaster/server/server.db
   BEHIND_PROXY=true
+   PROXY_USE_HTTPS=false
   LOG_LEVEL=info
   TZ=America/Chicago
   PM_DISABLE_SELFUPDATE=true

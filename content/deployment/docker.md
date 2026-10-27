@@ -69,6 +69,8 @@ docker run -d \
   --name printmaster-server \
   -p 9443:9443 \
   -v printmaster-data:/var/lib/printmaster/server \
+  -e SERVER_DB_DRIVER=sqlite \
+  -e SERVER_DB_PATH=/var/lib/printmaster/server/server.db \
   -e ADMIN_PASSWORD=your-secure-password \
   ghcr.io/printmaster-org/printmaster-server:latest
 ```
@@ -119,6 +121,8 @@ services:
       - printmaster-data:/var/lib/printmaster/server
       - printmaster-logs:/var/log/printmaster/server
     environment:
+      - SERVER_DB_DRIVER=sqlite
+      - SERVER_DB_PATH=/var/lib/printmaster/server/server.db
       - ADMIN_PASSWORD=your-secure-password
       - BIND_ADDRESS=0.0.0.0
       - LOG_LEVEL=info
@@ -218,18 +222,10 @@ older mount layout can prevent the PG18 image from finding its data directory.
 For PostgreSQL major-version migrations and TimescaleDB restore hooks, see
 [PostgreSQL and TimescaleDB Upgrades](/deployment/database-upgrade/).
 
-### Backup
+### Backup and restore
 
-```bash
-# Stop container first for consistent backup
-docker stop printmaster-server
-
-# Backup database
-docker cp printmaster-server:/var/lib/printmaster/server/printmaster.db ./backup-$(date +%Y%m%d).db
-
-# Restart
-docker start printmaster-server
-```
+See [Backup & restore](/deployment/backup-restore/) for consistent SQLite and
+PostgreSQL backups, isolated restore tests, and recovery limits.
 
 ---
 
