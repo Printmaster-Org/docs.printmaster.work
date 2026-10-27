@@ -143,16 +143,7 @@ Solutions for common PrintMaster issues.
    - Real-time updates will be slightly delayed
 
 2. **Check proxy configuration**
-   - Reverse proxies must support WebSocket passthrough
-   - For Nginx:
-     ```nginx
-     location / {
-         proxy_pass http://printmaster:9090;
-         proxy_http_version 1.1;
-         proxy_set_header Upgrade $http_upgrade;
-         proxy_set_header Connection "upgrade";
-     }
-     ```
+   - Reverse proxies must support WebSocket passthrough. Check the product-specific examples in [Reverse proxy setup](/deployment/reverse-proxy/).
 
 3. **Check for WebSocket blocking**
    - Some corporate firewalls block WebSocket

@@ -20,6 +20,17 @@ test('primary navigation follows reader tasks rather than implementation modules
   assert.equal(fs.existsSync(path.join(root, 'content/components/_index.md')), false);
 });
 
+test('reverse proxy guidance is curated near the top of deployment navigation', () => {
+  const section = read('content/deployment/_index.md');
+  assert.match(section, /pages: \["\/deployment\/reverse-proxy",/);
+  const guide = read('content/deployment/reverse-proxy.md');
+  for (const product of ['Nginx', 'Nginx Proxy Manager', 'Caddy', 'Traefik', 'Apache', 'HAProxy', 'IIS']) {
+    assert.ok(guide.includes(product), product);
+  }
+  assert.ok(guide.includes('WebSocket'));
+  assert.ok(guide.includes('TRUSTED_PROXIES'));
+});
+
 test('relocated guides preserve published routes and imported provenance', () => {
   for (const [file, url] of [
     ['start-here/install.md', '/guides/install/'],

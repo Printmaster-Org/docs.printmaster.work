@@ -194,46 +194,11 @@ See [Environment Variables](/deployment/docker/#environment-variables) for selec
 
 ---
 
-## Behind a Reverse Proxy
+## Reverse proxy
 
-### Nginx Proxy Manager / Traefik / Caddy
-
-```yaml
-environment:
-  - BEHIND_PROXY=true
-  - BIND_ADDRESS=0.0.0.0
-  - PROXY_USE_HTTPS=false  # Proxy terminates TLS; server upstream is HTTP
-```
-
-**Reverse proxy requirements:**
-- Forward to port `9090`
-- Enable **WebSocket support** (required for real-time features)
-- Handle SSL termination
-
-Change the port mapping to `9090:9090` for a host proxy, or route privately to `printmaster-server:9090` on a shared container network. Restrict backend access to the proxy. For an HTTPS upstream, set `PROXY_USE_HTTPS=true` and forward to `https://printmaster-server:9443` instead.
-
-### Nginx Configuration Example
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name printmaster.example.com;
-    
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
-    
-    location / {
-        proxy_pass http://printmaster-server:9090;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
+For TLS termination, private upstream networking, WebSocket requirements, and
+ready-to-adapt examples for Nginx, Nginx Proxy Manager, Caddy, Traefik, Apache,
+HAProxy, and IIS, see [Reverse proxy setup](/deployment/reverse-proxy/).
 
 ---
 

@@ -54,7 +54,7 @@ Use the Server URL and enrollment flow provided by your administrator. Agent tok
 
 ## Server listeners and TLS
 
-The Server's standalone listener uses HTTPS on port `9443` by default. HTTP on port `9090` is intended as a reverse-proxy backend and requires proxy mode. If TLS terminates at the proxy, restrict the backend listener to that proxy and enable WebSocket forwarding. For encrypted proxy-to-Server traffic, configure the HTTPS upstream instead.
+The Server's standalone listener uses HTTPS on port `9443` by default. HTTP on port `9090` is intended as a reverse-proxy backend and requires proxy mode. If TLS terminates at the proxy, restrict the backend listener to that proxy and enable WebSocket forwarding. For encrypted proxy-to-Server traffic, configure the HTTPS upstream instead. See [Reverse proxy setup](/deployment/reverse-proxy/) for complete product-specific configuration examples.
 
 The Server TOML file is normally located at:
 

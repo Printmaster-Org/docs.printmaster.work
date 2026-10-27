@@ -440,11 +440,10 @@ Standalone HTTPS on `9443` is the default. Supported server TLS modes are `self-
 
 ### Reverse Proxy Support
 
-For a reverse proxy terminating server TLS:
-- Set server `BEHIND_PROXY=true` and `PROXY_USE_HTTPS=false`; forward to HTTP `9090`
-- `PROXY_USE_HTTPS=true` instead selects HTTPS upstream on `9443`
-- Configure WebSocket passthrough for real-time features
-- Restrict backend access and configure trusted proxies; these server env variables are not agent configuration switches
+PrintMaster Server can run behind a TLS-terminating or end-to-end TLS reverse
+proxy. See [Reverse proxy setup](/deployment/reverse-proxy/) for server
+settings, trusted-proxy guidance, and examples for common proxy products. These
+settings apply to the Server, not the Agent's local web interface.
 
 ---
 

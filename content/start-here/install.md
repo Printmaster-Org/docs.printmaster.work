@@ -127,21 +127,10 @@ docker compose up -d
 
 #### Behind a Reverse Proxy
 
-If using Nginx Proxy Manager, Traefik, or another reverse proxy:
-
-```yaml
-environment:
-  - BEHIND_PROXY=true
-  - PROXY_USE_HTTPS=false
-  - BIND_ADDRESS=0.0.0.0
-```
-
-Configure your proxy to:
-- Forward to port 9090
-- Enable WebSocket support (required for real-time features)
-- Handle SSL termination
-
-Publish `9090:9090` instead of `9443:9443` for this HTTP backend, or use a private container network without publishing it. Restrict backend access to the proxy. `PROXY_USE_HTTPS=true` instead selects HTTPS on `9443` for an encrypted upstream.
+For proxy-specific setup, TLS modes, WebSocket requirements, and examples, see
+[Reverse proxy setup](/deployment/reverse-proxy/). In the common TLS-at-proxy
+mode, the Server uses private HTTP port `9090`; do not expose that backend
+directly to the internet.
 
 ### Unraid
 

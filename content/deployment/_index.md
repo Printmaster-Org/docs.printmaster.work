@@ -6,7 +6,7 @@ weight: 50
 icon: "◈"
 groups:
   - title: "Deploy & run"
-    pages: ["/deployment/docker", "/deployment/unraid", "/deployment/agent-service"]
+    pages: ["/deployment/reverse-proxy", "/deployment/docker", "/deployment/unraid", "/deployment/agent-service"]
   - title: "Maintain & recover"
     pages: ["/deployment/database-upgrade", "/deployment/backup-restore"]
 ---

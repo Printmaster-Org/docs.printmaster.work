@@ -29,7 +29,7 @@ Deploy PrintMaster Server on Unraid using the Docker container.
 | Name | `PrintMaster-Server` |
 | Repository | `ghcr.io/printmaster-org/printmaster-server:latest` |
 | Network Type | `Bridge` |
-| Port | `9090` → `9090` (TCP) |
+| Port | `9443` → `9443` (TCP) for direct HTTPS; keep `9090` private for proxy mode |
 | Volume | `/mnt/user/appdata/printmaster-server/data` → `/var/lib/printmaster/server` |
 | Volume | `/mnt/user/appdata/printmaster-server/logs` → `/var/log/printmaster/server` |
 
@@ -51,7 +51,7 @@ Deploy PrintMaster Server on Unraid using the Docker container.
 | Variable | Value | Description |
 |----------|-------|-------------|
 | `BIND_ADDRESS` | `0.0.0.0` | Allow external access |
-| `BEHIND_PROXY` | `true` or `false` | Behind Nginx Proxy Manager? |
+| `BEHIND_PROXY` | `false` by default | Set `true` only when using a reverse proxy |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `TZ` | `America/New_York` | Your timezone |
 | `PM_DISABLE_SELFUPDATE` | `true` | Recommended for Docker |
@@ -60,22 +60,13 @@ Deploy PrintMaster Server on Unraid using the Docker container.
 
 ## Reverse Proxy Setup
 
-### With Nginx Proxy Manager
+For Nginx Proxy Manager or another proxy, follow the complete
+[Reverse proxy setup](/deployment/reverse-proxy/) guide. In the common TLS-at-
+proxy configuration, set `BEHIND_PROXY=true` and `PROXY_USE_HTTPS=false`, then
+forward privately to the Server's HTTP listener on port `9090`. Enable WebSocket
+support and do not expose that backend port to the internet.
 
-1. Set container variables:
-   ```
-   BEHIND_PROXY=true
-   PROXY_USE_HTTPS=true
-   ```
-
-2. In Nginx Proxy Manager:
-   - **Scheme**: `http` (not https)
-   - **Forward Hostname**: `printmaster-server` or Unraid IP
-   - **Forward Port**: `9090`
-   - **Enable WebSockets**: ✅ Required!
-   - Configure SSL certificate
-
-### Without Reverse Proxy (Direct HTTPS)
+## Direct HTTPS (no reverse proxy)
 
 | Variable | Value |
 |----------|-------|
@@ -83,7 +74,8 @@ Deploy PrintMaster Server on Unraid using the Docker container.
 | `TLS_MODE` | `self-signed` |
 | `SERVER_HTTPS_PORT` | `9443` |
 
-Map port `9443` in addition to `9090`.
+Map port `9443`. Do not publish port `9090` unless you deliberately configure
+proxy mode.
 
 ---
 
@@ -115,7 +107,7 @@ Map port `9443` in addition to `9090`.
    - Database and config created automatically
 
 2. **Access the Web UI**
-   - Direct: `http://YOUR-UNRAID-IP:9090`
+   - Direct: `https://YOUR-UNRAID-IP:9443` (the default self-signed certificate triggers a browser warning)
    - Via Proxy: `https://printmaster.yourdomain.com`
 
 3. **Login**
@@ -123,7 +115,7 @@ Map port `9443` in addition to `9090`.
    - Password: `printmaster` (change immediately!)
 
 4. **Connect Agents**
-   - Agent config: `server_url = "http://YOUR-UNRAID-IP:9090"`
+   - Agent config: `server_url = "https://YOUR-UNRAID-IP:9443"`, or use the proxy's public HTTPS URL
 
 ---
 
