@@ -14,10 +14,12 @@ test('Agent cleanup guide is discoverable and includes illustrated recovery and 
   assert.ok(read('content/guides/troubleshooting.md').includes('/deployment/agent-cleanup/'));
   for (const text of ['unreleased development build', 'synthetic Windows installation data',
     'Release before three seconds', 'Removal starts automatically when the button fills',
-    'Return to start', 'non-recursive', '--purge-data', 'preserved by default']) {
+    'Return to start', 'non-recursive', '--purge-data', 'preserved by default',
+    'Nothing to clean up', 'All cleaned up', 'without a green check',
+    'Program Files (x86)', 'exact blocking directory']) {
     assert.ok(guide.includes(text), text);
   }
-  for (const name of ['scan', 'select', 'review', 'hold', 'done']) {
+  for (const name of ['scan', 'select', 'review', 'hold', 'clean', 'done']) {
     const asset = `images/agent-cleanup/${name}.png`;
     assert.ok(guide.includes(`](/${asset})`), asset);
     const bytes = fs.readFileSync(path.join(root, 'static', asset));
