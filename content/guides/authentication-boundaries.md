@@ -26,6 +26,8 @@ Provider role and tenant settings determine the access granted to newly provisio
 
 Use the Server's **Add Agent** flow and assign the Agent to the correct tenant. Treat the generated installation command, link, and join token as credentials. Share them only with the person installing that Agent, and redact them from logs, screenshots, and support requests.
 
+Pending, expired, and revoked deployments appear on the Server's Agents screen. Right-click an entry to revoke its invite, regenerate it, or remove it. Regeneration revokes the old token and shows the replacement once; removing an entry also revokes its invite.
+
 Before approving a pending Agent, verify the displayed machine and tenant with the person who requested enrollment. Replacing an Agent creates a new identity; it is not an in-place update or repair of the existing installation. Keep the old Agent available until the replacement is visible and reporting successfully.
 
 For platform-specific setup, see [Installation](/guides/install/). For service operations, see [Run the Agent as a service](/deployment/agent-service/).
