@@ -7,7 +7,7 @@ weight: 60
 
 **PrintMaster Agent Cleanup** is a standalone recovery utility. Use it when you need to remove an old or incomplete Agent installation before reinstalling, or deliberately reset an Agent's local state. It is not an updater, an unattended fleet-removal tool, or a way to remove the PrintMaster Server.
 
-> **Version note:** The latest published candidate is **v0.1.0-rc.6**, which includes Windows leftover-directory recovery, the simplified Done page, and the welcome-screen guide link. The screenshots and layout instructions below show an **unreleased development build** with a simpler Start page, centered headings, two-column installation cards, and an always-visible selection data policy. RC.6 still calls the first step Scan and stacks installation cards vertically. The Windows process-exit race fix described below also remains unreleased. Check the [release notes](https://github.com/Printmaster-Org/printmaster-agent-cleanup/releases) for your version. The improved Server bootstrap refusal messages described below remain unreleased and are not part of the cleanup utility.
+This guide covers **v0.1.0**, the first stable release, including Windows leftover-directory recovery, a centered Start screen, two-column installation cards, an always-visible data caution panel, and clear completion outcomes. See the [release notes](https://github.com/Printmaster-Org/printmaster-agent-cleanup/releases/tag/v0.1.0) for the available downloads.
 
 All screenshots were rendered from the actual desktop UI using **synthetic Windows installation data and a mock cleanup backend**. No real services or files were removed to capture them. Paths and outcomes are examples, not evidence that your device has been cleaned. Linux and macOS use the same wizard, with platform-specific inventory.
 
@@ -23,7 +23,7 @@ For normal maintenance or upgrades, use the existing installation's update path 
 
 ## Download and launch
 
-Download from the official [Agent Cleanup releases](https://github.com/Printmaster-Org/printmaster-agent-cleanup/releases). These are release candidates; test against representative disposable installations before broad deployment.
+Download from the official [Agent Cleanup releases](https://github.com/Printmaster-Org/printmaster-agent-cleanup/releases/latest). Test against representative disposable installations before broad deployment.
 
 | Platform | Release asset | Requirements |
 | --- | --- | --- |
@@ -53,11 +53,13 @@ Launch with no arguments to open the GUI. `gui` and `--gui` also select the GUI.
 
 The Start screen presents a vertically centered, splash-style introduction and **Scan this device** button. The heading reads **PrintMaster Agent Cleanup Tool**. The current wizard step has a tinted highlight and a blue underline spanning its section, in addition to the emphasized label. It does **not** scan automatically. Select the button when ready; scanning happens between Start and Select. The utility checks known installation paths, service/package ownership, running Agent processes, and associated data locations. Scanning does not mutate the device.
 
+The application window opens centered on its monitor. Windows builds embed the printer icon for the executable and taskbar, in addition to the in-app logo.
+
 ![Agent Cleanup welcome screen with the Scan this device button and cleanup guide link.](/images/agent-cleanup/scan.png)
 
 The welcome screen's **Read the cleanup utility guide** link opens this page in your browser.
 
-In RC.6, a clean scan goes directly to [Done](#4-done-check-the-outcome-and-return-to-the-beginning). Selection and removal controls appear only when there are findings to review.
+A clean scan goes directly to [Done](#4-done-check-the-outcome-and-return-to-the-beginning). Selection and removal controls appear only when there are findings to review.
 
 ## 2. Select: choose installations and the data policy
 
@@ -69,7 +71,7 @@ The amber **Agent data - use caution** panel stays visible beneath the scrolling
 
 If entries are unrecognized, removal is blocked. Resolve them with the installation owner or collect diagnostics for support; do not broaden paths or delete shared directories to make the warning disappear.
 
-**RC.6:** leftover machine-wide Windows Agent data can be listed even when its executable is gone. Empty bootstrap `bin` and protected Program Files `PrintMaster\Agent` directories can also appear as recoverable leftovers. See [bootstrap recovery](#bootstrap-still-refuses-a-fresh-install) below.
+Leftover machine-wide Windows Agent data can be listed even when its executable is gone. Empty bootstrap `bin` and protected Program Files `PrintMaster\Agent` directories can also appear as recoverable leftovers. See [bootstrap recovery](#bootstrap-still-refuses-a-fresh-install) below.
 
 ## 3. Review: inspect the plan and hold to confirm
 
@@ -90,7 +92,7 @@ During removal the page shows an activity indicator. Do not close the window. If
 
 ## 4. Done: check the outcome and return to the beginning
 
-RC.6's Done page gives a quick visual outcome:
+The Done page gives a quick visual outcome:
 
 - **Nothing to clean up** with a large green check means the scan found no known Agent installations, leftover files, or unrecognized entries. The utility skips Select and Review, and no changes were made.
 - **All cleaned up** with a large green check means removal of the **selected components** completed successfully. The message states whether Agent data was preserved or purged; it does not claim that unselected installations were removed or that a verification scan ran.
@@ -104,19 +106,15 @@ The page provides **Copy result**, collapsed **Scan / result details**, and link
 
 Choose **Return to start** to return to the **step 1 Start screen**. This does not start another scan. Select **Scan this device** when ready to verify what remains before reinstalling, or close the utility when finished.
 
-RC.5's final Results page instead offers **Scan again**, which immediately starts scanning and then returns to selection.
-
 A typical flow with one or two installation cards fits without scrolling at a window size of 900 by 760 or larger with standard text scaling and details collapsed. Expanded details, additional installations, smaller windows, larger text, or long errors may need scrolling; the selection data policy and action controls remain visible.
 
 ## Bootstrap still refuses a fresh install
 
 A bootstrap message such as **Existing Agent files or data found at `C:\ProgramData\PrintMaster\bin`** means the fresh-install guard found that path. It does **not** necessarily mean an Agent process is still installed: the guard rejects even an empty directory.
 
-**Existing protected Agent installation found** refers to `PrintMaster\Agent` beneath Program Files or Program Files (x86). Older bootstrap scripts do not include the path in that message. Updated development Server scripts name the exact blocking directory and explain that it may be empty; legacy-executable refusals also name the file. Updating only the cleanup utility does not change a script served by an older Server.
+**Existing protected Agent installation found** refers to `PrintMaster\Agent` beneath Program Files or Program Files (x86). Depending on the Server version, the bootstrap message may not name the exact blocking directory. Compare both locations with the cleanup inventory. Updating the cleanup utility does not change a bootstrap script served by the Server.
 
-In RC.5, executable removal can leave that empty directory behind, and leftover machine-wide data without an executable may not appear in the scan. RC.6 includes leftover-directory recovery.
-
-With RC.6:
+To recover:
 
 1. Return to start and scan again.
 2. Review cards labeled **Leftover Agent files / directories**.
@@ -132,10 +130,10 @@ Preserved Agent data may intentionally continue to block a fresh bootstrap. That
 
 | What you see | What to do |
 | --- | --- |
-| No recognized installations, but bootstrap refuses existing paths | Compare the exact refused path with inventory. Check the version caveat above; retain diagnostics and do not manually delete a shared root. |
+| No recognized installations, but bootstrap refuses existing paths | Compare the exact refused path with inventory and use the latest cleanup release. Retain diagnostics and do not manually delete a shared root. |
 | Unrecognized service, process, uninstall entry, or bootstrap remnant | Stop and review the named item with its owner. Use **Advanced diagnostics** and the CLI scan output for support. |
 | Read-only scan / privileges required | On Windows, relaunch and accept UAC. On Linux/macOS, use an appropriate elevated session or CLI. |
-| Removal stopped, including access denied while elevated | Use **Copy result** to retain the exact failed action, target, and OS error, then return to start and rescan. Administrator rights do not guarantee access to every protected or locked resource. The development build handles a known race where service shutdown has already ended an inventoried process before its stop action; a missing error report is not enough to conclude that this caused a particular failure. Do not assume that nothing changed or repeatedly retry the old plan. |
+| Removal stopped, including access denied while elevated | Use **Copy result** to retain the exact failed action, target, and OS error, then return to start and rescan. Administrator rights do not guarantee access to every protected or locked resource. Cleanup handles the case where service shutdown has already ended an inventoried process before its stop action; failures against a still-running process remain explicit. Do not assume that nothing changed or repeatedly retry the old plan. |
 | The removal button does not activate on a click | It requires a continuous three-second hold. Focus loss and leaving the button cancel the hold. |
 | GUI unavailable on a headless host | Use the CLI below; do not enable an insecure graphical session. |
 

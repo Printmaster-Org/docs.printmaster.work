@@ -12,7 +12,8 @@ test('Agent cleanup guide is discoverable and includes illustrated recovery and 
   const guide = read('content/deployment/agent-cleanup.md');
   assert.ok(read('content/deployment/_index.md').includes('"/deployment/agent-cleanup"'));
   assert.ok(read('content/guides/troubleshooting.md').includes('/deployment/agent-cleanup/'));
-  for (const text of ['v0.1.0-rc.6', 'remain unreleased', 'synthetic Windows installation data',
+  assert.doesNotMatch(guide, /\bRC\.\d|v\d+\.\d+\.\d+-rc\.|release candidates|development build|unreleased/i);
+  for (const text of ['v0.1.0', 'first stable release', 'synthetic Windows installation data',
     'Release before three seconds', 'Removal starts automatically when the button fills',
     'Return to start', 'non-recursive', '--purge-data', 'preserved by default',
     'Nothing to clean up', 'All cleaned up', 'without a green check',
