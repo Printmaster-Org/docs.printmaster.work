@@ -77,11 +77,9 @@ Leftover machine-wide Windows Agent data can be listed even when its executable 
 
 The compact review screen summarizes the selected installations, action counts, and data policy. Expand **View full removal details** for exact targets and reasons. Use **Back to selection** to change the selection or purge setting.
 
-![Review screen with an action summary, preserved-data policy, collapsed full removal details, and Hold to Confirm button.](/images/agent-cleanup/review.png)
-
 When ready, press and hold **Hold to Confirm** for **three seconds**. The button fills from left to right. **Removal starts automatically when the button fills**, without requiring you to release and without another confirmation popup.
 
-![The Hold to Confirm button partway filled, with progress contained inside the button rather than a separate progress bar.](/images/agent-cleanup/hold.png)
+![Review screen showing the action summary, preserved-data policy, collapsed removal details, and Hold to Confirm button partway filled.](/images/agent-cleanup/hold.png)
 
 - Release before three seconds to cancel the hold.
 - Moving off the button, losing focus, or returning to selection resets it.
@@ -100,7 +98,11 @@ The Done page gives a quick visual outcome:
 
 The page provides **Copy result**, collapsed **Scan / result details**, and links to the PrintMaster website, documentation, and GitHub support. Copied results include the scan inventory from before any cleanup.
 
+### Clean scan: nothing to clean up
+
 ![A clean scan goes directly to Done with a large green check and Nothing to clean up.](/images/agent-cleanup/clean.png)
+
+### Successful removal: all cleaned up
 
 ![Done screen with the cleanup result, PrintMaster resource links, Copy result, and Return to start.](/images/agent-cleanup/done.png)
 

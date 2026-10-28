@@ -23,7 +23,10 @@ test('Agent cleanup guide is discoverable and includes illustrated recovery and 
     'PrintMaster Agent Cleanup Tool', 'blue underline spanning its section']) {
     assert.ok(guide.includes(text), text);
   }
-  for (const name of ['scan', 'select', 'review', 'hold', 'clean', 'done']) {
+  assert.ok(!guide.includes('](/images/agent-cleanup/review.png)'));
+  assert.match(guide, /### Clean scan: nothing to clean up\s+!\[[^\]]+\]\(\/images\/agent-cleanup\/clean\.png\)/);
+  assert.match(guide, /### Successful removal: all cleaned up\s+!\[[^\]]+\]\(\/images\/agent-cleanup\/done\.png\)/);
+  for (const name of ['scan', 'select', 'hold', 'clean', 'done']) {
     const asset = `images/agent-cleanup/${name}.png`;
     assert.ok(guide.includes(`](/${asset})`), asset);
     const bytes = fs.readFileSync(path.join(root, 'static', asset));
