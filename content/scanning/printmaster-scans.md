@@ -32,12 +32,12 @@ Windows 7, 8, 8.1, and Windows Server are not validated support targets.
 
 3. Review the username, password, local directory, and SMB share name. The defaults are user `scans`, directory `C:\scans`, and share `scans`. Keep the generated password or use one that meets your organization's policy.
 4. Use the **Settings** gear to select which steps to run, then choose **OK**.
-5. In development builds with the existing-account safeguard, review the warning before confirming a password change. Declining cancels setup without changing the account. Scans refuses to change an account in the local Administrators group; choose a different username or cancel. It also refuses the update if it cannot verify group membership. See the [release availability note](#folder-access-review-unreleased).
+5. If the username belongs to an existing account, review the warning before confirming a password change. Declining cancels setup without changing the account. Scans refuses to change an account in the local Administrators group; choose a different username or cancel. It also refuses the update if it cannot verify group membership.
 6. Review the progress list. If Windows rejects the password, follow the [password correction steps](#windows-rejects-the-password) before proceeding. On successful account setup, use **Copy Password** and store the credential securely before selecting **Done**. Do not share it in screenshots or issue reports.
 
 The utility can create or update the dedicated local account, hide it from the login screen, create the folder, set folder permissions, create the SMB share, and add a desktop shortcut. It can also set non-domain network profiles to Private and enable File and Printer Sharing and Network Discovery firewall rules.
 
-**Review these changes before running on a managed PC.** Published v2.1.4 grants the scan account Full Control, the current administrator Full Control, and Everyone Modify on the folder; domain-joined PCs also receive a Domain Users Modify grant. It configures the share for the scan user. Use only on trusted networks with your administrator's approval. Development changes below restrict new-folder permissions and add confirmation before changing an existing account's password. When a password is changed, update any printers using those credentials.
+**Review these changes before running on a managed PC.** Since v2.2.0, new scan folders give the scan account only the [minimum folder rights](#folder-access-review), and new shares grant it Change rather than Full. Existing folders, shares, and accounts are reviewed before anything changes. Releases up to v2.1.4 granted the scan account Full Control and added Everyone Modify (plus Domain Users Modify on domain-joined PCs) without review; rerunning v2.2.0 offers to clean those entries up but never removes them automatically. Use only on trusted networks with your administrator's approval. When a password is changed, update any printers using those credentials.
 
 The windows carry the PrintMaster logo and "Provided by PrintMaster" attribution. The desktop shortcut retains the original scan-folder icon.
 
@@ -73,9 +73,9 @@ Wait for processing to finish and inspect the retained step details. A skipped s
 
 After successful account setup, copy and securely store the applied password, then configure and test the printer destination as described below. If the utility reports **Completed with errors**, follow the remediation rather than treating the destination as ready.
 
-### Themed confirmation and input dialogs (unreleased)
+### Themed confirmation and input dialogs
 
-Development builds use the app's Solarized light/dark theme, PrintMaster logo, and attribution for account confirmation, folder-access review, password retry, startup/step errors, and clipboard confirmation. These shared dialogs center on their parent when present and scroll longer content while keeping the action buttons available. The change is not yet in the published stable utility.
+Since v2.2.0, Scans uses the app's Solarized light/dark theme, PrintMaster logo, and attribution for account confirmation, folder-access review, password retry, startup/step errors, and clipboard confirmation. These shared dialogs center on their parent when present and scroll longer content while keeping the action buttons available.
 
 The existing-account dialog offers **Change password** and **Cancel setup** instead of native Windows Yes/No buttons. Cancel is the keyboard default; closing the dialog or pressing Escape does not authorize an account change. Folder review retains its recipient input, and password retry retains **Generate**, **Retry**, and **Cancel setup**.
 
@@ -83,11 +83,11 @@ Dialog footers place the neutral, outlined **Cancel** to the left and the filled
 
 The shared dialog work does **not** make passwords masked or eliminate plaintext handling. [Password handling improvements are tracked separately](https://github.com/Printmaster-Org/scans/issues/29). Currently entry fields show the password, setup state holds strings, and copying places the accepted credential on the clipboard. Avoid screenshots, recordings, or shared clipboard history/sync that could expose it. Future masking and secure-state changes will be documented when implemented; a themed window is not a security boundary.
 
-## Folder access review (unreleased)
+## Folder access review
 
-**Availability:** the account safeguards and folder policy described here are development changes on `main`, intended for the next release. They are not yet available through the published stable utility. Pushing code or updating this guide does not publish a release. The screenshots above do not show the new folder-access dialog.
+**Availability:** v2.2.0 and later. The screenshots above do not show the folder-access dialog.
 
-When **Set folder permissions** is selected, development builds show a review before creating a folder or writing its permissions:
+When **Set folder permissions** is selected, Scans shows a review before creating a folder or writing its permissions:
 
 1. Confirm the receiving Windows user. The default comes from the desktop session hosting Scans (including RDP), not the elevated administrator account. If the accounts differ, the dialog explicitly explains the difference; **Apply permissions** confirms the selected recipient. You can choose another account, and a missing desktop identity requires an explicit entry rather than silently selecting the administrator.
 2. Review the access policy. For a new folder, inheritance is disabled and the scan account receives only the advanced rights below. The recipient must be different from the scan account.
@@ -111,9 +111,9 @@ For an existing folder, cleanup candidates are limited to explicit Everyone/Doma
 
 Canceling the review leaves the folder and ACL unchanged, but does not roll back earlier account changes. Folder failure or cancellation skips SMB share configuration and reports an error; independent selected steps can continue. If a folder is created but applying its ACL fails, it retains inherited permissions and the error warns about that state.
 
-## SMB share safety (unreleased)
+## SMB share safety
 
-**Availability:** this describes development code on `main`, not the published stable utility. A successful setup step is not a substitute for testing printer delivery.
+**Availability:** v2.2.0 and later. A successful setup step is not a substitute for testing printer delivery.
 
 Scans verifies that the selected folder exists and compares an existing share's local path before touching its permissions. If the share name belongs to another folder, **Share name conflict** lets you enter another name to check or cancel share setup. The unrelated share is never repointed, deleted, or recreated. Use the share name actually reported in the progress details when configuring the printer.
 
@@ -178,7 +178,7 @@ Choose **Cancel setup** or close the password dialog to stop all remaining setup
 
 Use a longer password with uppercase and lowercase letters, numbers, and symbols, without the username. Generated passwords cannot guarantee compliance with every policy. Ask your administrator about the effective minimum length, complexity, history, and other restrictions rather than disabling policy.
 
-**Release availability:** the retry dialog requires a release containing the password-retry change. Merging utility code does not update the downloaded stable release. Older versions instead show a password-error popup, skip account-dependent steps, and may continue independent steps with **Copy Password** disabled. In those versions, finish the run and rerun setup with a replacement password, or use a newer published release that includes the dialog.
+**Release availability:** the retry dialog is included in v2.2.0 and later. v2.1.4 and earlier instead show a password-error popup, skip account-dependent steps, and may continue independent steps with **Copy Password** disabled. If you are pinned to an older version, finish the run and rerun setup with a replacement password, or use the current stable release.
 
 ### Setup finishes with errors
 
