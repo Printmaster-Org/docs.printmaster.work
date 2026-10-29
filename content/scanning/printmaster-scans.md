@@ -109,6 +109,29 @@ For an existing folder, cleanup candidates are limited to explicit Everyone/Doma
 
 Canceling the review leaves the folder and ACL unchanged, but does not roll back earlier account changes. Folder failure or cancellation skips SMB share configuration and reports an error; independent selected steps can continue. If a folder is created but applying its ACL fails, it retains inherited permissions and the error warns about that state.
 
+## SMB share safety (unreleased)
+
+**Availability:** this describes development code on `main`, not the published stable utility. A successful setup step is not a substitute for testing printer delivery.
+
+Scans verifies that the selected folder exists and compares an existing share's local path before touching its permissions. If the share name belongs to another folder, **Share name conflict** lets you enter another name to check or cancel share setup. The unrelated share is never repointed, deleted, or recreated. Use the share name actually reported in the progress details when configuring the printer.
+
+For a **new share**, only the explicitly qualified local scan account receives **Change** share access, rather than Full. No Everyone share grant is added. Share permissions and NTFS permissions are separate layers: Change allows SMB file operations, including deletion, but the folder ACL still restricts what the account can actually do.
+
+For an **existing share at the correct folder**, review the account/Allow-Deny/access table before choosing **Apply share access**:
+
+- The warning counts grants to other or unresolved accounts, scan-account Full grants, and Deny entries. Resolved account names appear where Windows can resolve them; raw identities remain available in tooltips.
+- All **Remove** checkboxes start unchecked. Remove an Allow grant only after confirming nobody still needs it. Unselected grants and all Deny entries remain.
+- Removal is unavailable when multiple Allow entries resolve to the same principal: the Windows revoke operation would remove them together. Manage those entries in Windows instead.
+- Scans adds Change if the scan account lacks an existing Change or Full Allow. Existing scan Full stays unless explicitly selected for removal; selecting it replaces Full with Change.
+
+Retained group grants may provide broader effective access, and a Deny entry may still block scanning. Use Windows share/security tools to review effective access; the table lists entries rather than calculating group membership or combining share and NTFS access.
+
+Cancel, Escape, or closing the dialog makes no share changes, but earlier account/folder changes are not rolled back. Share failures are reported in progress details and the final error state; independent selected steps can still run. If a permission update partly succeeds, the error lists changes already applied. Inspect the share before retrying; Scans does not attempt an automatic rollback.
+
+The share path, scope, and ACL are checked again after review. If another administrator changes them while the dialog is open, setup stops for a fresh review. This is a best-effort check, not an atomic lock; avoid concurrent share administration. Special/scoped or unreadable shares are not edited.
+
+On systems **without SMB cmdlets**, structured WMI lookup and a create-only operation can create a new share with an explicit Change ACL. Existing-share edits are refused in this mode; configure the share in Windows or rerun where SMB cmdlets are available. A lookup error never triggers blind creation.
+
 ## Configure the printer destination
 
 After PC setup, open your printer's address book or scan destination settings. Labels differ by vendor:
