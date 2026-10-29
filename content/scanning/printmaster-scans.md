@@ -89,7 +89,11 @@ When **Set folder permissions** is selected, development builds show a review be
 
 1. Confirm the receiving Windows user. The default comes from the desktop session hosting Scans (including RDP), not the elevated administrator account. If the accounts differ, the dialog explicitly explains the difference; **Apply permissions** confirms the selected recipient. You can choose another account, and a missing desktop identity requires an explicit entry rather than silently selecting the administrator.
 2. Review the access policy. For a new folder, inheritance is disabled and the scan account receives only the advanced rights below. The recipient must be different from the scan account.
-3. If this is an existing folder, inspect the displayed ACL and select individual cleanup entries only after checking that they are safe to remove. Inheritance and unrelated custom entries are preserved.
+3. If this is an existing folder, inspect the permission table and select individual cleanup entries only after checking that they are safe to remove. Inheritance and unrelated custom entries are preserved.
+
+The review groups recipient selection, scan-account access, and folder policy into separate sections. The permission table resolves Windows account names and shows Allow/Deny indicators, access, explicit/inherited source, and scope. Hover over a row to inspect its SID and exact rights. An account Windows cannot resolve is labeled **Unresolved account**; its SID remains available rather than being replaced with a guessed name. The table shows ACL entries, not calculated effective access.
+
+Only eligible explicit cleanup entries have **Remove** checkboxes, all unchecked initially. Amber notices highlight account mismatches and access risks. The **Advanced** section contains exact scan-right details and the optional Everyone Modify grant; selecting that grant displays an additional warning.
 
 | Principal | New-folder NTFS Allow permissions |
 | --- | --- |
