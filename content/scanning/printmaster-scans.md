@@ -32,11 +32,12 @@ Windows 7, 8, 8.1, and Windows Server are not validated support targets.
 
 3. Review the username, password, local directory, and SMB share name. The defaults are user `scans`, directory `C:\scans`, and share `scans`. Keep the generated password or use one that meets your organization's policy.
 4. Use the **Settings** gear to select which steps to run, then choose **OK**.
-5. Review the progress list. If Windows rejects the password, follow the [password correction steps](#windows-rejects-the-password) before proceeding. On successful account setup, use **Copy Password** and store the credential securely before selecting **Done**. Do not share it in screenshots or issue reports.
+5. If the selected username already exists, review the warning before confirming a password change. Declining cancels setup without changing the account. Scans refuses to change an account in the local Administrators group; choose a different username or cancel. It also refuses the update if it cannot verify group membership.
+6. Review the progress list. If Windows rejects the password, follow the [password correction steps](#windows-rejects-the-password) before proceeding. On successful account setup, use **Copy Password** and store the credential securely before selecting **Done**. Do not share it in screenshots or issue reports.
 
 The utility can create or update the dedicated local account, hide it from the login screen, create the folder, set folder permissions, create the SMB share, and add a desktop shortcut. It can also set non-domain network profiles to Private and enable File and Printer Sharing and Network Discovery firewall rules.
 
-**Review these changes before running on a managed PC.** The utility grants folder permissions to the scan user, current administrator, and Everyone, and configures the share for the scan user. Use only on trusted networks with your administrator's approval; it is not a least-privilege hardening tool. Existing scan-account passwords can be changed when rerunning setup, so update any printers using those credentials.
+**Review these changes before running on a managed PC.** The utility grants folder permissions to the scan user, current administrator, and Everyone, and configures the share for the scan user. Use only on trusted networks with your administrator's approval; it is not a least-privilege hardening tool. When rerunning setup with an existing non-administrator account, Scans requests confirmation before changing its password. Update any printers using those credentials after confirming.
 
 The windows carry the PrintMaster logo and "Provided by PrintMaster" attribution. The desktop shortcut retains the original scan-folder icon.
 
