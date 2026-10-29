@@ -24,22 +24,22 @@ Windows 7, 8, 8.1, and Windows Server are not validated support targets.
 ## Prepare the PC
 
 1. Open [the Scans website](https://scans.printmaster.work/) and review the linked loader script before executing it.
-2. Open Windows PowerShell or Terminal **as Administrator** and run:
+2. Open Windows PowerShell or Terminal and run:
 
    ```powershell
    irm https://scans.printmaster.work/scans.ps1 | iex
    ```
 
-   **Coming in the next release:** the loader will request administrator approval (UAC) itself, so a normal PowerShell window will work. It verifies the download before asking, re-checks the same bytes in the approved process, and treats a declined prompt as a cancellation with no changes. Until that release is published, use an administrator window.
+   Since v2.3.0, a normal window works: the loader verifies the download, then requests administrator approval (UAC). The approved process re-checks the same bytes before running them, and declining the prompt cancels with no changes. Pinned older versions still need an administrator window.
 
-3. Review the username, password, local directory, and SMB share name. The defaults are user `scans`, directory `C:\scans`, and share `scans`. Keep the generated password or use one that meets your organization's policy.
+3. Review the username, password, local directory, and SMB share name. The defaults are user `scans`, directory `C:\scans`, and share `scans`. Keep the generated passphrase or use one that meets your organization's policy.
 
-   **Coming in the next release:** the generated password becomes a passphrase such as `Brook-Ocean7-Gnat-Plaza-Rumor`, made of five capitalized words joined by hyphens with one random digit. It is 20–30 characters long, because length is what makes a password strong, and it fits the 32-character password field common on printers. See [password errors](#windows-rejects-the-password) if Windows still rejects it.
+   Since v2.3.0, the generated password is a passphrase such as `Brook-Ocean7-Gnat-Plaza-Rumor`: five capitalized words joined by hyphens, with one random digit after one word. It is 20–30 characters long, because length is what makes a password strong, and it fits the 32-character password field common on printers. See [password errors](#windows-rejects-the-password) if Windows still rejects it.
 4. Use the **Settings** gear to select which steps to run, then choose **OK**.
 5. If the username belongs to an existing account, review the warning before confirming a password change. Declining cancels setup without changing the account. Scans refuses to change an account in the local Administrators group; choose a different username or cancel. It also refuses the update if it cannot verify group membership.
 6. Review the progress list. If Windows rejects the password, follow the [password correction steps](#windows-rejects-the-password) before proceeding. On successful account setup, use **Copy Password** and store the credential securely before selecting **Done**. Do not share it in screenshots or issue reports.
 
-The utility can create or update the dedicated local account, hide it from the login screen, create the folder, set folder permissions, create the SMB share, and add a desktop shortcut. It can also set non-domain network profiles to Private and enable the File and Printer Sharing firewall rules, which are all SMB scanning needs. **Network Discovery is opt-in** (unreleased; v2.2.0 and earlier always enabled it): select **Also enable Network Discovery** in Settings only if the printer must browse the network to find this PC. Scans never turns off a Network Discovery rule that is already enabled, and the progress list reports each firewall group as enabled, already enabled, or left unchanged.
+The utility can create or update the dedicated local account, hide it from the login screen, create the folder, set folder permissions, create the SMB share, and add a desktop shortcut. It can also set non-domain network profiles to Private and enable the File and Printer Sharing firewall rules, which are all SMB scanning needs. **Network Discovery is opt-in** (since v2.3.0; v2.2.0 and earlier always enabled it): select **Also enable Network Discovery** in Settings only if the printer must browse the network to find this PC. Scans never turns off a Network Discovery rule that is already enabled, and the progress list reports each firewall group as enabled, already enabled, or left unchanged.
 
 **Review these changes before running on a managed PC.** Since v2.2.0, new scan folders give the scan account only the [minimum folder rights](#folder-access-review), and new shares grant it Change rather than Full. Existing folders, shares, and accounts are reviewed before anything changes. Releases up to v2.1.4 granted the scan account Full Control and added Everyone Modify (plus Domain Users Modify on domain-joined PCs) without review; rerunning v2.2.0 offers to clean those entries up but never removes them automatically. Use only on trusted networks with your administrator's approval. When a password is changed, update any printers using those credentials.
 
