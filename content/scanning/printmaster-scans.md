@@ -224,9 +224,9 @@ Read the **Not ready for scanning** list on the Done page. Each failed step show
 
 If v3.0.0 or v3.0.1 reports **Value does not fall within the expected range** for the desktop shortcut, the folder and share may still be configured correctly. Shortcut creation is optional; check the other step results and test a scan.
 
-This loader-launch regression is fixed in development, but not in those releases. Until a release containing the fix is published, use File Explorer to create a shortcut to your configured local scans folder. After upgrading, you can rerun Scans with only **Add a desktop shortcut to the folder** selected under **Advanced options**; leave account, folder, share, and network steps off to avoid changing their settings again.
+This loader-launch regression is fixed in v3.0.2. Rerun Scans with only **Add a desktop shortcut to the folder** selected under **Advanced options**; leave account, folder, share, and network steps off to avoid changing their settings again.
 
-The development version also separates setup windows from PowerShell's taskbar grouping so they use the printer logo. Updating the loader alone does not install these utility fixes; they require an updated utility release.
+Since v3.0.2, setup windows are also separated from PowerShell's taskbar grouping so they use the printer logo.
 
 ### The printer cannot write a scan
 
