@@ -12,7 +12,7 @@ Is the PC awake? Does the expected share still exist? Has its name, address, acc
 
 Use the [manual Windows guide's share test](/guides/manual-smb-setup/#5-test-from-another-windows-pc) with the **dedicated scan account**. A successful test under your own administrator account does not verify the copier's permissions. Do not disconnect unrelated SMB sessions when investigating cached credentials.
 
-If you used the utility, read the [Scans troubleshooting notes](/guides/scans/#troubleshooting). "Completed with errors" does not mean the destination is ready.
+If you used the utility, read the [Scans troubleshooting notes](/guides/scans/#troubleshooting). Only **Ready for scanning** on the Done page means the destination is ready; "Not ready for scanning" (or "Completed with errors" in versions before v3.0.0) lists what to fix.
 
 ## 2. Check the network path
 

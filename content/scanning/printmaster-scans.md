@@ -32,14 +32,15 @@ Windows 7, 8, 8.1, and Windows Server are not validated support targets.
 
    Since v2.3.0, a normal window works: the loader verifies the download, then requests administrator approval (UAC). The approved process re-checks the same bytes before running them, and declining the prompt cancels with no changes. Pinned older versions still need an administrator window.
 
-3. Review the username, password, local directory, and SMB share name. The defaults are user `scans`, directory `C:\scans`, and share `scans`. Keep the generated passphrase or use one that meets your organization's policy.
+3. Since v3.0.0, Scans is a four-page wizard: **Configure → Review → Apply → Done**. Nothing changes on the PC until you choose **Apply** on the Review page.
+4. On **Configure**, check the scan account, password, scans folder, and share name. The defaults are user `scans`, folder `C:\scans`, and share `scans`. The password is hidden by default; **Show** reveals it and **Generate** creates a new one. Keep the generated passphrase or use one that meets your organization's policy.
 
-   Since v2.3.0, the generated password is a passphrase such as `Brook-Ocean7-Gnat-Plaza-Rumor`: five capitalized words joined by hyphens, with one random digit after one word. It is 20–30 characters long, because length is what makes a password strong, and it fits the 32-character password field common on printers. See [password errors](#windows-rejects-the-password) if Windows still rejects it.
-4. Use the **Settings** gear to select which steps to run, then choose **OK**.
-5. If the username belongs to an existing account, review the warning before confirming a password change. Declining cancels setup without changing the account. Scans refuses to change an account in the local Administrators group; choose a different username or cancel. It also refuses the update if it cannot verify group membership.
-6. Review the progress list. If Windows rejects the password, follow the [password correction steps](#windows-rejects-the-password) before proceeding. On successful account setup, use **Copy Password** and store the credential securely before selecting **Done**. Do not share it in screenshots or issue reports.
-
-The utility can create or update the dedicated local account, hide it from the login screen, create the folder, set folder permissions, create the SMB share, and add a desktop shortcut. It can also set non-domain network profiles to Private and enable the File and Printer Sharing firewall rules, which are all SMB scanning needs. **Network Discovery is opt-in** (since v2.3.0; v2.2.0 and earlier always enabled it): select **Also enable Network Discovery** in Settings only if the printer must browse the network to find this PC. Scans never turns off a Network Discovery rule that is already enabled, and the progress list reports each firewall group as enabled, already enabled, or left unchanged.
+   The generated password is a passphrase such as `Brook-Ocean7-Gnat-Plaza-Rumor`: five capitalized words joined by hyphens, with one random digit after one word. It is 20–30 characters long, because length is what makes a password strong, and it fits the 32-character password field common on printers. See [password errors](#windows-rejects-the-password) if Windows still rejects it.
+5. Open **Advanced options** only if some steps are already handled on this PC; every step is on by default.
+6. On **Review**, check the list of changes. If the username belongs to an existing account, tick the confirmation to allow its password to change; **Apply** stays disabled until you do. Scans refuses to change an account in the local Administrators group, and refuses the update if it cannot verify group membership.
+7. Choose **Apply** and answer the folder-access and share reviews that open while setup runs.
+8. On **Done**, check the outcome, then copy the [printer connection details](#configure-the-printer-destination) into the printer. Store the password securely; do not share it in screenshots or issue reports.
+The utility can create or update the dedicated local account, hide it from the login screen, create the folder, set folder permissions, create the SMB share, and add a desktop shortcut. It can also set non-domain network profiles to Private and enable the File and Printer Sharing firewall rules, which are all SMB scanning needs. **Network Discovery is opt-in** (since v2.3.0; v2.2.0 and earlier always enabled it): select **Also enable Network Discovery** under **Advanced options** only if the printer must browse the network to find this PC. Scans never turns off a Network Discovery rule that is already enabled, and the Done page reports each firewall group as enabled, already enabled, or left unchanged.
 
 **Review these changes before running on a managed PC.** Since v2.2.0, new scan folders give the scan account only the [minimum folder rights](#folder-access-review), and new shares grant it Change rather than Full. Existing folders, shares, and accounts are reviewed before anything changes. Releases up to v2.1.4 granted the scan account Full Control and added Everyone Modify (plus Domain Users Modify on domain-joined PCs) without review; rerunning v2.2.0 offers to clean those entries up but never removes them automatically. Use only on trusted networks with your administrator's approval. When a password is changed, update any printers using those credentials.
 
@@ -47,49 +48,71 @@ The windows carry the PrintMaster logo and "Provided by PrintMaster" attribution
 
 ## Setup walkthrough
 
-These screenshots are rendered from the current app's window definitions with example credentials and simulated progress/completion states. They illustrate the interface, not a real machine setup run.
+These screenshots are rendered from the current app's window definitions for an example PC named `FRONTDESK-PC`, with simulated progress and results. They illustrate the interface, not a real machine setup run.
 
-### Choose the destination
+### 1. Configure
 
-![PrintMaster Scans setup window with the PrintMaster logo, account and folder fields, and Provided by PrintMaster attribution](/images/scans/scans-setup.png)
+![Scans Configure page with scan account, hidden generated passphrase with Show and Generate, scans folder, share name, and the network path printers will use](/images/scans/scans-setup.png)
 
-Review the username, generated password, local folder, and share name before proceeding. The screenshot is an example, not a credential to reuse.
+Check the scan account, password, folder, and share name. The line under the share name shows the network path printers will use. If a field is missing or invalid, **Next** stays on this page and lists the problems.
 
 The app follows your Windows light or dark theme:
 
-![PrintMaster Scans setup window in the light theme with the same account, folder, and share fields](/images/scans/scans-setup-theme.png)
+![Scans Configure page in the light theme](/images/scans/scans-setup-theme.png)
 
-### Select setup steps
+**Advanced options** turns individual steps on or off. Folder permissions require creating the folder, and Network Discovery requires the network checks, so those options are disabled when the step they depend on is off.
 
-![Scans settings dialog with account, folder, permissions, share, shortcut, and networking options](/images/scans/scans-settings.png)
+![Scans Advanced options listing account, folder and sharing, desktop, and network steps](/images/scans/scans-advanced.png)
 
-The gear opens the step selection dialog. Review which changes are appropriate for this PC before choosing **OK**.
+### 2. Review
 
-### Review progress
+![Scans Review page listing each change, with an amber notice and confirmation checkbox for an existing account](/images/scans/scans-review.png)
 
-![Scans progress window showing setup details with Copy Password and Done disabled during processing](/images/scans/scans-loading.png)
+Review lists every change before anything runs. **Back** returns to Configure with your choices kept. **Cancel** on Configure or Review exits without changes.
 
-Wait for processing to finish and inspect the retained step details. A skipped step can be intentional, such as hiding an account on a domain-joined PC.
+### 3. Apply
 
-### Save the credential and test
+![Scans Apply page with a progress bar and activity list](/images/scans/scans-apply.png)
 
-![Scans completion window showing finished steps and enabled Copy Password and Done buttons](/images/scans/scans-finished.png)
+Apply shows each step as it runs. The window cannot be closed mid-step. The [folder access review](#folder-access-review) and [existing-share review](#smb-share-safety) open as dialogs during this step. If Windows rejects the password, setup pauses on this page; see [password errors](#windows-rejects-the-password).
 
-After successful account setup, copy and securely store the applied password, then configure and test the printer destination as described below. If the utility reports **Completed with errors**, follow the remediation rather than treating the destination as ready.
+### 4. Done
 
-### Themed confirmation and input dialogs
+![Scans Done page reporting Ready for scanning and listing printer connection details with Copy buttons](/images/scans/scans-finished.png)
 
-Since v2.2.0, Scans uses the app's Solarized light/dark theme, PrintMaster logo, and attribution for account confirmation, folder-access review, password retry, startup/step errors, and clipboard confirmation. These shared dialogs center on their parent when present and scroll longer content while keeping the action buttons available.
+Done reports one of four outcomes:
 
-The existing-account dialog offers **Change password** and **Cancel setup** instead of native Windows Yes/No buttons. Cancel is the keyboard default; closing the dialog or pressing Escape does not authorize an account change. Folder review retains its recipient input, and password retry retains **Generate**, **Retry**, and **Cancel setup**.
+| Outcome | Meaning |
+| --- | --- |
+| **Ready for scanning** | Every selected step finished. |
+| **Ready, with optional problems** | Only optional steps (desktop shortcut, Network Discovery) failed. |
+| **Not ready for scanning** | A required step failed. Failed steps are listed first with the error and how to fix it. |
+| **Setup canceled** | Setup stopped before finishing; connection details are hidden. |
 
-Dialog footers place the neutral, outlined **Cancel** to the left and the filled approval action at the far right. Folder/share permission confirmations initially focus Cancel rather than approving changes with Enter. Permission table rows remain readable on hover, selection, and when focus moves elsewhere; borders distinguish selection and keyboard focus.
+**Printer connection details** lists everything the printer may ask for, each with a **Copy** button; see [Configure the printer destination](#configure-the-printer-destination). **What happened** lists every step, and **Copy summary** copies a plain-text report without the password for support requests. **Back to setup** returns to Configure with your choices kept.
 
-The shared dialog work does **not** make passwords masked or eliminate plaintext handling. [Password handling improvements are tracked separately](https://github.com/Printmaster-Org/scans/issues/29). Currently entry fields show the password, setup state holds strings, and copying places the accepted credential on the clipboard. Avoid screenshots, recordings, or shared clipboard history/sync that could expose it. Future masking and secure-state changes will be documented when implemented; a themed window is not a security boundary.
+![Scans Done page reporting Not ready for scanning, with a failed share step, its error, and how to fix it](/images/scans/scans-not-ready.png)
 
+### Password handling
+
+Since v3.0.0 ([issue #29](https://github.com/Printmaster-Org/scans/issues/29)):
+
+- Password fields are masked by default. **Show** reveals the text until you hide it again.
+- The password stays in a .NET `SecureString` from the password box to the Windows account cmdlets. Plaintext is created only briefly for **Show**, **Copy**, and the legacy `net user` fallback used on systems without the LocalAccounts module.
+- Error messages and logs never include the password; text Windows echoes back is redacted.
+- **Copy** marks the clipboard entry so Windows clipboard history and cloud clipboard sync skip it. When the window closes, Scans clears the clipboard only if it still holds the copied password.
+- The Done page can copy the password only if it was set during this run.
+
+These reduce exposure; they are not guarantees. `SecureString` is not encryption at rest, and PowerShell cannot zero every intermediate string. The legacy `net user` fallback passes the password on a command line, briefly visible to other administrators. Third-party clipboard managers may ignore the exclusion, and screen recording can capture a revealed password.
+
+### Themed dialogs
+
+Scans uses its Solarized light/dark theme, PrintMaster logo, and attribution for the folder-access review, existing-share review, share name conflicts, startup errors, and a fallback existing-account confirmation (shown only if the account appears between Review and Apply). Dialogs center on the wizard and scroll longer content while keeping the action buttons available.
+
+Dialog footers place the neutral, outlined **Cancel** to the left and the filled approval action at the far right. Confirmations focus Cancel first; closing a dialog or pressing Escape never authorizes a change. Permission table rows remain readable on hover, selection, and when focus moves elsewhere; borders distinguish selection and keyboard focus.
 ## Folder access review
 
-**Availability:** v2.2.0 and later. The screenshots above do not show the folder-access dialog.
+**Availability:** v2.2.0 and later. It opens as a dialog during the Apply step.
 
 When **Set folder permissions** is selected, Scans shows a review before creating a folder or writing its permissions:
 
@@ -119,7 +142,7 @@ Canceling the review leaves the folder and ACL unchanged, but does not roll back
 
 **Availability:** v2.2.0 and later. A successful setup step is not a substitute for testing printer delivery.
 
-Scans verifies that the selected folder exists and compares an existing share's local path before touching its permissions. If the share name belongs to another folder, **Share name conflict** lets you enter another name to check or cancel share setup. The unrelated share is never repointed, deleted, or recreated. Use the share name actually reported in the progress details when configuring the printer.
+Scans verifies that the selected folder exists and compares an existing share's local path before touching its permissions. If the share name belongs to another folder, **Share name conflict** lets you enter another name to check or cancel share setup. The unrelated share is never repointed, deleted, or recreated. Use the share name shown on the Done page when configuring the printer.
 
 For a **new share**, only the explicitly qualified local scan account receives **Change** share access, rather than Full. No Everyone share grant is added. Share permissions and NTFS permissions are separate layers: Change allows SMB file operations, including deletion, but the folder ACL still restricts what the account can actually do.
 
@@ -132,7 +155,7 @@ For an **existing share at the correct folder**, review the account/Allow-Deny/a
 
 Retained group grants may provide broader effective access, and a Deny entry may still block scanning. Use Windows share/security tools to review effective access; the table lists entries rather than calculating group membership or combining share and NTFS access.
 
-Cancel, Escape, or closing the dialog makes no share changes, but earlier account/folder changes are not rolled back. Share failures are reported in progress details and the final error state; independent selected steps can still run. If a permission update partly succeeds, the error lists changes already applied. Inspect the share before retrying; Scans does not attempt an automatic rollback.
+Cancel, Escape, or closing the dialog makes no share changes, but earlier account/folder changes are not rolled back. Share failures are listed on the Done page; independent selected steps can still run. If a permission update partly succeeds, the error lists changes already applied. Inspect the share before retrying; Scans does not attempt an automatic rollback.
 
 The share path, scope, and ACL are checked again after review. If another administrator changes them while the dialog is open, setup stops for a fresh review. This is a best-effort check, not an atomic lock; avoid concurrent share administration. Special/scoped or unreadable shares are not edited.
 
@@ -149,6 +172,8 @@ After PC setup, open your printer's address book or scan destination settings. L
 | Share / folder | The configured share name, `scans` by default |
 | Username | The dedicated local scan user; if required, qualify it as `PCNAME\scans` |
 | Password | The password successfully applied by the utility |
+
+Since v3.0.0, the Done page lists each of these values with a **Copy** button, along with the bare and `PC\user` forms of the username, the domain (the PC name for a local account), the full host name (FQDN), network paths by name and IP address, the IPv4 addresses, and SMB port 445. Prefer the host name: DHCP can change IP addresses, so reserve the address on the router if a printer can only use an IP.
 
 The default Windows UNC path is `\\PCNAME\scans`. If the printer has separate host and share fields, enter `PCNAME` and `scans` separately, not the full UNC path in both fields. Use the share name, not the local `C:\scans` path.
 
@@ -172,22 +197,23 @@ This still requires the online loader, manifest, and release asset. SHA-256 chec
 
 `InvalidPassword` or `net user` error `2245` indicates that Windows rejected the scan-account password.
 
-With the password-retry dialog, setup pauses before running any remaining steps:
+Setup pauses on the Apply page before running any remaining steps and shows the error with a **New password** field:
+
+![Scans Apply page paused with the Windows password error, remediation, and a New password field with Show, Generate, Retry, and Cancel setup](/images/scans/scans-password-retry.png)
 
 1. Enter a replacement password, or choose **Generate** to create another one. **Retry** is disabled while the field is empty or contains only whitespace.
 2. Choose **Retry** to attempt account setup again. Your username, folder, share name, and selected setup steps are preserved. If Windows rejects another password, edit or generate one and retry again.
-3. After Windows accepts the password, setup resumes with the remaining selected steps, including account hiding, folder permissions, and SMB share configuration. **Copy Password** becomes available on completion when account creation/update is selected and succeeds; it copies the accepted replacement, not the rejected password.
+3. After Windows accepts the password, setup resumes with the remaining selected steps. The accepted password replaces the original on the Configure page and is the one shown on the Done page.
 
-Choose **Cancel setup** or close the password dialog to stop all remaining setup steps. The progress window reports **Canceled**, **Copy Password** stays disabled, and **Done** closes the window. Cancellation does not roll back changes from previous setup runs.
+Choose **Cancel setup** to stop all remaining setup steps; the Done page reports **Setup canceled**. Cancellation does not roll back changes from previous setup runs.
 
 Use a long password or passphrase without the username; length matters more than symbols. Generated passwords cannot guarantee compliance with every policy. Ask your administrator about the effective minimum length, complexity, history, and other restrictions rather than disabling policy.
 
-**Release availability:** the retry dialog is included in v2.2.0 and later. v2.1.4 and earlier instead show a password-error popup, skip account-dependent steps, and may continue independent steps with **Copy Password** disabled. If you are pinned to an older version, finish the run and rerun setup with a replacement password, or use the current stable release.
+**Release availability:** the inline retry is in v3.0.0 and later; v2.2.0 through v2.3.x show a separate password-retry dialog with the same choices. v2.1.4 and earlier instead show a password-error popup and skip account-dependent steps. If you are pinned to an older version, finish the run and rerun setup with a replacement password, or use the current stable release.
 
 ### Setup finishes with errors
 
-Read the popup and retained progress details. Domain trust failures, access denied, and shares in use have specific remediation. Correct the reported issue and rerun with the appropriate steps selected. "Completed with errors" does not mean the destination is ready.
-
+Read the **Not ready for scanning** list on the Done page. Each failed step shows the Windows error and how to fix it; domain trust failures, access denied, and shares in use have specific remediation. Correct the problem, then choose **Back to setup** and apply again. **Copy summary** gives a password-free report to include in a support request. Only **Ready for scanning** means the destination is ready; versions before v3.0.0 report errors in popups and the final window shows "Completed with errors".
 ### The printer cannot write a scan
 
 - Confirm the PC is awake and reachable from the printer, and check the host and share fields.
