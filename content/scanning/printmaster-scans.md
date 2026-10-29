@@ -73,6 +73,14 @@ Wait for processing to finish and inspect the retained step details. A skipped s
 
 After successful account setup, copy and securely store the applied password, then configure and test the printer destination as described below. If the utility reports **Completed with errors**, follow the remediation rather than treating the destination as ready.
 
+### Themed confirmation and input dialogs (unreleased)
+
+Development builds use the app's Solarized light/dark theme, PrintMaster logo, and attribution for account confirmation, folder-access review, password retry, startup/step errors, and clipboard confirmation. These shared dialogs center on their parent when present and scroll longer content while keeping the action buttons available. The change is not yet in the published stable utility.
+
+The existing-account dialog offers **Change password** and **Cancel setup** instead of native Windows Yes/No buttons. Cancel is the keyboard default; closing the dialog or pressing Escape does not authorize an account change. Folder review retains its recipient input, and password retry retains **Generate**, **Retry**, and **Cancel setup**.
+
+The shared dialog work does **not** make passwords masked or eliminate plaintext handling. [Password handling improvements are tracked separately](https://github.com/Printmaster-Org/scans/issues/29). Currently entry fields show the password, setup state holds strings, and copying places the accepted credential on the clipboard. Avoid screenshots, recordings, or shared clipboard history/sync that could expose it. Future masking and secure-state changes will be documented when implemented; a themed window is not a security boundary.
+
 ## Folder access review (unreleased)
 
 **Availability:** the account safeguards and folder policy described here are development changes on `main`, intended for the next release. They are not yet available through the published stable utility. Pushing code or updating this guide does not publish a release. The screenshots above do not show the new folder-access dialog.
