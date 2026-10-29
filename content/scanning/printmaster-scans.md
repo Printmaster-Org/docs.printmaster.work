@@ -32,12 +32,12 @@ Windows 7, 8, 8.1, and Windows Server are not validated support targets.
 
 3. Review the username, password, local directory, and SMB share name. The defaults are user `scans`, directory `C:\scans`, and share `scans`. Keep the generated password or use one that meets your organization's policy.
 4. Use the **Settings** gear to select which steps to run, then choose **OK**.
-5. If the selected username already exists, review the warning before confirming a password change. Declining cancels setup without changing the account. Scans refuses to change an account in the local Administrators group; choose a different username or cancel. It also refuses the update if it cannot verify group membership.
+5. In development builds with the existing-account safeguard, review the warning before confirming a password change. Declining cancels setup without changing the account. Scans refuses to change an account in the local Administrators group; choose a different username or cancel. It also refuses the update if it cannot verify group membership. See the [release availability note](#folder-access-review-unreleased).
 6. Review the progress list. If Windows rejects the password, follow the [password correction steps](#windows-rejects-the-password) before proceeding. On successful account setup, use **Copy Password** and store the credential securely before selecting **Done**. Do not share it in screenshots or issue reports.
 
 The utility can create or update the dedicated local account, hide it from the login screen, create the folder, set folder permissions, create the SMB share, and add a desktop shortcut. It can also set non-domain network profiles to Private and enable File and Printer Sharing and Network Discovery firewall rules.
 
-**Review these changes before running on a managed PC.** The utility grants folder permissions to the scan user, current administrator, and Everyone, and configures the share for the scan user. Use only on trusted networks with your administrator's approval; it is not a least-privilege hardening tool. When rerunning setup with an existing non-administrator account, Scans requests confirmation before changing its password. Update any printers using those credentials after confirming.
+**Review these changes before running on a managed PC.** Published v2.1.4 grants the scan account Full Control, the current administrator Full Control, and Everyone Modify on the folder; domain-joined PCs also receive a Domain Users Modify grant. It configures the share for the scan user. Use only on trusted networks with your administrator's approval. Development changes below restrict new-folder permissions and add confirmation before changing an existing account's password. When a password is changed, update any printers using those credentials.
 
 The windows carry the PrintMaster logo and "Provided by PrintMaster" attribution. The desktop shortcut retains the original scan-folder icon.
 
@@ -72,6 +72,30 @@ Wait for processing to finish and inspect the retained step details. A skipped s
 ![Scans completion window showing finished steps and enabled Copy Password and Done buttons](/images/scans/scans-finished.png)
 
 After successful account setup, copy and securely store the applied password, then configure and test the printer destination as described below. If the utility reports **Completed with errors**, follow the remediation rather than treating the destination as ready.
+
+## Folder access review (unreleased)
+
+**Availability:** the account safeguards and folder policy described here are development changes on `main`, intended for the next release. They are not yet available through the published stable utility. Pushing code or updating this guide does not publish a release. The screenshots above do not show the new folder-access dialog.
+
+When **Set folder permissions** is selected, development builds show a review before creating a folder or writing its permissions:
+
+1. Confirm the receiving Windows user. The default comes from the desktop session hosting Scans (including RDP), not the elevated administrator account. If the accounts differ, the dialog explicitly explains the difference; **Apply permissions** confirms the selected recipient. You can choose another account, and a missing desktop identity requires an explicit entry rather than silently selecting the administrator.
+2. Review the access policy. For a new folder, inheritance is disabled and the scan account receives only the advanced rights below. The recipient must be different from the scan account.
+3. If this is an existing folder, inspect the displayed ACL and select individual cleanup entries only after checking that they are safe to remove. Inheritance and unrelated custom entries are preserved.
+
+| Principal | New-folder NTFS Allow permissions |
+| --- | --- |
+| Local scan account | List folder / read data; Create files / write data; Create folders / append data |
+| Receiving Windows user | Full Control |
+| Local Administrators and SYSTEM | Full Control |
+
+These rules apply to the folder, subfolders, and files. Windows also adds **Synchronize** to the scan account's rule. No explicit delete, execute, permission-change, or ownership right is added to that profile. This is not a write-only drop box: read data can expose existing scans and write data can allow overwriting files. Test printer compatibility; some models need additional rights for attributes, temporary files, or rename operations.
+
+Everyone and Domain Users are not added by default. The unchecked **Also grant Everyone Modify** option deliberately broadens NTFS access, including reading, changing, and deleting scans. It does not configure SMB share access.
+
+For an existing folder, cleanup candidates are limited to explicit Everyone/Domain Users Modify entries and scan-account Full Control entries matching the old utility's exact rule shape. **Matching is not proof of ownership:** old Scans versions did not mark their rules. Candidates are unchecked by default; only the entries explicitly selected are removed. Inherited rules, unrelated custom entries, and protected child ACLs are not reset. Existing grants and group memberships can still provide broader effective access, and setup warns about that. Use Windows **Advanced Security Settings > Effective Access** to review access for the scan account and receiving user.
+
+Canceling the review leaves the folder and ACL unchanged, but does not roll back earlier account changes. Folder failure or cancellation skips SMB share configuration and reports an error; independent selected steps can continue. If a folder is created but applying its ACL fails, it retains inherited permissions and the error warns about that state.
 
 ## Configure the printer destination
 
