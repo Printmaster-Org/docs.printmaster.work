@@ -220,6 +220,14 @@ Use a long password or passphrase without the username; length matters more than
 ### Setup finishes with errors
 
 Read the **Not ready for scanning** list on the Done page. Each failed step shows the Windows error and how to fix it; domain trust failures, access denied, and shares in use have specific remediation. Correct the problem, then choose **Back to setup** and apply again. **Copy summary** gives a password-free report to include in a support request. Only **Ready for scanning** means the destination is ready; versions before v3.0.0 report errors in popups and the final window shows "Completed with errors".
+### The desktop shortcut could not be created
+
+If v3.0.0 or v3.0.1 reports **Value does not fall within the expected range** for the desktop shortcut, the folder and share may still be configured correctly. Shortcut creation is optional; check the other step results and test a scan.
+
+This loader-launch regression is fixed in development, but not in those releases. Until a release containing the fix is published, use File Explorer to create a shortcut to your configured local scans folder. After upgrading, you can rerun Scans with only **Add a desktop shortcut to the folder** selected under **Advanced options**; leave account, folder, share, and network steps off to avoid changing their settings again.
+
+The development version also separates setup windows from PowerShell's taskbar grouping so they use the printer logo. Updating the loader alone does not install these utility fixes; they require an updated utility release.
+
 ### The printer cannot write a scan
 
 - Confirm the PC is awake and reachable from the printer, and check the host and share fields.
