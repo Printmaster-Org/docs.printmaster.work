@@ -79,6 +79,8 @@ Development builds use the app's Solarized light/dark theme, PrintMaster logo, a
 
 The existing-account dialog offers **Change password** and **Cancel setup** instead of native Windows Yes/No buttons. Cancel is the keyboard default; closing the dialog or pressing Escape does not authorize an account change. Folder review retains its recipient input, and password retry retains **Generate**, **Retry**, and **Cancel setup**.
 
+Dialog footers place the neutral, outlined **Cancel** to the left and the filled approval action at the far right. Folder/share permission confirmations initially focus Cancel rather than approving changes with Enter. Permission table rows remain readable on hover, selection, and when focus moves elsewhere; borders distinguish selection and keyboard focus.
+
 The shared dialog work does **not** make passwords masked or eliminate plaintext handling. [Password handling improvements are tracked separately](https://github.com/Printmaster-Org/scans/issues/29). Currently entry fields show the password, setup state holds strings, and copying places the accepted credential on the clipboard. Avoid screenshots, recordings, or shared clipboard history/sync that could expose it. Future masking and secure-state changes will be documented when implemented; a themed window is not a security boundary.
 
 ## Folder access review (unreleased)
