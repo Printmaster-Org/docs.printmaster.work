@@ -15,7 +15,7 @@ This is the **receiving-PC** side of [Scanning & SMB](/scanning/). After setup, 
 ## Requirements
 
 - Windows 11 is the primary support target. Windows 10 22H2 has best-effort compatibility; this does not extend Microsoft's support.
-- Windows PowerShell 5.1 or PowerShell 7, running as Administrator.
+- Windows PowerShell 5.1 or PowerShell 7, and administrator approval.
 - Internet access to `scans.printmaster.work` and GitHub for the loader and release download.
 - A printer with scan-to-SMB support and network access to the receiving PC.
 
@@ -29,6 +29,8 @@ Windows 7, 8, 8.1, and Windows Server are not validated support targets.
    ```powershell
    irm https://scans.printmaster.work/scans.ps1 | iex
    ```
+
+   **Coming in the next release:** the loader will request administrator approval (UAC) itself, so a normal PowerShell window will work. It verifies the download before asking, re-checks the same bytes in the approved process, and treats a declined prompt as a cancellation with no changes. Until that release is published, use an administrator window.
 
 3. Review the username, password, local directory, and SMB share name. The defaults are user `scans`, directory `C:\scans`, and share `scans`. Keep the generated password or use one that meets your organization's policy.
 4. Use the **Settings** gear to select which steps to run, then choose **OK**.
