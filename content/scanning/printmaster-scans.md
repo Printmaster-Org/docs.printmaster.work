@@ -52,6 +52,8 @@ These screenshots are rendered from the current app's window definitions for an 
 
 ### 1. Configure
 
+The account defaults to `scans`, the folder to `C:\scans`, and the share name to `scans`. **Use v3.0.1 or later:** it restores these defaults and the default step selections when launched through the release loader; v3.0.0 incorrectly left them empty or off.
+
 ![Scans Configure page with scan account, hidden generated passphrase with Show and Generate, scans folder, share name, and the network path printers will use](/images/scans/scans-setup.png)
 
 Check the scan account, password, folder, and share name. The line under the share name shows the network path printers will use. If a field is missing or invalid, **Next** stays on this page and lists the problems.
