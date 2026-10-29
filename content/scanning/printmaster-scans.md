@@ -195,6 +195,10 @@ This still requires the online loader, manifest, and release asset. SHA-256 chec
 
 ## Troubleshooting
 
+### Administrator approval is canceled
+
+Declining or closing the Windows UAC prompt cancels setup without changes. The loader reports **Administrator approval was declined. Scans did not run and nothing was changed.**, removes its temporary download, and returns to the PowerShell prompt. Run the command again when you are ready to approve it. Other launch failures still report a startup error.
+
 ### Windows rejects the password
 
 `InvalidPassword` or `net user` error `2245` indicates that Windows rejected the scan-account password.
