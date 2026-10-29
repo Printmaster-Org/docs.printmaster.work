@@ -33,6 +33,8 @@ Windows 7, 8, 8.1, and Windows Server are not validated support targets.
    **Coming in the next release:** the loader will request administrator approval (UAC) itself, so a normal PowerShell window will work. It verifies the download before asking, re-checks the same bytes in the approved process, and treats a declined prompt as a cancellation with no changes. Until that release is published, use an administrator window.
 
 3. Review the username, password, local directory, and SMB share name. The defaults are user `scans`, directory `C:\scans`, and share `scans`. Keep the generated password or use one that meets your organization's policy.
+
+   **Coming in the next release:** the generated password becomes a passphrase such as `Brook-Ocean7-Gnat-Plaza-Rumor`, made of five capitalized words joined by hyphens with one random digit. It is 20–30 characters long, because length is what makes a password strong, and it fits the 32-character password field common on printers. See [password errors](#windows-rejects-the-password) if Windows still rejects it.
 4. Use the **Settings** gear to select which steps to run, then choose **OK**.
 5. If the username belongs to an existing account, review the warning before confirming a password change. Declining cancels setup without changing the account. Scans refuses to change an account in the local Administrators group; choose a different username or cancel. It also refuses the update if it cannot verify group membership.
 6. Review the progress list. If Windows rejects the password, follow the [password correction steps](#windows-rejects-the-password) before proceeding. On successful account setup, use **Copy Password** and store the credential securely before selecting **Done**. Do not share it in screenshots or issue reports.
@@ -178,7 +180,7 @@ With the password-retry dialog, setup pauses before running any remaining steps:
 
 Choose **Cancel setup** or close the password dialog to stop all remaining setup steps. The progress window reports **Canceled**, **Copy Password** stays disabled, and **Done** closes the window. Cancellation does not roll back changes from previous setup runs.
 
-Use a longer password with uppercase and lowercase letters, numbers, and symbols, without the username. Generated passwords cannot guarantee compliance with every policy. Ask your administrator about the effective minimum length, complexity, history, and other restrictions rather than disabling policy.
+Use a long password or passphrase without the username; length matters more than symbols. Generated passwords cannot guarantee compliance with every policy. Ask your administrator about the effective minimum length, complexity, history, and other restrictions rather than disabling policy.
 
 **Release availability:** the retry dialog is included in v2.2.0 and later. v2.1.4 and earlier instead show a password-error popup, skip account-dependent steps, and may continue independent steps with **Copy Password** disabled. If you are pinned to an older version, finish the run and rerun setup with a replacement password, or use the current stable release.
 
