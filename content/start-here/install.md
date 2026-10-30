@@ -448,6 +448,20 @@ qualified. Until release notes confirm the path for your installation, use the
 same installation method and do not switch an MSI-owned Windows install to the
 portable executable.
 
+### Legacy updater retirement
+
+**0.32.x is the bridge release. Legacy updater support will be removed in
+0.33.0 Stable.** Update Agents on 0.31.x or earlier to 0.32.x, and verify
+that they reconnect and report the new version, before upgrading the Server
+to 0.33.0 Stable. Do not rely on a 0.33 Server to provide the legacy update
+path for an Agent left behind.
+
+An upcoming Server update adds a **Legacy updater** badge beside older Agent
+versions in the Agents table and card views. Its tooltip names the 0.33.0
+Stable deadline. The badge is a version-based reminder, not a check of the
+installation method or a guarantee that an automatic update will succeed.
+It disappears when the Agent reports 0.32 or later.
+
 | Existing Agent installation | Upgrade path |
 | --- | --- |
 | Debian/Ubuntu APT package | Use the configured Stable repository with `sudo apt-get update && sudo apt-get upgrade printmaster-agent`. Beta packages are not published to this repository. |
