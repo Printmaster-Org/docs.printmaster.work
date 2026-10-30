@@ -186,7 +186,16 @@ See [Connection Issues](/guides/troubleshooting/#connection-issues) for more hel
 
 ## Updates
 
-Update using the same installation method you chose: pull the new Docker image, use the configured Linux package repository, or run the Windows installer. Review the [deployment guides](/deployment/) and release notes before upgrading a production Server. Automatic Agent updates and available channels depend on the installed release and installation method; do not assume every channel or updater feature is available.
+Stable is currently **0.32.3** for Agent and **0.32.0** for Server. The 0.32
+Beta tags are Agent **0.32.0-beta.4** and Server **0.32.0-beta.3**. Beta is
+for test fleets, not production.
+
+Use the same installation method when upgrading. APT/DNF repositories publish
+Stable packages only. Upgrade an MSI-installed Windows Agent with the matching
+MSI, not the portable `.exe`. Automatic migration from Agent 0.30.x/0.31.x is
+still being qualified, especially for legacy Windows MSI installs. See the
+[installation and upgrade guide](/guides/install/#upgrading) and the component
+[release notes](https://github.com/Printmaster-Org/printmaster/releases).
 
 ---
 

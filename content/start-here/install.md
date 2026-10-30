@@ -23,6 +23,7 @@ This guide covers installing PrintMaster on all supported platforms.
   - [macOS](#macos)
   - [Docker](#docker-agent)
 - [First-Time Setup](#first-time-setup)
+- [Upgrading](#upgrading)
 
 ---
 
@@ -434,6 +435,31 @@ Complete the agent onboarding/approval flow; setting a URL alone does not author
 ---
 
 ## Upgrading
+
+Agent and Server releases are versioned independently. The latest Stable
+release is Agent **0.32.3** and Server **0.32.0**. The 0.32 Beta tags are
+Agent **0.32.0-beta.4** and Server **0.32.0-beta.3**. Use Beta only in a test
+fleet. Check the [Agent releases](https://github.com/Printmaster-Org/printmaster/releases?q=agent)
+and [Server releases](https://github.com/Printmaster-Org/printmaster/releases?q=server)
+for the current assets and release notes.
+
+Upgrades from Agent **0.30.x** and **0.31.x** to 0.32.x are still being
+qualified. Until release notes confirm the path for your installation, use the
+same installation method and do not switch an MSI-owned Windows install to the
+portable executable.
+
+| Existing Agent installation | Upgrade path |
+| --- | --- |
+| Debian/Ubuntu APT package | Use the configured Stable repository with `sudo apt-get update && sudo apt-get upgrade printmaster-agent`. Beta packages are not published to this repository. |
+| Fedora/RHEL DNF package | Use the configured Stable repository with `sudo dnf upgrade printmaster-agent`. Beta packages are not published to this repository. |
+| Windows MSI | Run the matching Stable MSI to upgrade the existing MSI installation. Do not use the `.exe` over an MSI-owned install. |
+| Windows portable executable | Keep using the portable binary update path for that install. A raw-binary service outside the protected Program Files path needs the documented [`--service update` migration](/deployment/agent-service/#updating-an-existing-windows-service) before automatic replacement. |
+| Docker | Update the Agent or Server image independently; use the same component and channel. |
+
+For the 0.32 Beta, an Agent on Beta.3 was verified updating to Agent Beta.4
+while connected to a Server on Beta.3. That verifies the 0.32 Beta-to-Beta
+path only; it does not qualify 0.30.x/0.31.x automatic upgrades or Windows MSI
+auto-updates.
 
 ### Docker
 

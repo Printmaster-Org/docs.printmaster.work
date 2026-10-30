@@ -20,13 +20,15 @@ Agent and Server publish independently, so their versioned tags can differ:
 | Server | `latest`, `0.32.0` | `beta`, `0.32.0-beta.3` | `main`, `dev-<short-sha>` |
 | Agent | `latest`, `0.32.3` | `beta`, `0.32.0-beta.4` | `main`, `dev-<short-sha>` |
 
-Version examples describe naming, not already-published releases. Docker version
-tags do **not** have a `v` prefix. Stable also publishes a `major.minor` alias.
-Beta never moves Stable aliases, and Dev stays separate from both. Pin a
-versioned tag for predictable deployments instead of a moving alias.
+Docker version tags do **not** have a `v` prefix. Stable also publishes a
+`major.minor` alias. Beta never moves Stable aliases, and Dev stays separate
+from both. Pin a versioned tag for predictable deployments instead of a
+moving alias.
 
 The [public downloads page](https://printmaster.work/downloads) features Stable
-and lists Beta separately. Dev is available only inside a collapsed
+and lists Beta separately. Agent Beta.4 was verified updating from Beta.3
+while connected to Server Beta.3; this does not qualify upgrades from Agent
+0.30.x/0.31.x. Dev is available only inside a collapsed
 **Developer builds (Dev)** section. Beta Agent releases have no MSI: use the
 Windows executable, versioned DEB/RPM assets, or Docker image. APT/DNF
 repository installation commands remain Stable-only.
@@ -100,7 +102,8 @@ Docker automatically pulls the correct architecture for your platform.
 
 **Image tags:**
 - `latest` - Latest stable release (recommended)
-- `0.32.0` - Specific Stable version (example; see the channel table above)
+- `0.32.0` - Server Stable version
+- `0.32.3` - Agent Stable version
 
 ---
 
