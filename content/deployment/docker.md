@@ -13,13 +13,12 @@ Deploy PrintMaster Server using Docker containers with multi-architecture suppor
 - [PrintMaster Agent on GHCR](https://github.com/printmaster-org/printmaster/pkgs/container/printmaster-agent):
   site-local printer discovery, SNMP metrics, and reporting to a central Server.
 
-Both packages use the same channels:
+Agent and Server publish independently, so their versioned tags can differ:
 
-| Channel | Moving image tag | Versioned image tag | Intended use |
-|---------|------------------|---------------------|--------------|
-| Stable | `latest` | `0.32.0` | Production deployments |
-| Beta | `beta` | `0.32.0-beta.1` | Small test fleets before Stable |
-| Dev | `main` | `dev-<short-sha>` | Developer/debugging use, not general consumption |
+| Component | Stable tags | Beta tags | Dev tags |
+|-----------|-------------|-----------|----------|
+| Server | `latest`, `0.32.0` | `beta`, `0.32.0-beta.3` | `main`, `dev-<short-sha>` |
+| Agent | `latest`, `0.32.3` | `beta`, `0.32.0-beta.4` | `main`, `dev-<short-sha>` |
 
 Version examples describe naming, not already-published releases. Docker version
 tags do **not** have a `v` prefix. Stable also publishes a `major.minor` alias.
@@ -51,10 +50,10 @@ publishing metadata. Existing image versions are not modified retroactively.
 Inspect a published version:
 
 ```bash
-docker pull ghcr.io/printmaster-org/printmaster-server:0.32.0-beta.1
-docker image inspect ghcr.io/printmaster-org/printmaster-server:0.32.0-beta.1 \
+docker pull ghcr.io/printmaster-org/printmaster-server:0.32.0-beta.3
+docker image inspect ghcr.io/printmaster-org/printmaster-server:0.32.0-beta.3 \
   --format '{{json .Config.Labels}}'
-docker buildx imagetools inspect ghcr.io/printmaster-org/printmaster-server:0.32.0-beta.1 \
+docker buildx imagetools inspect ghcr.io/printmaster-org/printmaster-server:0.32.0-beta.3 \
   --raw
 ```
 
