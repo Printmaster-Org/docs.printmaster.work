@@ -1,4 +1,4 @@
-FROM node:25-alpine AS api-assets
+FROM node:26-alpine AS api-assets
 WORKDIR /tools
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
